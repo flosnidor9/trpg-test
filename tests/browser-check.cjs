@@ -149,10 +149,15 @@ async function accessibility(page, name) {
     assert.equal(await page.locator('#participant-count').textContent(), '1');
     assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'GM 역할' }).count());
     assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'PL 역할' }).count());
-    assert.equal(await page.locator('#group-tables').getByRole('rowheader', { name: '타이핑 시간' }).count(), 1);
-    assert.equal(await page.locator('#group-tables').getByRole('rowheader', { name: 'RP 템포' }).count(), 1);
+    assert.equal(await page.locator('#group-tables').getByRole('heading', { name: '타이핑 시간', exact: true }).count(), 1);
+    assert.equal(await page.locator('#group-tables').getByRole('heading', { name: 'RP 템포', exact: true }).count(), 1);
     assert.equal(await page.locator('#radar-axis-labels button').count(), 6);
     assert.equal(await page.locator('#radar-axis-guide').count(), 0);
+    assert.equal(await page.locator('.rp-distribution').count(), 6);
+    assert.equal(await page.locator('.rp-group table').count(), 0);
+    assert.equal(await page.locator('#radar-overlap-value').textContent(), '—');
+    await page.locator('.distribution-person').first().focus();
+    assert.ok(await page.locator('.distribution-tooltip').first().isVisible());
     assert.match(await page.locator('#radar-axis-labels button').first().getAttribute('aria-label'), /천천히 정리 → 바로 이어가기/);
     assert.match(await page.locator('#radar-data-summary').textContent(), /타이핑 시간/);
     for (let i = 1; i <= 7; i++) {
@@ -160,10 +165,11 @@ async function accessibility(page, name) {
       await page.locator('#json-input').fill(JSON.stringify(generated)); await page.locator('#add-json').click();
       if (i === 1) {
         assert.equal(await page.locator('#participant-count').textContent(), '2');
+        assert.match(await page.locator('#radar-overlap-value').textContent(), /^\d+%$/);
         assert.equal(await page.locator('#alignment-section').count(), 0);
-        assert.equal(await page.locator('.boundary-subgroup').count(), 2);
-        assert.equal(await page.locator('.boundary-subgroup h4').first().textContent(), '캐릭터 권한과 경계');
-        assert.equal(await page.locator('.boundary-subgroup tbody th').first().textContent(), 'PC 간 말다툼');
+        assert.equal(await page.locator('.boundary-subgroup').count(), 5);
+        assert.equal(await page.locator('.boundary-subgroup').nth(3).locator('h4').textContent(), '캐릭터 권한과 경계');
+        assert.equal(await page.locator('.boundary-subgroup').nth(3).locator('tbody th').first().textContent(), 'PC 간 말다툼');
         assert.equal(await page.locator('#group-tables').getByRole('rowheader', { name: 'PC 간 말다툼' }).count(), 1);
         assert.ok((await page.locator('#group-tables').textContent()).includes('포함하지 마세요'));
         assert.equal(await page.locator('#group-story').count(), 0);
@@ -189,6 +195,23 @@ async function accessibility(page, name) {
       }
     }
     assert.equal(await page.locator('#participant-count').textContent(), '8');
+    assert.equal(await page.getByRole('tab').count(), 9);
+    assert.equal(await page.getByRole('tab').first().textContent(), '전체');
+    assert.equal(await page.locator('.preparation-status').count(), 0);
+    assert.ok(await page.locator('.party-common').isVisible());
+    const storedBeforeTabs = await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile'));
+    await page.getByRole('tab').nth(1).focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#party-panel').isVisible(), false);
+    assert.equal(await page.locator('#personal-profile-title').textContent(), '참가자 2의 플레이 성향');
+    assert.equal(await page.locator('#personal-radar-axis-labels button').count(), 6);
+    assert.ok(await page.locator('#personal-taste-cards .taste-card').count() > 0);
+    await accessibility(page, '개인 탭');
+    await noPageOverflow(page);
+    await page.keyboard.press('Home');
+    assert.equal(await page.locator('#party-panel').isVisible(), true);
+    assert.equal(await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile')), storedBeforeTabs);
+
     assert.equal(await page.locator('.preparation-table tbody tr').count(), 4);
     assert.equal(await page.locator('.preparation-table thead').textContent(), '항목기준 응답');
     assert.equal(await page.locator('.preparation-table tbody button').count(), 0);
@@ -221,6 +244,18 @@ async function accessibility(page, name) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await noPageOverflow(page);
     await page.screenshot({ path: path.join(artifacts, 'comparison-mobile.png') });
+    await page.getByRole('tab').nth(1).click();
+    await noPageOverflow(page);
+    await accessibility(page, '모바일 개인 탭');
+    await page.screenshot({ path: path.join(artifacts, 'personal-mobile.png') });
+    await page.getByRole('tab').first().click();
+    await page.goto(base + '/index.html');
+    await noPageOverflow(page);
+    await page.screenshot({ path: path.join(artifacts, 'landing-mobile.png') });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: path.join(artifacts, 'landing-desktop.png') });
+    await page.setViewportSize({ width: 390, height: 844 });
+
     await page.goto(base + '/result.html'); await noPageOverflow(page);
     await accessibility(page, '모바일 결과');
     await page.screenshot({ path: path.join(artifacts, 'result-mobile.png') });

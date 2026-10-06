@@ -1,0 +1,221 @@
+{
+  "schemaVersion": "3.0",
+  "questionnaireVersion": "rp-2026-10-v7",
+  "displayName": "민준",
+  "context": {
+    "role": "GM",
+    "maxHours": "6"
+  },
+  "responses": {
+    "role": {
+      "value": "GM"
+    },
+    "maxHours": {
+      "value": "6",
+      "fields": {
+        "availability": "토요일 오후 1~7시 (한국 시간)"
+      }
+    },
+    "T1": {
+      "value": 50
+    },
+    "D1": {
+      "value": 50
+    },
+    "S1": {
+      "value": 50
+    },
+    "I1": {
+      "value": 75
+    },
+    "M1": {
+      "value": 75
+    },
+    "P03": {
+      "value": "5+"
+    },
+    "O01": {
+      "value": "240"
+    },
+    "O02": {
+      "value": "15"
+    },
+    "O03": {
+      "value": "0"
+    },
+    "O04": {
+      "value": {
+        "notes": "responsive",
+        "food": "outside",
+        "message": "outside",
+        "social": "break",
+        "work": "break"
+      }
+    },
+    "O05": {
+      "value": "1"
+    },
+    "O06": {
+      "value": "1"
+    },
+    "O07": {
+      "value": {
+        "friends": "ok",
+        "community": "ask",
+        "intro": "ask",
+        "public": "no"
+      }
+    },
+    "O08": {
+      "value": "1"
+    },
+    "O09": {
+      "value": "1"
+    },
+    "O10": {
+      "value": "1"
+    },
+    "O11": {
+      "value": "0"
+    },
+    "O16": {
+      "value": "day"
+    },
+    "O15": {
+      "value": "0"
+    },
+    "O12": {
+      "value": "0"
+    },
+    "O13": {
+      "value": "14"
+    },
+    "O14": {
+      "value": "7"
+    },
+    "A01": {
+      "value": "2",
+      "fields": {
+        "minimum": "1",
+        "offered": "2"
+      }
+    },
+    "A02": {
+      "value": "3",
+      "fields": {
+        "minimum": "1",
+        "offered": "3"
+      }
+    },
+    "A03": {
+      "value": "2",
+      "fields": {
+        "minimum": "1",
+        "offered": "2"
+      }
+    },
+    "A04": {
+      "value": "2",
+      "fields": {
+        "minimum": "1"
+      }
+    },
+    "C01": {
+      "value": {
+        "rules": "during",
+        "intent": "during",
+        "direction": "channel",
+        "planning": "channel",
+        "information": "between"
+      }
+    },
+    "C02": {
+      "value": {
+        "character": "2",
+        "player": "1"
+      },
+      "fields": {
+        "serious": "less"
+      }
+    },
+    "C03": {
+      "value": {
+        "dialogue": "full",
+        "description": "full",
+        "ooc": "short"
+      }
+    },
+    "P01": {
+      "value": "cocofolia"
+    },
+    "P02": {
+      "value": "discord"
+    },
+    "P04": {
+      "value": "진행 중 별도 게임이나 영상 시청, 반복되는 당일 취소"
+    },
+    "B01": {
+      "value": {
+        "argument": "ok",
+        "pvp": "no",
+        "sabotage": "no",
+        "pcRomance": "ask",
+        "npcRomance": "ask",
+        "control": "no",
+        "change": "ask",
+        "loss": "ask"
+      }
+    },
+    "B02": {
+      "value": {
+        "violence": "ok",
+        "gore": "ask",
+        "sexual": "no",
+        "discrimination": "no",
+        "abuse": "no",
+        "fear": "ask",
+        "grief": "ok"
+      }
+    }
+  },
+  "radar": {
+    "tempo": 50,
+    "detail": 50,
+    "scene": 50,
+    "initiative": 75,
+    "meta": 75
+  },
+  "dimensions": {
+    "tempo": {
+      "value": 50,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "detail": {
+      "value": 50,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "scene": {
+      "value": 50,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "initiative": {
+      "value": 75,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "meta": {
+      "value": 75,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    }
+  },
+  "createdAt": "2026-10-07T00:00:00.000Z"
+}

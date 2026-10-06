@@ -1,53 +1,59 @@
 {
   "schemaVersion": "3.0",
-  "questionnaireVersion": "rp-2026-10-v6",
-  "displayName": "도윤",
+  "questionnaireVersion": "rp-2026-10-v7",
+  "displayName": "유나",
   "context": {
-    "role": "GM",
-    "maxHours": "4"
+    "role": "PL",
+    "maxHours": "3"
   },
   "responses": {
     "role": {
-      "value": "GM"
+      "value": "PL"
     },
     "maxHours": {
-      "value": "4"
+      "value": "3",
+      "fields": {
+        "availability": "토요일 오후 2~5시 (한국 시간)"
+      }
     },
     "T1": {
-      "value": 25
+      "value": 0
     },
     "D1": {
       "value": 100
     },
     "S1": {
-      "value": 75
+      "value": 100
     },
     "I1": {
-      "value": 75
+      "value": 0
     },
     "M1": {
-      "value": 25
+      "value": 0
+    },
+    "P03": {
+      "value": "10+"
     },
     "O01": {
-      "value": "240"
+      "value": "120"
     },
     "O02": {
-      "value": "10"
+      "value": "20"
     },
     "O03": {
-      "value": "0"
+      "value": "2"
     },
     "O04": {
       "value": {
         "notes": "responsive",
-        "food": "responsive",
-        "message": "responsive",
-        "social": "responsive",
-        "work": "responsive"
+        "food": "break",
+        "message": "break",
+        "social": "break",
+        "work": "break"
       }
     },
     "O05": {
-      "value": "2"
+      "value": "0"
     },
     "O06": {
       "value": "2"
@@ -55,127 +61,130 @@
     "O07": {
       "value": {
         "friends": "ok",
-        "community": "ok",
-        "intro": "ok",
-        "public": "ok"
+        "community": "ask",
+        "intro": "ask",
+        "public": "no"
       }
     },
     "O08": {
-      "value": "0"
+      "value": "3"
     },
     "O09": {
-      "value": "0"
+      "value": "1"
     },
     "O10": {
       "value": "0"
     },
     "O11": {
-      "value": "0"
+      "value": "1"
     },
     "O16": {
-      "value": "now"
+      "value": "three"
     },
     "O15": {
-      "value": "0"
+      "value": "3"
     },
     "O12": {
-      "value": "2"
+      "value": "0"
     },
     "O13": {
-      "value": "14"
+      "value": "30"
     },
     "O14": {
       "value": "14"
     },
     "A01": {
-      "value": "0",
+      "value": "3",
       "fields": {
-        "offered": "1"
+        "minimum": "2"
       }
     },
     "A02": {
       "value": "0",
       "fields": {
-        "offered": "1"
+        "minimum": "0"
       }
     },
     "A03": {
-      "value": "0",
+      "value": "3",
       "fields": {
-        "offered": "1"
+        "minimum": "3"
       }
     },
     "A04": {
-      "value": "0",
+      "value": "3",
       "fields": {
-        "offered": "1"
+        "minimum": "2"
       }
     },
     "C01": {
       "value": {
-        "rules": "during",
-        "intent": "during",
-        "direction": "during",
-        "planning": "during",
-        "information": "during"
+        "rules": "channel",
+        "intent": "channel",
+        "direction": "between",
+        "planning": "between",
+        "information": "ask"
       }
     },
     "C02": {
       "value": {
-        "character": "0",
+        "character": "1",
         "player": "0"
+      },
+      "fields": {
+        "serious": "outside"
       }
     },
     "C03": {
       "value": {
-        "dialogue": "ok",
-        "description": "ok",
-        "ooc": "ok"
+        "dialogue": "full",
+        "description": "full",
+        "ooc": "short"
       }
     },
     "P01": {
       "value": "roll20"
     },
     "P02": {
-      "value": "discord"
+      "value": "openKakao"
     },
-    "P03": {
-      "value": "5+"
+    "P04": {
+      "value": "과도한 사담, 큰 음량의 BGM, 준비 없이 급하게 확정하는 일정"
     },
     "B01": {
       "value": {
-        "argument": "ok",
-        "pvp": "ask",
+        "argument": "ask",
+        "pvp": "no",
         "sabotage": "no",
-        "pcRomance": "ask",
+        "pcRomance": "ok",
         "npcRomance": "ok",
         "control": "no",
-        "change": "ok",
-        "loss": "ok"
+        "change": "no",
+        "loss": "no"
       }
     },
     "B02": {
       "value": {
-        "violence": "ok",
+        "violence": "ask",
         "gore": "no",
-        "sexual": "ask",
+        "sexual": "no",
         "discrimination": "no",
-        "abuse": "ok",
-        "fear": "ok",
-        "grief": "ok"
+        "abuse": "no",
+        "fear": "no",
+        "grief": "ask"
       }
     }
   },
   "radar": {
-    "tempo": 25,
+    "tempo": 0,
     "detail": 100,
-    "scene": 75,
-    "initiative": 75,
-    "meta": 25
+    "scene": 100,
+    "initiative": 0,
+    "meta": 0
   },
   "dimensions": {
     "tempo": {
-      "value": 25,
+      "value": 0,
       "count": 1,
       "spread": 0,
       "conditional": 0
@@ -187,19 +196,19 @@
       "conditional": 0
     },
     "scene": {
-      "value": 75,
+      "value": 100,
       "count": 1,
       "spread": 0,
       "conditional": 0
     },
     "initiative": {
-      "value": 75,
+      "value": 0,
       "count": 1,
       "spread": 0,
       "conditional": 0
     },
     "meta": {
-      "value": 25,
+      "value": 0,
       "count": 1,
       "spread": 0,
       "conditional": 0

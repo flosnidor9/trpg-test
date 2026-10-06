@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({});
-for (const file of ['questionnaire.js', 'narratives.js', 'app.js', 'comparison.js']) {
+for (const file of ['questionnaire.js', 'narratives.js', 'cards.js', 'app.js', 'comparison.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
 }
 const A = context.TRPGApp, D = context.TRPGData, C = context.TRPGCompare;
@@ -382,13 +382,13 @@ test('순서를 정할 수 있는 운영 응답은 더 조심스러운 조건을
   open.responses.O05.value = '2'; careful.responses.O05.value = '0';
   assert.equal(C.governingAnswer(q('O05'), undefined, [open, careful]).label, '사담은 거의 없이');
   open.responses.O06.value = '0'; careful.responses.O06.value = '3';
-  assert.equal(C.governingAnswer(q('O06'), undefined, [open, careful]).label, '휴식·종료 후에 나누기');
+  assert.equal(C.governingAnswer(q('O06'), undefined, [open, careful]).label, '최다 득표 동률 · 조율 필요');
   open.responses.O08.value = '2'; careful.responses.O08.value = '3';
   assert.equal(C.governingAnswer(q('O08'), undefined, [open, careful]).label, '짧은 사전 대화·체험 후 모두 확인');
   open.responses.O09.value = '2'; careful.responses.O09.value = '3';
   assert.equal(C.governingAnswer(q('O09'), undefined, [open, careful]).label, '빈자리 대체는 원하지 않음');
   open.responses.O16.value = 'week'; careful.responses.O16.value = 'now';
-  assert.equal(C.governingAnswer(q('O16'), undefined, [open, careful]).label, '알게 된 즉시');
+  assert.equal(C.governingAnswer(q('O16'), undefined, [open, careful]).label, '최다 득표 동률 · 조율 필요');
   open.responses.A01.value = '1'; careful.responses.A01.value = '3';
   assert.equal(C.governingAnswer(q('A01'), undefined, [open, careful]).label, C.cellLabel(q('A01'), careful));
   open.responses.C03.value.dialogue = 'ok'; careful.responses.C03.value.dialogue = 'na';
@@ -401,11 +401,11 @@ test('고정 일정 등 비교할 수 없는 답은 미확인으로 표시하지
   const numeric = fixture(), fixed = fixture();
   numeric.responses.O13.value = '14'; fixed.responses.O13.value = 'fixed';
   const result = C.governingAnswer(D.operation.find(q => q.id === 'O13'), undefined, [numeric, fixed]);
-  assert.equal(result.label, '약 2주 전');
+  assert.equal(result.label, '최다 득표 동률 · 조율 필요');
   assert.equal(result.unknownCount, 0);
-  assert.equal(result.incomparableCount, 1);
+  assert.equal(result.incomparableCount, 0);
   numeric.responses.O06.value = '1'; fixed.responses.O06.value = '2';
-  assert.equal(C.governingAnswer(D.operation.find(q => q.id === 'O06'), undefined, [numeric, fixed]).label, '응답이 달라요');
+  assert.equal(C.governingAnswer(D.operation.find(q => q.id === 'O06'), undefined, [numeric, fixed]).label, '최다 득표 동률 · 조율 필요');
 });
 
 test('롤방 선호와 GM 제공 가능 수준을 분리', () => {
@@ -422,4 +422,47 @@ test('상위 답을 바꾼 뒤 적용되지 않는 추가 조건은 버림', () 
   const p = fixture();
   p.responses.O12 = { value: '0', fields: { minimum: '3' } };
   assert.equal(A.validateProfile(p).responses.O12.fields.minimum, undefined);
+});
+
+test('사담 위치는 최다 득표를 표시하고 동률과 미확인을 구분', () => {
+  const q = D.operation.find(q => q.id === 'O06');
+  const first = fixture(), second = fixture(), third = fixture(), missing = fixture();
+  first.responses.O06.value = '1'; second.responses.O06.value = '1'; third.responses.O06.value = '3';
+  delete missing.responses.O06;
+  const result = C.governingAnswer(q, undefined, [first, second, third, missing]);
+  assert.equal(result.label, q.options.find(([value]) => value === '1')[1]);
+  assert.equal(result.voteCount, '2/3명 선택');
+  assert.equal(result.unknownCount, 1);
+  assert.equal(C.governingAnswer(q, undefined, [first, third]).label, '최다 득표 동률 · 조율 필요');
+  assert.equal(C.governingAnswer(q, undefined, [missing]).label, '미확인');
+});
+
+test('공통 카드는 완전히 같은 응답 없이도 두 명 이상이 함께 가지면 표시', () => {
+  const first = fixture(75), second = fixture(100), missing = A.makeProfile({}, '미응답');
+  first.displayName = '가람'; second.displayName = '누리';
+  const common = C.sharedPlaystyle([first, second, missing]);
+  const card = common.find(item => item.id === 'live-exchange');
+  assert.ok(card);
+  assert.equal(card.names.length, 2);
+  assert.match(card.evidence, /2\/3명/);
+  assert.equal(C.sharedPlaystyle([first]).length, 0);
+  assert.equal(C.sharedPlaystyle([first, missing]).length, 0);
+});
+
+test('일정과 변경은 최다 득표를 따르고 미확인과 동률을 구분', () => {
+  const first = fixture(), second = fixture(), third = fixture(), missing = fixture();
+  for (const q of D.operation.filter(q => q.group === '일정과 변경')) {
+    first.responses[q.id] = { value: q.options[0][0] };
+    second.responses[q.id] = { value: q.options[0][0] };
+    third.responses[q.id] = { value: q.options[1][0] };
+    delete missing.responses[q.id];
+    const result = C.governingAnswer(q, undefined, [first, second, third, missing]);
+    assert.equal(result.label, q.options[0][1]);
+    assert.equal(result.voteCount, '2/3명 선택');
+    assert.equal(result.unknownCount, 1);
+    assert.equal(C.governingAnswer(q, undefined, [first, third]).label, '최다 득표 동률 · 조율 필요');
+    assert.match(C.criterionCopy([q]), /최다 득표 기준/);
+  }
+  assert.match(C.criterionCopy(D.boundaries), /경계 존중 기준/);
+  assert.match(C.criterionCopy(D.traits), /분포로 보기/);
 });

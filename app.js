@@ -274,6 +274,10 @@
       if (raw.schemaVersion === '2.0' || (!raw.schemaVersion && raw.radar)) { resultNotice('이전 설계의 결과입니다.', '문항과 축의 의미가 달라졌어요. 새 테스트로 다시 답하면 RP와 운영 해설을 볼 수 있습니다.', raw); return; }
       p = validateProfile(raw);
     } catch (err) { resultNotice('결과를 읽지 못했어요.', err.message + ' 새 테스트로 다시 답할 수 있습니다.'); return; }
+    renderProfile(document.querySelector('#result-content'), p);
+  }
+  function renderProfile(root, p, { allowExport = true } = {}) {
+    const $ = selector => root.querySelector(selector);
     $('#profile-title').textContent = p.displayName + '의 플레이 성향';
     $('#profile-copy').textContent = '함께 나타나는 취향을 세션 카드로 모았어요.\n성향 지도에서 RP와 세션 운영의 방향을 살펴보세요.';
     const ranked = globalThis.TRPGCards?.featuredCards(p.responses) || [];
@@ -297,6 +301,7 @@
       const direction = a.left + ' → ' + a.right;
       return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + escape(a.name + ': ' + direction) + '">' + escape(a.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + escape(direction) + '</span></button>';
     }).join('');
+    if (!allowExport) return;
     $('#display-name').value = p.displayName;
     const preview = () => {
       p.displayName = $('#display-name').value.trim().slice(0, 80) || '나의 모험가';
@@ -310,6 +315,6 @@
     };
     preview();
   }
-  globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, drawRadar };
+  globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, drawRadar, renderProfile };
   if (typeof document !== 'undefined' && document.querySelector('#result-content')) document.addEventListener('DOMContentLoaded', initResult, { once: true });
 })();

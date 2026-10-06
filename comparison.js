@@ -101,6 +101,34 @@
     }).join(' · ') || '미확인';
   }
   const unresolved = v => v == null || ['unknown', 'private', 'other', 'conditional'].includes(v);
+  function sharedPlaystyle(profiles) {
+    if (profiles.length < 2) return [];
+    const cards = new Map();
+    profiles.forEach(profile => {
+      for (const card of globalThis.TRPGCards.featuredCards(profile.responses)) {
+        if (!cards.has(card.id)) cards.set(card.id, { id: card.id, title: card.title, category: card.category, names: [] });
+        cards.get(card.id).names.push(profile.displayName);
+      }
+    });
+    return [...cards.values()].filter(card => card.names.length >= 2)
+      .sort((a, b) => b.names.length - a.names.length)
+      .map(card => ({ ...card, text: card.names.join(', '), evidence: card.names.length + '/' + profiles.length + '명 · ' + card.category }));
+  }
+  const usesMajority = q => ['P01', 'P02', 'O06'].includes(q.id) || q.group === '일정과 변경';
+  function criterionCopy(questions) {
+    const policies = questions.map(q => {
+      if (q.group === 'RP') return '분포로 보기 · 대표 응답을 고르지 않고 각자의 선호 위치를 보여줍니다.';
+      if (usesMajority(q)) return '최다 득표 기준 · 같은 응답이 가장 많은 선택을 표시하며, 동률은 함께 조율합니다. 미확인은 투표에서 제외합니다.';
+      if (q.preparation) return '준비 가능 범위 기준 · 자료는 GM이 제공할 수 있는 가장 낮은 수준, 스탠딩은 참가자 선호 중 가장 낮은 수준을 표시합니다. 최소 필요 수준은 별도로 확인합니다.';
+      if (q.boundary) return '경계 존중 기준 · 한 명이라도 포함하지 않기를 요청하면 제외하며, 사전협의는 동의가 아니라 대화가 필요하다는 뜻입니다.';
+      if (q.type === 'trait') return '각자의 선호를 함께 확인합니다.';
+      if (['O01', 'O02', 'maxHours'].includes(q.id)) return '참여 가능 범위 기준 · 회차와 휴식 간격은 가장 짧은 응답, 휴식 길이는 가장 긴 응답을 반영합니다.';
+      if (q.id === 'role' || q.id === 'P04') return '개별 응답 기준 · 참가자별로 공유한 내용을 모두 표시합니다.';
+      if (q.group === '표현과 소통' || ['O03', 'O04', 'O05', 'O07', 'O08', 'O09'].includes(q.id)) return '확인 범위 우선 · 사용·참여 범위가 더 좁거나 사전 확인이 필요한 응답을 먼저 반영합니다. 미확인과 별도 조건은 함께 조율합니다.';
+      return '개별 응답 기준 · 응답을 한 가지 기준으로 정하기 어려우면 참가자별 내용을 함께 확인합니다.';
+    });
+    return [...new Set(policies)].join(' ');
+  }
   const namesFor = (profiles, predicate) => profiles.filter(predicate).map(p => p.displayName).join(', ');
   function answerGroups(profiles, q, valueOf = p => A.valueOf(p, q.id)) {
     const groups = new Map();
@@ -195,7 +223,6 @@
     if (q.id === 'O03') return { '0': 1, '1': 2, '2': 3, '3': 4 }[value] ?? null;
     if (q.id === 'O04') return { responsive: 1, outside: 2, break: 3, ask: 4 }[value] ?? null;
     if (q.id === 'O05') return { '2': 1, '1': 2, '0': 3 }[value] ?? null;
-    if (q.id === 'O06') return { '0': 1, '1': 2, '2': 2, '3': 3 }[value] ?? null;
     if (q.id === 'O08') return { '2': 1, '0': 2, '1': 3, '3': 4 }[value] ?? null;
     if (q.id === 'O09') return { '2': 1, '0': 2, '1': 3, '3': 4 }[value] ?? null;
     if (q.id === 'C02') return { '3': 1, '2': 2, '1': 3, '0': 4, ask: 5 }[value] ?? null;
@@ -215,9 +242,9 @@
   }
   function governingAnswer(q, row, profiles) {
     const entries = profiles.map(profile => ({ label: cellLabel(q, profile, row), rank: constraintRank(q, profile, row), value: row ? A.valueOf(profile, q.id)?.[row] : A.valueOf(profile, q.id) }));
-    if (q.id === 'P01' || q.id === 'P02') {
+    if (usesMajority(q)) {
       const validValues = new Set(q.options.map(([value]) => value));
-      const votes = entries.filter(entry => validValues.has(entry.value));
+      const votes = entries.filter(entry => validValues.has(entry.value) && !['unknown', 'private', 'conditional'].includes(entry.value));
       const counts = new Map();
       votes.forEach(entry => counts.set(entry.label, (counts.get(entry.label) || 0) + 1));
       const mostVotes = Math.max(0, ...counts.values());
@@ -238,7 +265,7 @@
     const differs = new Set(entries.map(entry => entry.label)).size > 1;
     if (ranked.length) {
       const limiting = ranked.reduce((best, entry) => entry.rank > best.rank ? entry : best);
-      if (['O06', 'C01'].includes(q.id) && new Set(ranked.filter(entry => entry.rank === limiting.rank).map(entry => entry.value)).size > 1) {
+      if (q.id === 'C01' && new Set(ranked.filter(entry => entry.rank === limiting.rank).map(entry => entry.value)).size > 1) {
         return { label: '응답이 달라요', unknownCount, incomparableCount, constrained: false, differs };
       }
       return { label: limiting.label, unknownCount, incomparableCount, constrained: true, differs };
@@ -255,10 +282,10 @@
     const selected = known.length ? String(Math.min(...known)) : null;
     return { label: q.options.find(([value]) => value === selected)?.[1] || (q.id === 'A04' ? '미확인' : 'GM 응답 없음'), source: q.id === 'A04' ? '참가자 선호 중 가장 낮은 수준' : 'GM 제공 가능 중 가장 낮은 수준' };
   }
-  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, radarOverlap };
+  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, radarOverlap, sharedPlaystyle, usesMajority, criterionCopy };
   if (typeof document === 'undefined' || !document.querySelector('#comparison-output')) return;
   const { $ } = A;
-  let people = [], nextId = 1, selected = new Set(), selectionTouched = false;
+  let people = [], nextId = 1, selected = new Set(), selectionTouched = false, activePerson = null;
   const style = person => ({ color: A.COLORS[(person.id - 1) % 6], shape: A.SHAPES[(person.id - 1) % 6] });
   const marker = person => '<span class="person-symbol" style="color:' + style(person).color + '">' + style(person).shape + '</span>';
   function setMessage(message, error = false) {
@@ -271,7 +298,7 @@
     if (!selectionTouched) selected = new Set(people.slice(0, 6).map(p => p.id));
   }
   function rowsFor(questions) {
-    return questions.flatMap(q => q.id === 'role' ? [{ q, role: 'GM', title: 'GM 역할' }, { q, role: 'PL', title: 'PL 역할' }] : q.type === 'matrix' ? q.rows.map(([row, title]) => ({ q, row, title: q.boundary ? title : q.name + ' · ' + title })) : [{ q, title: q.name }]);
+    return questions.flatMap(q => q.id === 'role' ? [{ q, role: 'GM', title: 'GM 역할' }, { q, role: 'PL', title: 'PL 역할' }] : q.type === 'matrix' ? q.rows.map(([row, title]) => ({ q, row, title: q.boundary || q.group === '표현과 소통' ? title : q.name + ' · ' + title })) : [{ q, title: q.name }]);
   }
   function roleRow(role, title) {
     const members = people.filter(p => p.profile.context.role === role || p.profile.context.role === 'both');
@@ -291,7 +318,7 @@
         const minimum = p.profile.responses[q.id]?.fields?.minimum;
         return p.profile.displayName + ': 선호 ' + answer(q, A.valueOf(p.profile, q.id)) + (minimum !== undefined && minimum !== '' ? ', 최소 필요 ' + answer(q, minimum) : '');
       }).join('; ');
-      return '<tr class="preparation-row" tabindex="0" aria-label="' + e(q.name + ': ' + representative.label + '. ' + representative.source + '. 참가자별 선호와 최소 필요: ' + spoken) + '"><th scope="row">' + e(q.name) + (notice ? '<span class="preparation-status">' + e(notice.label) + '</span>' : '') + '</th><td><strong class="preparation-primary">' + e(representative.label) + '</strong><span class="preparation-source">' + e(representative.source) + '</span><div id="preparation-details-' + e(q.id) + '" class="preparation-popover"><strong class="preparation-popover-title">참가자별 선호와 최소 필요</strong><ul class="preparation-people">' + members + '</ul>' + (notice ? '<p class="preparation-note">' + e(notice.text) + '</p>' : '') + '</div></td></tr>';
+      return '<tr class="preparation-row" tabindex="0" aria-label="' + e(q.name + ': ' + representative.label + '. ' + representative.source + '. 참가자별 선호와 최소 필요: ' + spoken) + '"><th scope="row">' + e(q.name) + '</th><td><strong class="preparation-primary">' + e(representative.label) + '</strong><span class="preparation-source">' + e(representative.source) + '</span><div id="preparation-details-' + e(q.id) + '" class="preparation-popover"><strong class="preparation-popover-title">참가자별 선호와 최소 필요</strong><ul class="preparation-people">' + members + '</ul>' + (notice ? '<p class="preparation-note">' + e(notice.text) + '</p>' : '') + '</div></td></tr>';
     }).join('') + '</tbody></table></div>';
   }
   function summaryRow(item) {
@@ -313,14 +340,25 @@
       return '<tr><th scope="row">' + e(title) + '</th><td><button type="button" class="group-answer" aria-label="' + e(title + ': ' + governing.label + '. 참가자별 응답: ' + spoken) + '"><span class="' + (governing.differs ? 'different-answer' : '') + '">' + e(governing.label) + '</span>' + notice + '<span class="answer-cue" aria-hidden="true">자세히</span><span class="answer-popover" aria-hidden="true"><span class="popover-title">참가자별 응답</span>' + answers + '</span></button>' + '</td></tr>' + (q.id === 'O02' && breakSummary ? summaryRow(breakSummary) : '');
     }).join('') + '</tbody></table></div>';
   }
+  function rpDistributions(questions) {
+    return '<div class="rp-distributions">' + questions.map(q => {
+      const axis = D.axes.find(axis => axis.key === q.axis);
+      const buckets = q.options.map(([value, label]) => ({ label, members: people.filter(person => A.valueOf(person.profile, q.id) === value) }));
+      const unknown = people.filter(person => !q.options.some(([value]) => value === A.valueOf(person.profile, q.id)));
+      const personPoint = (person, label) => '<button type="button" class="distribution-person" aria-label="' + e(person.profile.displayName + ' · ' + q.name + ': ' + label) + '">' + marker(person) + '<span class="distribution-name">' + e(person.profile.displayName) + '</span><span class="distribution-tooltip" aria-hidden="true">' + e(person.profile.displayName + ': ' + label) + '</span></button>';
+      return '<article class="rp-distribution" aria-labelledby="distribution-' + e(q.id) + '"><h4 id="distribution-' + e(q.id) + '">' + e(q.name) + '</h4><div class="distribution-endpoints"><span>' + e(axis?.left || q.options[0][1]) + '</span><span>' + e(axis?.right || q.options.at(-1)[1]) + '</span></div><div class="distribution-track" style="--steps:' + buckets.length + '">' + buckets.map(bucket => '<div class="distribution-bucket"><span class="distribution-tick" aria-hidden="true"></span>' + bucket.members.slice(0, 3).map(person => personPoint(person, bucket.label)).join('') + (bucket.members.length > 3 ? '<details class="distribution-more"><summary>+' + (bucket.members.length - 3) + '명</summary>' + bucket.members.slice(3).map(person => personPoint(person, bucket.label)).join('') + '</details>' : '') + '</div>').join('') + '</div>' + (unknown.length ? '<p class="distribution-unknown">미확인 · ' + e(unknown.map(person => person.profile.displayName).join(', ')) + '</p>' : '') + '<ul class="sr-only">' + people.map(person => '<li>' + e(person.profile.displayName + ': ' + A.answerLabel(q, A.response(person.profile, q.id))) + '</li>').join('') + '</ul></article>';
+    }).join('') + '</div>';
+  }
   function renderTables(analysis) {
     const questionsForTables = [...D.setup, ...D.traits, ...D.operation, ...D.boundaries];
     const groups = [...new Set(questionsForTables.map(q => q.group))];
     $('#group-tables').innerHTML = groups.map(group => {
       const questions = questionsForTables.filter(q => q.group === group);
-      if (group === '경계 확인') return '<section class="operation-group boundary-group"><h3>' + e(group) + '</h3>' + questions.map(q => '<section class="boundary-subgroup" aria-labelledby="boundary-' + e(q.id) + '"><h4 id="boundary-' + e(q.id) + '">' + e(q.name) + '</h4>' + compactTable(rowsFor([q]), analysis, q.name + '의 세부 경계와 파티 응답') + '</section>').join('') + '</section>';
-      if (group === '롤방 준비') return '<section class="operation-group preparation-group"><h3>' + e(group) + '</h3>' + preparationTable(questions, analysis) + '</section>';
-      return '<section class="operation-group"><h3>' + e(group) + '</h3>' + compactTable(rowsFor(questions), analysis) + '</section>';
+      const criterion = '<p class="aggregation-copy">' + e(criterionCopy(questions)) + '</p>';
+      if (group === 'RP') return '<section class="operation-group rp-group"><h3>RP</h3>' + criterion + rpDistributions(questions) + '</section>';
+      if (['경계 확인', '표현과 소통'].includes(group)) return '<section class="operation-group boundary-group"><h3>' + e(group) + '</h3>' + questions.map(q => '<section class="boundary-subgroup" aria-labelledby="boundary-' + e(q.id) + '"><h4 id="boundary-' + e(q.id) + '">' + e(q.name) + '</h4><p class="aggregation-copy">' + e(criterionCopy([q])) + '</p>' + compactTable(rowsFor([q]), analysis, q.name + '의 세부 항목과 파티 응답') + '</section>').join('') + '</section>';
+      if (group === '롤방 준비') return '<section class="operation-group preparation-group"><h3>' + e(group) + '</h3>' + criterion + preparationTable(questions, analysis) + '</section>';
+      return '<section class="operation-group"><h3>' + e(group) + '</h3>' + criterion + compactTable(rowsFor(questions), analysis) + '</section>';
     }).join('');
   }
   function closePreparationDetails() {
@@ -363,8 +401,47 @@
     $('#radar-data-summary').innerHTML = '<table><caption>선택한 참가자의 RP·운영 레이더 응답</caption><thead><tr><th>참가자</th>' + comparisonAxes.map(axis => '<th>' + e(axis.name) + '</th>').join('') + '</tr></thead><tbody>' + chosen.map(person => '<tr><th>' + e(person.profile.displayName) + '</th>' + comparisonAxes.map(axis => '<td>' + e(comparisonAnswer(person.profile, axis)) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
     const overlap = radarOverlap(radars);
     $('#radar-overlap-value').textContent = overlap === null ? '—' : overlap + '%';
-    $('#radar-overlap-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 공통 면적을 볼 수 있어요.' : overlap === null ? '미확인 축이 있어 계산할 수 없어요.' : '선택한 ' + chosen.length + '명의 레이더가 모두 겹치는 면적 ÷ 전체가 차지하는 면적';
+    $('#radar-overlap-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 공통 면적을 볼 수 있어요.' : overlap === null ? '미확인 축이 있어 면적을 계산할 수 없어요.' : '모두 겹치는 면적 ÷ 전체가 차지하는 면적. 취향의 우열이나 궁합 점수는 아니에요.';
+    const common = sharedPlaystyle(chosen.map(person => person.profile));
+    $('#party-common-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 함께 선호하는 방식을 살펴볼 수 있어요.' : '선택한 참가자 중 두 명 이상이 함께 가진 세션 취향 카드예요. 응답이 완전히 같을 필요는 없어요.';
+    const commonItem = item => '<article class="common-item"><h4>' + e(item.title) + '</h4><p>' + e(item.text) + '</p><small>' + e(item.evidence) + '</small></article>';
+    $('#party-common-list').innerHTML = common.length ? common.slice(0, 3).map(commonItem).join('') + (common.length > 3 ? '<details class="common-more"><summary>공통점 더 보기 (' + (common.length - 3) + ')</summary>' + common.slice(3).map(commonItem).join('') + '</details>' : '') : chosen.length >= 2 ? '<p class="common-empty">아직 함께 가진 세션 취향 카드가 없어요. 아래 분포에서 각자의 선호를 살펴보세요.</p>' : '';
   }
+  function renderTabs() {
+    if (!people.some(person => person.id === activePerson)) activePerson = null;
+    const tabs = [{ id: null, name: '전체' }, ...people.map(person => ({ id: person.id, name: person.profile.displayName }))];
+    $('#comparison-tabs').innerHTML = tabs.map(tab => '<button type="button" role="tab" id="' + (tab.id === null ? 'party-tab' : 'person-tab-' + tab.id) + '" data-tab="' + (tab.id ?? 'all') + '" aria-selected="' + (activePerson === tab.id) + '" aria-controls="' + (tab.id === null ? 'party-panel' : 'personal-panel') + '" tabindex="' + (activePerson === tab.id ? '0' : '-1') + '">' + e(tab.name) + '</button>').join('');
+    $('#party-panel').hidden = activePerson !== null;
+    $('#personal-panel').hidden = activePerson === null;
+    $('#personal-panel').innerHTML = '';
+    if (activePerson !== null) {
+      const person = people.find(person => person.id === activePerson);
+      $('#personal-panel').setAttribute('aria-labelledby', 'person-tab-' + activePerson);
+      // Prefix IDs so the personal radar and the party radar remain independently addressable.
+      const container = document.createElement('div');
+      container.innerHTML = globalThis.TRPGProfileView;
+      A.renderProfile(container, person.profile, { allowExport: false });
+      container.querySelectorAll('[id]').forEach(element => { element.id = 'personal-' + element.id; });
+      container.querySelectorAll('[aria-labelledby]').forEach(element => { element.setAttribute('aria-labelledby', element.getAttribute('aria-labelledby').split(' ').map(id => 'personal-' + id).join(' ')); });
+      $('#personal-panel').append(container);
+    }
+  }
+  $('#comparison-tabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-tab]');
+    if (!tab) return;
+    activePerson = tab.dataset.tab === 'all' ? null : Number(tab.dataset.tab);
+    renderTabs();
+    document.getElementById(tab.id).focus();
+  });
+  $('#comparison-tabs').addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...$('#comparison-tabs').querySelectorAll('[role="tab"]')];
+    const index = tabs.indexOf(event.target);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[next].click();
+  });
   function renderParticipants() {
     $('#legend').innerHTML = people.map(p => '<div class="participant-control"><label><input type="checkbox" aria-label="레이더에 표시: ' + e(p.profile.displayName) + '" data-person="' + p.id + '"' + (selected.has(p.id) ? ' checked' : '') + '>' + marker(p) + '</label><input class="participant-name" aria-label="참가자 ' + p.id + ' 이름" data-name="' + p.id + '" maxlength="80" value="' + e(p.profile.displayName) + '"><button class="remove-person" type="button" data-remove="' + p.id + '" aria-label="' + e(p.profile.displayName) + ' 제거">×</button></div>').join('');
     $('#legend').querySelectorAll('[data-person]').forEach(input => input.addEventListener('change', () => {
@@ -391,7 +468,7 @@
     $('#comparison-empty').hidden = Boolean(people.length);
     $('#participant-count').textContent = String(people.length);
     if (!people.length) { selected.clear(); selectionTouched = false; return; }
-    renderParticipants();
+    renderParticipants(); renderTabs();
     const analysis = groupAnalysis(people.map(p => p.profile));
     renderRadar(); renderTables(analysis);
   }

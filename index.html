@@ -30,15 +30,22 @@
           <div class="orbit-track"></div>
           <div class="dice-planet">
             <svg viewBox="0 0 120 120" fill="none" aria-hidden="true">
-              <g transform="rotate(45 60 60)">
-                <rect x="23" y="23" width="74" height="74" rx="13" fill="#6547da"/>
-                <rect x="27" y="27" width="66" height="66" rx="10" stroke="#ae9af1" stroke-width="2"/>
-                <g fill="#fff">
-                  <circle cx="40" cy="40" r="6"/><circle cx="80" cy="40" r="6"/>
-                  <circle cx="40" cy="60" r="6"/><circle cx="80" cy="60" r="6"/>
-                  <circle cx="40" cy="80" r="6"/><circle cx="80" cy="80" r="6"/>
-                </g>
-              </g>
+              <defs>
+                <clipPath id="rounded-die"><path d="M52 15Q60 10 68 15L98 32Q106 36 106 45V79Q106 88 98 93L68 110Q60 115 52 110L22 93Q14 88 14 79V45Q14 36 22 32Z"/></clipPath>
+                <linearGradient id="die-top" x1="20" y1="12" x2="95" y2="65" gradientUnits="userSpaceOnUse"><stop stop-color="#c5b4ff"/><stop offset="1" stop-color="#9275ee"/></linearGradient>
+                <linearGradient id="die-left" x1="14" y1="39" x2="63" y2="111" gradientUnits="userSpaceOnUse"><stop stop-color="#8c6ce8"/><stop offset="1" stop-color="#6343bf"/></linearGradient>
+                <linearGradient id="die-right" x1="60" y1="58" x2="106" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#6b49cf"/><stop offset="1" stop-color="#40247e"/></linearGradient>
+              </defs>
+              <g transform="rotate(45 60 60)"><g clip-path="url(#rounded-die)">
+              <path d="M60 10 106 36 60 63 14 36Z" fill="url(#die-top)"/>
+              <path d="M14 36 60 63 60 115 14 88Z" fill="url(#die-left)"/>
+              <path d="M60 63 106 36 106 88 60 115Z" fill="url(#die-right)"/>
+              <path d="M14 36 60 63 106 36M60 63V115" stroke="#d5c7ff" stroke-opacity=".6" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M15 35 60 10 105 35" stroke="#e5dcff" stroke-width="2" stroke-linecap="round"/>
+              <g fill="#fff" transform="matrix(.46 .26 -.46 .27 60 10)"><circle cx="25" cy="25" r="9"/><circle cx="75" cy="75" r="9"/></g>
+              <g fill="#fff" transform="matrix(.46 .27 0 .52 14 36)"><circle cx="25" cy="25" r="8"/><circle cx="75" cy="25" r="8"/><circle cx="25" cy="75" r="8"/><circle cx="75" cy="75" r="8"/></g>
+              <g fill="#eee7ff" transform="matrix(.46 -.27 0 .52 60 63)"><circle cx="25" cy="22" r="8"/><circle cx="75" cy="22" r="8"/><circle cx="25" cy="50" r="8"/><circle cx="75" cy="50" r="8"/><circle cx="25" cy="78" r="8"/><circle cx="75" cy="78" r="8"/></g>
+              </g></g>
             </svg>
           </div>
           <span class="orbit-person person-one" style="--phase:0">

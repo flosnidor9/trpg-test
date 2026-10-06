@@ -19,11 +19,15 @@
     <div class="participant-row"><div><p class="label">PARTY MEMBERS</p><h2>참가자 <span id="participant-count">0</span>명</h2></div></div>
     <p class="small-copy">이름 옆 체크로 레이더에 표시할 참가자를 최대 6명까지 고를 수 있습니다. 아래 조건 표에는 모든 참가자가 포함됩니다.</p>
     <div id="legend" class="participant-list"></div><p id="selection-message" class="form-message" role="status"></p>
-    <section class="details compare-radar-section"><p class="label">PARTY RADAR</p><h2>파티의 플레이 성향</h2><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><div class="comparison-radar-visual"><canvas id="comparison-radar" width="600" height="600" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels"></div></div><aside class="radar-overlap" aria-label="레이더 공통 면적"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note">두 명 이상을 선택하면 공통 면적을 볼 수 있어요.</p></aside></div><div id="radar-data-summary" class="sr-only"></div></div></section>
-    <section class="details"><p class="label">TABLE AGREEMENTS</p><h2>함께 적용할 조건</h2><p class="section-copy">응답이 다를 때 적용할 기준을 굵게 보여줍니다. 선호 플랫폼과 연락 채널은 최다 득표를 따르고, 동률이면 함께 정해요. 불호 요소는 공유된 내용을 참가자별로 모두 표시합니다. 다른 응답 위에 마우스를 올리거나 키보드로 선택하면 참가자별 답을 볼 수 있어요.</p><div id="group-tables"></div></section>
+    <div id="comparison-tabs" class="comparison-tabs" role="tablist" aria-label="파티 결과 보기"></div>
+    <div id="party-panel" role="tabpanel" aria-labelledby="party-tab">
+    <section class="details compare-radar-section"><p class="label">PARTY RADAR</p><h2>파티의 플레이 성향</h2><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><div class="comparison-radar-visual"><canvas id="comparison-radar" width="600" height="600" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels"></div></div><aside class="party-common" aria-labelledby="party-common-title"><div class="radar-overlap"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note"></p></div><p class="label">SHARED SESSION CARDS</p><h3 id="party-common-title">함께 가진 취향 카드</h3><p id="party-common-note"></p><div id="party-common-list" aria-live="polite"></div></aside></div><div id="radar-data-summary" class="sr-only"></div></div></section>
+    <section class="details"><p class="label">TABLE AGREEMENTS</p><h2>함께 적용할 조건</h2><p class="section-copy">응답이 다를 때 적용할 기준을 굵게 보여줍니다. 선호 플랫폼·연락 채널·사담 위치·일정과 변경은 최다 득표를 따르고, 동률이면 함께 정해요. 불호 요소는 공유된 내용을 참가자별로 모두 표시합니다. 다른 응답 위에 마우스를 올리거나 키보드로 선택하면 참가자별 답을 볼 수 있어요.</p><div id="group-tables"></div></section>
+    </div>
+    <div id="personal-panel" class="personal-panel" role="tabpanel" hidden></div>
   </section>
 </main>
 <footer>TRPG 성향 테스트 · 비교 결과는 자동으로 공유되지 않습니다.</footer>
-<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="app.js"></script><script src="comparison.js"></script>
+<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="profile-view.js"></script><script src="app.js"></script><script src="comparison.js"></script>
 </body>
 </html>

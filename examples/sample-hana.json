@@ -1,53 +1,59 @@
 {
   "schemaVersion": "3.0",
-  "questionnaireVersion": "rp-2026-10-v6",
-  "displayName": "서린",
+  "questionnaireVersion": "rp-2026-10-v7",
+  "displayName": "하나",
   "context": {
     "role": "PL",
-    "maxHours": "3"
+    "maxHours": "4"
   },
   "responses": {
     "role": {
       "value": "PL"
     },
     "maxHours": {
-      "value": "3"
+      "value": "4",
+      "fields": {
+        "availability": "토요일 오후 2~6시 (한국 시간)"
+      }
     },
     "T1": {
-      "value": 75
+      "value": 100
     },
     "D1": {
       "value": 0
     },
     "S1": {
-      "value": 25
+      "value": 0
     },
     "I1": {
-      "value": 25
+      "value": 100
     },
     "M1": {
-      "value": 75
+      "value": 100
+    },
+    "P03": {
+      "value": "1-3"
     },
     "O01": {
       "value": "120"
     },
     "O02": {
-      "value": "15"
+      "value": "10"
     },
     "O03": {
-      "value": "0"
+      "value": "1"
     },
     "O04": {
       "value": {
         "notes": "responsive",
         "food": "responsive",
-        "message": "responsive",
-        "social": "responsive",
-        "work": "responsive"
+        "message": "outside",
+        "social": "break",
+        "work": "break"
       }
     },
     "O05": {
-      "value": "1"
+      "value": "2"
     },
     "O06": {
       "value": "1"
@@ -56,15 +62,15 @@
       "value": {
         "friends": "ok",
         "community": "ok",
-        "intro": "ok",
-        "public": "ok"
+        "intro": "ask",
+        "public": "ask"
       }
     },
     "O08": {
-      "value": "0"
+      "value": "2"
     },
     "O09": {
-      "value": "0"
+      "value": "2"
     },
     "O10": {
       "value": "0"
@@ -76,48 +82,66 @@
       "value": "now"
     },
     "O15": {
-      "value": "0"
-    },
-    "O12": {
       "value": "1"
     },
+    "O12": {
+      "value": "2",
+      "fields": {
+        "minimum": "3"
+      }
+    },
     "O13": {
-      "value": "7"
+      "value": "3"
     },
     "O14": {
-      "value": "7"
+      "value": "3"
     },
     "A01": {
-      "value": "0"
+      "value": "1",
+      "fields": {
+        "minimum": "0"
+      }
     },
     "A02": {
-      "value": "0"
+      "value": "2",
+      "fields": {
+        "minimum": "1"
+      }
     },
     "A03": {
-      "value": "0"
+      "value": "1",
+      "fields": {
+        "minimum": "0"
+      }
     },
     "A04": {
-      "value": "0"
+      "value": "1",
+      "fields": {
+        "minimum": "0"
+      }
     },
     "C01": {
       "value": {
         "rules": "during",
         "intent": "during",
-        "direction": "during",
+        "direction": "channel",
         "planning": "during",
-        "information": "during"
+        "information": "between"
       }
     },
     "C02": {
       "value": {
-        "character": "0",
-        "player": "0"
+        "character": "3",
+        "player": "2"
+      },
+      "fields": {
+        "serious": "less"
       }
     },
     "C03": {
       "value": {
-        "dialogue": "ok",
-        "description": "ok",
+        "dialogue": "short",
+        "description": "full",
         "ooc": "ok"
       }
     },
@@ -127,19 +151,19 @@
     "P02": {
       "value": "discord"
     },
-    "P03": {
-      "value": "1-3"
+    "P04": {
+      "value": "긴 대기 시간, 사담 없이 계속 진행하는 분위기"
     },
     "B01": {
       "value": {
         "argument": "ok",
-        "pvp": "no",
-        "sabotage": "no",
+        "pvp": "ask",
+        "sabotage": "ask",
         "pcRomance": "ask",
         "npcRomance": "ok",
         "control": "no",
-        "change": "ok",
-        "loss": "ok"
+        "change": "ask",
+        "loss": "ask"
       }
     },
     "B02": {
@@ -148,22 +172,22 @@
         "gore": "no",
         "sexual": "no",
         "discrimination": "no",
-        "abuse": "ok",
-        "fear": "ask",
+        "abuse": "ask",
+        "fear": "ok",
         "grief": "ok"
       }
     }
   },
   "radar": {
-    "tempo": 75,
+    "tempo": 100,
     "detail": 0,
-    "scene": 25,
-    "initiative": 25,
-    "meta": 75
+    "scene": 0,
+    "initiative": 100,
+    "meta": 100
   },
   "dimensions": {
     "tempo": {
-      "value": 75,
+      "value": 100,
       "count": 1,
       "spread": 0,
       "conditional": 0
@@ -175,19 +199,19 @@
       "conditional": 0
     },
     "scene": {
-      "value": 25,
+      "value": 0,
       "count": 1,
       "spread": 0,
       "conditional": 0
     },
     "initiative": {
-      "value": 25,
+      "value": 100,
       "count": 1,
       "spread": 0,
       "conditional": 0
     },
     "meta": {
-      "value": 75,
+      "value": 100,
       "count": 1,
       "spread": 0,
       "conditional": 0
