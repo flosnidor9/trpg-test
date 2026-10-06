@@ -49,7 +49,17 @@
     document.removeEventListener('visibilitychange', onVisibility);
     motion.removeEventListener('change', onMotion);
   }
-  function onKey(event) { if (event.key === 'Escape') finish(); }
+  function onClick(event) {
+    // One click advances only this scene, not the entrance it starts.
+    event.stopPropagation();
+    finish();
+  }
+  function onKey(event) {
+    if (event.repeat) return;
+    if (!['Escape', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    finish();
+  }
   // Keyboard navigation reveals the focused landing action immediately.
   function onFocus(event) { if (!intro.contains(event.target)) finish(); }
   function onMotion() { if (motion.matches) finish(); }
@@ -169,7 +179,7 @@
     if (elapsed >= 4.8) finish();
     else frame = requestAnimationFrame(tick);
   }
-  intro.querySelector('button').addEventListener('click', finish);
+  intro.addEventListener('click', onClick);
   window.addEventListener('resize', measure);
   window.addEventListener('pagehide', finish);
   document.addEventListener('keydown', onKey);

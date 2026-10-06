@@ -23,6 +23,7 @@
     document.removeEventListener('landingintroend', start);
     document.removeEventListener('focusin', onFocus);
     document.removeEventListener('keydown', onKey);
+    document.removeEventListener('click', onClick);
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('resize', finish);
     window.removeEventListener('scroll', onScroll);
@@ -38,7 +39,19 @@
   function onFocus(event) {
     if (!event.target.closest('.landing-intro')) finish();
   }
-  function onKey(event) { if (event.key === 'Escape') finish(); }
+  function onClick(event) {
+    if (!started || finished || event.target.closest('.landing-intro')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    finish();
+  }
+  function onKey(event) {
+    if (event.defaultPrevented || event.repeat) return;
+    if (!started || finished || body.dataset.intro === 'playing') return;
+    if (!['Escape', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    finish();
+  }
   function onMotion() { if (motion.matches) finish(); }
   function onScroll() { if (started) finish(); }
   function onVisibility() {
@@ -97,6 +110,7 @@
   }
   document.addEventListener('focusin', onFocus);
   document.addEventListener('keydown', onKey);
+  document.addEventListener('click', onClick);
   document.addEventListener('visibilitychange', onVisibility);
   document.addEventListener('landingintroend', start);
   window.addEventListener('resize', finish);
