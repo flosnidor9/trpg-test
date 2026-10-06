@@ -3,66 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TRPG 성향 테스트</title>
+  <meta name="theme-color" content="#faf8f5">
+  <title>TRPG 성향 테스트 · 당신의 플레이를 발견하세요</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="landing.css">
-  <script src="landing-orbit.js" defer></script>
+  <script src="landing.js" defer></script>
 </head>
-<body>
-  <header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a></header>
+<body class="landing">
+<header class="landing-header">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m23 5-4 14L9 27l4-14Z" fill="#b5a3e8"/><path d="m23 5-4 14-6-6Z" fill="#6547da"/><circle cx="16" cy="16" r="2" fill="#fff"/></svg></span> TRPG 성향 테스트</a>
+    <span class="header-note">TRPG PLAYSTYLE GUIDE</span>
+  </header>
   <main>
-    <section class="hero">
-      <div class="reveal">
-        <p class="eyebrow">TRPG PLAYSTYLE GUIDE</p>
-        <h1>같은 모험을<br><em>더 편안하게.</em></h1>
-        <p class="lede">플레이 성향을 미리 살펴보고,<br>세션에 참여하는 모두와 이야기해봐요.</p>
+    <section class="landing-hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> DISCOVER YOUR PLAYSTYLE</p>
+        <h1 id="hero-title">모험의 시작은,<br><em>나를 아는 것.</em></h1>
+        <p class="hero-description">이야기를 만드는 방식도, 함께 즐기는 방식도.<br>당신만의 플레이 스타일을 발견하세요.</p>
         <nav class="landing-actions" aria-label="시작 메뉴">
-          <a class="landing-action landing-action-primary" href="test.html"><span class="action-number">1</span><span class="action-label">테스트 시작</span><span class="action-arrow" aria-hidden="true">→</span></a>
-          <a class="landing-action" href="result.html"><span class="action-number">2</span><span class="action-label">내 결과 보기</span><span class="action-arrow" aria-hidden="true">→</span></a>
-          <a class="landing-action" href="compare.html"><span class="action-number">3</span><span class="action-label">파티 비교하기</span><span class="action-arrow" aria-hidden="true">→</span></a>
+          <a class="landing-action action-primary" href="test.html" data-feature="discover"><span class="action-number" aria-hidden="true">01</span><span>플레이 스타일 찾기</span><span class="action-arrow" aria-hidden="true">↗</span></a>
+          <a class="landing-action" href="result.html" data-feature="profile"><span class="action-number" aria-hidden="true">02</span><span>내 결과 보기</span><span class="action-arrow" aria-hidden="true">↗</span></a>
+          <a class="landing-action" href="compare.html" data-feature="party"><span class="action-number" aria-hidden="true">03</span><span>파티 비교하기</span><span class="action-arrow" aria-hidden="true">↗</span></a>
         </nav>
-        <p class="quiet">중간 저장 지원 · 결과와 비교는 브라우저 안에서만 처리돼요</p>
+        <p class="hero-note">36개 문항 묶음 <span>·</span> 중간 저장 지원</p>
       </div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="orbit-scene">
-          <div class="orbit-track"></div>
-          <div class="dice-planet">
-            <svg viewBox="0 0 120 120" fill="none" aria-hidden="true">
+      <div class="playstyle-art" data-feature="discover">
+        <div class="art-topline"><span>EVERY STYLE, ONE ADVENTURE</span><span>TRPG / 01</span></div>
+        <div class="art-stage" aria-hidden="true">
+          <div class="art-halo"></div>
+          <div class="art-ring ring-outer"></div><div class="art-ring ring-inner"></div>
+          <svg class="compass-dial" viewBox="0 0 400 400" fill="none">
+            <circle cx="200" cy="200" r="176" stroke="#b8a7d4" stroke-width="8" stroke-dasharray="1 14.36"/>
+            <path d="M200 14v27m186 159h-27M200 386v-27M14 200h27" stroke="#8d74b7" stroke-width="2"/>
+            <path d="m70 70 13 13m247-13-13 13m13 247-13-13M70 330l13-13" stroke="#b8a7d4" stroke-width="2"/>
+            <path d="M200 70v44m130 86h-44m-86 130v-44M70 200h44" stroke="#d6c9e9" stroke-width="1"/>
+          </svg>
+          <svg class="orbit-trails orbit-trails-back" fill="none"><path data-orbit="0"></path><path data-orbit="1"></path></svg>
+          <svg class="orbit-trails orbit-trails-front" fill="none"><path data-orbit="0"></path><path data-orbit="1"></path></svg>
+          <span class="orbit-body orbit-die" data-die="6" data-orbit="0" data-phase="0.4"><svg class="die-graphic" viewBox="0 0 64 64"></svg></span>
+          <span class="orbit-body orbit-die" data-die="10" data-orbit="1" data-phase="1.8"><svg class="die-graphic" viewBox="0 0 64 64"></svg></span>
+          <span class="orbit-body orbit-die" data-die="20" data-orbit="1" data-phase="4.94"><svg class="die-graphic" viewBox="0 0 64 64"></svg></span>
+          <div class="emblem-wrap">
+            <svg class="playstyle-emblem" viewBox="0 0 320 360" fill="none">
               <defs>
-                <clipPath id="rounded-die"><path d="M52 15Q60 10 68 15L98 32Q106 36 106 45V79Q106 88 98 93L68 110Q60 115 52 110L22 93Q14 88 14 79V45Q14 36 22 32Z"/></clipPath>
-                <linearGradient id="die-top" x1="20" y1="12" x2="95" y2="65" gradientUnits="userSpaceOnUse"><stop stop-color="#c5b4ff"/><stop offset="1" stop-color="#9275ee"/></linearGradient>
-                <linearGradient id="die-left" x1="14" y1="39" x2="63" y2="111" gradientUnits="userSpaceOnUse"><stop stop-color="#8c6ce8"/><stop offset="1" stop-color="#6343bf"/></linearGradient>
-                <linearGradient id="die-right" x1="60" y1="58" x2="106" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#6b49cf"/><stop offset="1" stop-color="#40247e"/></linearGradient>
+                <linearGradient id="needle-north" x1="160" y1="25" x2="200" y2="180" gradientUnits="userSpaceOnUse"><stop stop-color="#a28ae7"/><stop offset="1" stop-color="#6547c9"/></linearGradient>
+                <linearGradient id="needle-south" x1="120" y1="180" x2="160" y2="335" gradientUnits="userSpaceOnUse"><stop stop-color="#e4dcee"/><stop offset="1" stop-color="#b4a7ce"/></linearGradient>
               </defs>
-              <g transform="rotate(45 60 60)"><g clip-path="url(#rounded-die)">
-              <path d="M60 10 106 36 60 63 14 36Z" fill="url(#die-top)"/>
-              <path d="M14 36 60 63 60 115 14 88Z" fill="url(#die-left)"/>
-              <path d="M60 63 106 36 106 88 60 115Z" fill="url(#die-right)"/>
-              <path d="M14 36 60 63 106 36M60 63V115" stroke="#d5c7ff" stroke-opacity=".6" stroke-width="1.5" stroke-linejoin="round"/>
-              <path d="M15 35 60 10 105 35" stroke="#e5dcff" stroke-width="2" stroke-linecap="round"/>
-              <g fill="#fff" transform="matrix(.46 .26 -.46 .27 60 10)"><circle cx="25" cy="25" r="9"/><circle cx="75" cy="75" r="9"/></g>
-              <g fill="#fff" transform="matrix(.46 .27 0 .52 14 36)"><circle cx="25" cy="25" r="8"/><circle cx="75" cy="25" r="8"/><circle cx="25" cy="75" r="8"/><circle cx="75" cy="75" r="8"/></g>
-              <g fill="#eee7ff" transform="matrix(.46 -.27 0 .52 60 63)"><circle cx="25" cy="22" r="8"/><circle cx="75" cy="22" r="8"/><circle cx="25" cy="50" r="8"/><circle cx="75" cy="50" r="8"/><circle cx="25" cy="78" r="8"/><circle cx="75" cy="78" r="8"/></g>
-              </g></g>
+              <g transform="rotate(28 160 180)">
+                <path d="m160 24 40 156h-80Z" fill="url(#needle-north)"/>
+                <path d="m160 24 0 156h-40Z" fill="#b9a6ef"/>
+                <path d="m120 180 40 156 40-156Z" fill="url(#needle-south)"/>
+                <path d="m160 180 0 156 40-156Z" fill="#f2edf8"/>
+                <path d="M160 24v312" stroke="#fff" stroke-opacity=".45" stroke-width="1.5"/>
+              </g>
+              <circle cx="160" cy="180" r="20" fill="#faf8ff" stroke="#b9a6e1" stroke-width="2"/>
+              <circle cx="160" cy="180" r="8" fill="#7655c8"/>
             </svg>
           </div>
-          <span class="orbit-person person-one" style="--phase:0">
-            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M13 55c0-17 8-27 19-27s19 10 19 27H13Z"/><circle cx="32" cy="22" r="10"/></svg>
-          </span>
-          <span class="orbit-person person-two" style="--phase:2.0943951024">
-            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 55c1-17 8-27 20-27s19 10 20 27H12Z"/><circle cx="32" cy="22" r="10"/></svg>
-          </span>
-          <span class="orbit-person person-three" style="--phase:4.1887902048">
-            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M13 55c0-17 8-27 19-27s19 10 19 27H13Z"/><circle cx="32" cy="22" r="10"/></svg>
-          </span>
-          <span class="orbit-spark spark-one">✦</span>
-          <span class="orbit-spark spark-two">✧</span>
+          <span class="art-coordinate coordinate-top">N</span><span class="art-coordinate coordinate-bottom">S</span>
+          <span class="art-coordinate coordinate-left">W</span><span class="art-coordinate coordinate-right">E</span>
         </div>
+        <div class="art-bottomline"><span>각자의 스타일이 만나는 곳</span><span class="art-line"></span><span>PLAY YOUR WAY</span></div>
+      </div>
+    </section>
+    <section class="journey-guide" aria-labelledby="guide-title">
+      <div class="guide-heading"><p class="eyebrow">BEFORE THE FIRST SESSION</p><h2 id="guide-title">좋은 모험을 위한 세 가지 준비.</h2></div>
+      <div class="journey-steps">
+        <article><span class="step-number">01</span><div class="step-symbol compass-symbol" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26"/><path d="m45 12-7 26-19 14 7-26Z" fill="#bba7ea"/><path d="m45 12-7 26-12-12Z" fill="#7252c6"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg></div><h3>내 스타일 발견하기</h3><p>RP 취향과 세션 운영 선호를<br> 하나씩 살펴봐요.</p></article>
+        <article><span class="step-number">02</span><div class="step-symbol radar-symbol" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="m32 5 26 19-10 31H16L6 24z"/><path d="m32 17 14 12-6 17H23l-7-18z"/><path d="M32 5v27m26-8L32 32m16 23L32 32M16 55l16-23M6 24l26 8"/></svg></div><h3>프로필 완성하기</h3><p>성향 차트와 취향 요약으로<br> 나의 플레이를 읽어봐요.</p></article>
+        <article><span class="step-number">03</span><div class="step-symbol party-symbol" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="17" r="9"/><path d="M17 53v-9a15 15 0 0 1 30 0v9"/><circle cx="10" cy="26" r="6"/><circle cx="54" cy="26" r="6"/><path d="M3 53V42q0-8 10-8m48 19V42q0-8-10-8"/></svg></div><h3>파티와 대화하기</h3><p>서로의 취향과 경계를 나누고<br> 함께 즐길 세션을 준비해요.</p></article>
       </div>
     </section>
   </main>
-  <footer>TRPG 성향테스트는 우열을 가리기 위한 것이 아니라, 더 좋은 세션을 위해서 만들어졌습니다.</footer>
+  <footer class="landing-footer"><span>각자의 스타일이 모여, 하나의 모험이 됩니다.</span><span>결과와 비교 데이터는 브라우저 안에서 처리됩니다.</span></footer>
 </body>
 </html>
