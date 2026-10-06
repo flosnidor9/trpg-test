@@ -4,15 +4,18 @@
   const A = globalThis.TRPGApp;
   const D = A.D;
   const { $, escape: e } = A;
+  const allValues = { O04: 'responsive', O07: 'ok', C01: 'during', C03: 'ok', B01: 'ok', B02: 'ok' };
   const draftKey = 'trpg-rp-draft-v3';
   let current = 0;
   let responses = {};
   let resumed = false;
   try {
     const draft = JSON.parse(localStorage.getItem(draftKey) || 'null');
-    if (draft?.version === D.version && A.isObject(draft.responses)) {
-      responses = A.validateProfile(A.makeProfile(draft.responses)).responses;
-      current = Number.isInteger(draft.current) ? Math.max(0, Math.min(D.questions.length - 1, draft.current)) : 0;
+    if ([D.version, 'rp-2026-10-v1', 'rp-2026-10-v2', 'rp-2026-10-v3', 'rp-2026-10-v4', 'rp-2026-10-v5'].includes(draft?.version) && A.isObject(draft.responses)) {
+      const saved = A.makeProfile(draft.responses);
+      saved.questionnaireVersion = draft.version;
+      responses = A.validateProfile(saved).responses;
+      current = draft.version === D.version && Number.isInteger(draft.current) ? Math.max(0, Math.min(D.questions.length - 1, draft.current)) : 0;
       resumed = Object.keys(responses).length > 0;
     }
     if (new URLSearchParams(location.search).has('edit')) {
@@ -21,13 +24,12 @@
     }
   } catch { responses = {}; current = 0; }
   const save = () => localStorage.setItem(draftKey, JSON.stringify({ version: D.version, current, responses }));
-  const activeFields = q => A.fieldsFor(q, responses.role?.value).filter(f => !f.when || responses[q.id]?.value === f.when);
+  const activeFields = q => A.fieldsFor(q, responses.role?.value).filter(f => (!f.when || responses[q.id]?.value === f.when) && !(q.id === 'C02' && f.key === 'serious' && q.rows.every(([row]) => ['ask', 'unknown'].includes(responses.C02?.value?.[row]))));
   function complete(q) {
     const answer = responses[q.id];
     if (!answer || answer.value === undefined) return false;
+    if (q.type === 'text') return typeof answer.value === 'string';
     if (q.type === 'matrix' && A.isObject(answer.value) && !q.rows.every(([key]) => answer.value[key] !== undefined)) return false;
-    if (answer.value === 'conditional' || answer.value === 'other') return Boolean(answer.note?.trim());
-    if (answer.value === 'unknown') return true;
     return activeFields(q).filter(f => f.required).every(f => {
       const value = answer.fields?.[f.key];
       if (value === undefined || value === '') return false;
@@ -61,12 +63,10 @@
   }
   function fieldHTML(q) {
     const answer = responses[q.id] || {};
-    const generic = ['unknown', 'other', 'conditional'].includes(answer.value);
-    const defs = activeFields(q).filter(f => f.key === 'note' || !generic);
-    return defs.map(f => {
+    return activeFields(q).map(f => {
       const value = f.key === 'note' ? answer.note || '' : answer.fields?.[f.key] ?? '';
-      const label = f.key === 'note' && ['conditional', 'other'].includes(answer.value) ? '어떤 조건이나 방식이 필요한지 적어주세요' : f.label;
-      const required = f.required || (f.key === 'note' && ['conditional', 'other'].includes(answer.value));
+      const label = f.label;
+      const required = Boolean(f.required);
       const id = 'field-' + q.id + '-' + f.key;
       let control;
       if (f.type === 'select') control = '<select id="' + id + '" data-field="' + f.key + '"' + (required ? ' required' : '') + '><option value="">선택해주세요</option>' + f.options.map(([v, t]) => '<option value="' + e(v) + '"' + (value === v ? ' selected' : '') + '>' + e(t) + '</option>').join('') + '</select>';
@@ -101,8 +101,7 @@
     save(); renderFields(q); status();
     cardFor(q).querySelectorAll('.choice').forEach(label => label.classList.toggle('selected', label.querySelector('input')?.checked));
     if (q.id === 'role') D.questions.slice(0, current + 1).filter(item => item.preparation).forEach(renderFields);
-    if (['conditional', 'other'].includes(value)) $('#field-' + q.id + '-note')?.focus();
-    else if (!complete(q)) cardFor(q).querySelector('[data-field][required]')?.focus();
+    if (!complete(q)) cardFor(q).querySelector('[data-field][required]')?.focus();
     advance(q);
   }
   function renderQuestion(index) {
@@ -119,30 +118,47 @@
     const inputName = 'answer-' + q.id;
     let controls;
     if (q.type === 'matrix') {
-      controls = '<div class="matrix-questions">' + q.rows.map(([key, label]) => '<div class="matrix-question"><label for="row-' + q.id + '-' + key + '">' + e(label) + '</label><select id="row-' + q.id + '-' + key + '" data-row="' + key + '"><option value="">선택해주세요</option>' + q.options.map(([v, t]) => '<option value="' + e(v) + '"' + (a?.value?.[key] === v ? ' selected' : '') + '>' + e(t) + '</option>').join('') + '</select></div>').join('') + '</div><button class="text-button unknown-all" type="button">이 묶음은 아직 판단하기 어려워요</button>';
+      controls = '<div class="matrix-questions">' + q.rows.map(([key, label]) => '<div class="matrix-question"><label for="row-' + q.id + '-' + key + '">' + e(label) + '</label><select id="row-' + q.id + '-' + key + '" data-row="' + key + '"><option value="">선택해주세요</option>' + q.options.map(([v, t]) => '<option value="' + e(v) + '"' + (a?.value?.[key] === v ? ' selected' : '') + '>' + e(t) + '</option>').join('') + (a?.value?.[key] === 'unknown' ? '<option value="unknown" selected>모르겠음</option>' : '') + (a?.value?.[key] === 'private' ? '<option value="private" selected>비공개</option>' : '') + '</select></div>').join('') + '</div><div class="matrix-actions"><button class="text-button talk-all" type="button">' + (q.id === 'O07' ? '모두 사전확인' : '모두 먼저 이야기해요') + '</button>' + (q.id === 'C02' ? '' : '<button class="text-button possible-all" type="button">모두 가능</button>') + (q.id === 'O07' ? '<button class="text-button impossible-all" type="button">모두 불가능</button>' : '') + '</div>';
+    } else if (q.type === 'text') {
+      controls = '<div class="suggestion-group"><p>예시에서 선택</p><div class="suggestion-chips">' + (q.suggestions || []).map(t => '<button class="suggestion-chip" type="button" aria-pressed="' + String((a?.value || '').split('\n').some(line => line.trim() === t)) + '">' + e(t) + '</button>').join('') + '</div></div><div class="question-field"><label for="text-' + q.id + '">직접 적기 (선택)</label><textarea id="text-' + q.id + '" data-text-answer maxlength="2000" rows="5">' + e(a?.value ?? '') + '</textarea></div><button class="button secondary text-next" type="button">다음 문항 →</button>';
     } else {
-      const extra = q.type === 'trait' ? [['conditional', '상황에 따라 선호가 달라요'], ['unknown', '아직 판단하기 어려워요'], ['other', '두 설명 모두 맞지 않아요']] : [['unknown', '아직 모르겠어요'], ['other', '다른 방식이 필요해요']];
-      controls = '<fieldset class="choices"><legend class="sr-only">' + e(q.text) + '</legend>' + [...q.options, ...extra].map(([v, t]) => '<label class="choice' + (a?.value === v ? ' selected' : '') + '"><input type="radio" name="' + inputName + '" value="' + e(v) + '"' + (a?.value === v ? ' checked' : '') + '><span>' + e(t) + '</span></label>').join('') + '</fieldset>';
+      controls = '<fieldset class="choices"><legend class="sr-only">' + e(q.text) + '</legend>' + q.options.map(([v, t], optionIndex) => '<label class="choice' + (a?.value === v ? ' selected' : '') + '"><input type="radio" name="' + inputName + '" value="' + e(v) + '"' + (a?.value === v ? ' checked' : '') + '><span>' + e(t) + (q.examples?.[optionIndex] ? '<small class="choice-example">예: ' + e(q.examples[optionIndex]) + '</small>' : '') + '</span></label>').join('') + '</fieldset>';
     }
     card.innerHTML = '<p class="question-group">' + e(q.group) + ' · ' + e(q.name) + '</p><span class="question-num">' + String(index + 1).padStart(2, '0') + '</span><h2 id="question-title-' + q.id + '" tabindex="-1">' + e(q.text) + '</h2><p class="question-hint">' + e(q.hint || (q.type === 'trait' ? '잘하는 방식이나 캐릭터 성격이 아니라, 내가 편하게 즐길 방식을 골라주세요.' : q.explanation)) + '</p>' + controls + '<div class="question-fields"></div>';
-    if (q.type === 'matrix' && a?.value === 'unknown') {
-      card.querySelector('.question-fields').insertAdjacentHTML('beforebegin', '<p class="selected-answer">이 묶음은 미확인으로 기록했어요.</p>');
-    }
     card.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => choose(q, q.type === 'trait' && /^\d+$/.test(input.value) ? Number(input.value) : input.value)));
+    card.querySelector('[data-text-answer]')?.addEventListener('input', input => {
+      responses[q.id] = { value: input.target.value };
+      card.querySelectorAll('.suggestion-chip').forEach(chip => chip.setAttribute('aria-pressed', String(input.target.value.split('\n').some(line => line.trim() === chip.textContent))));
+      save(); status();
+    });
+    card.querySelectorAll('.suggestion-chip').forEach(chip => chip.addEventListener('click', () => {
+      const textarea = card.querySelector('[data-text-answer]');
+      const lines = textarea.value.split('\n').filter(line => line.trim());
+      const selected = lines.some(line => line.trim() === chip.textContent);
+      const next = selected ? lines.filter(line => line.trim() !== chip.textContent) : [...lines, chip.textContent];
+      textarea.value = next.join('\n').slice(0, 2000);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }));
+    card.querySelector('.text-next')?.addEventListener('click', () => choose(q, card.querySelector('[data-text-answer]').value));
     card.querySelectorAll('[data-row]').forEach(input => input.addEventListener('change', () => {
       const before = responses[q.id] || {};
       const value = A.isObject(before.value) ? { ...before.value } : {};
       if (input.value) value[input.dataset.row] = input.value; else delete value[input.dataset.row];
-      responses[q.id] = { ...before, value }; save(); status();
-      card.querySelector('.selected-answer')?.remove();
+      responses[q.id] = { ...before, value }; save(); renderFields(q); status();
       advance(q);
     }));
-    if (card.querySelector('.unknown-all')) card.querySelector('.unknown-all').onclick = () => {
-      if (q.options.some(o => o[0] === 'unknown')) {
-        choose(q, Object.fromEntries(q.rows.map(r => [r[0], 'unknown'])));
-      } else choose(q, 'unknown');
+    card.querySelector('.talk-all')?.addEventListener('click', () => {
+      choose(q, Object.fromEntries(q.rows.map(([row]) => [row, 'ask'])));
       renderQuestion(index);
-    };
+    });
+    card.querySelector('.possible-all')?.addEventListener('click', () => {
+      choose(q, Object.fromEntries(q.rows.map(([row]) => [row, allValues[q.id]])));
+      renderQuestion(index);
+    });
+    card.querySelector('.impossible-all')?.addEventListener('click', () => {
+      choose(q, Object.fromEntries(q.rows.map(([row]) => [row, 'no'])));
+      renderQuestion(index);
+    });
     renderFields(q);
   }
   $('#reset-test').onclick = () => {

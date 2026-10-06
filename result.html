@@ -16,20 +16,14 @@
   <div id="result-content">
     <section class="result-intro"><p class="eyebrow">YOUR PLAY PROFILE</p><h1 id="profile-title">나의 플레이 성향</h1><p id="profile-copy" class="lede"></p></section>
     <div class="profile-grid">
-      <article class="radar-card"><p class="label">RP MAP</p><h2>나의 성향 지도</h2><canvas id="radar" width="520" height="520" aria-hidden="true"></canvas><p class="small-copy">바깥으로 향할수록 좋은 성향이라는 뜻이 아닙니다. 미확인 축은 연결하지 않아요.</p><p id="radar-summary" class="chart-summary"></p></article>
-      <article class="summary-card"><p class="label">HOW TO READ</p><h2>내게 편한 방향</h2><div id="axis-bars"></div><div id="talk-prompts"></div></article>
+      <article class="radar-card"><p class="label">RP MAP</p><h2>나의 성향 지도</h2><p class="small-copy">그래프는 선호하는 방향을 보여줍니다. 바깥쪽이 더 좋은 성향이라는 뜻은 아닙니다.</p><p id="radar-summary" class="chart-summary"></p><canvas id="radar" width="520" height="520" aria-hidden="true"></canvas></article>
+      <article class="summary-card"><p class="label">HOW TO READ</p><h2>내게 편한 방향</h2><div id="axis-bars"></div></article>
     </div>
-    <nav class="section-links" aria-label="결과 항목 바로가기"><a href="#profile-reading">전체 해설</a><a href="#rp-details">RP 항목</a><a href="#operation-details">운영·준비</a><a href="#boundary-details">경계</a><a href="#export-section">JSON</a></nav>
-    <section id="profile-reading" class="details reading-section"><p class="label">READ YOUR PROFILE</p><h2>줄글로 읽는 나의 성향</h2><div id="profile-story" class="prose"></div><div id="combination-story" class="combination-panel prose"></div></section>
-    <section id="rp-details" class="details"><p class="label">RP DETAILS</p><h2>각 항목을 더 자세히</h2><div id="answer-notes" class="narrative-grid"></div></section>
-    <section class="details"><p class="label">YOUR CONTEXT</p><h2>답변의 기준과 참여 조건</h2><div id="context-notes" class="note-grid"></div></section>
-    <section id="operation-details" class="details"><p class="label">TABLE PREFERENCES</p><h2>운영과 준비도 내 방식으로</h2><p class="section-copy">휴식·사담·일정·롤방 자료·표현 범위를 각각 읽어보세요. 필요한 조건과 선호를 구분합니다.</p><div id="operation-notes"></div></section>
-    <section id="boundary-details" class="details"><p class="label">BOUNDARIES</p><h2>존중해야 할 범위</h2><div id="boundary-notes" class="narrative-grid"></div></section>
     <section id="export-section" class="details export-section">
       <p class="label">PRIVATE BY DEFAULT</p><h2>공유할 범위를 직접 선택하세요.</h2><p class="section-copy">결과는 이 브라우저에 저장됩니다. 내보내기 전 아래 미리보기로 공유 내용을 확인하세요.</p>
       <label class="question-field" for="display-name">공유할 이름<input id="display-name" maxlength="80"></label>
-      <div class="share-options"><label><input type="checkbox" id="share-boundaries"> 공개하기로 답한 경계도 포함</label><label><input type="checkbox" id="share-notes"> 직접 적은 조건·일정·메모도 포함</label></div>
-      <p class="small-copy">‘공개하지 않을게요’로 답한 세부 항목은 항상 제외합니다. 제외한 경계는 비교에서 허용이 아닌 미확인으로 표시됩니다.</p>
+      <div class="share-options"><label><input type="checkbox" id="share-boundaries"> 캐릭터 전개·소재별 허용 범위도 공유</label><label><input type="checkbox" id="share-notes"> 직접 적은 조건·일정·불호 요소·메모도 포함</label></div>
+      <p class="small-copy">35·36번에서 답한 ‘가능해요 / 먼저 이야기해요 / 포함하지 마세요’를 JSON에 담는 설정입니다. 기본값은 공유하지 않음이며, 공유하지 않은 항목은 파티 비교에서 ‘미확인’으로 표시됩니다.</p>
       <details><summary>내보낼 JSON 미리보기</summary><label class="sr-only" for="export-preview">내보낼 결과 JSON</label><textarea id="export-preview" readonly rows="14" spellcheck="false"></textarea></details>
       <button type="button" id="download" class="button primary">선택한 범위로 JSON 저장 ↓</button><p id="export-message" class="form-message" role="status"></p>
     </section>
