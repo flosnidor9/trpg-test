@@ -110,7 +110,7 @@
         cards.get(card.id).names.push(profile.displayName);
       }
     });
-    return [...cards.values()].filter(card => card.names.length >= 2)
+    return [...cards.values()].filter(card => card.names.length === profiles.length)
       .sort((a, b) => b.names.length - a.names.length)
       .map(card => ({ ...card, text: card.names.join(', '), evidence: card.names.length + '/' + profiles.length + '명 · ' + card.category }));
   }
@@ -403,7 +403,7 @@
     $('#radar-overlap-value').textContent = overlap === null ? '—' : overlap + '%';
     $('#radar-overlap-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 공통 면적을 볼 수 있어요.' : overlap === null ? '미확인 축이 있어 면적을 계산할 수 없어요.' : '모두 겹치는 면적 ÷ 전체가 차지하는 면적. 취향의 우열이나 궁합 점수는 아니에요.';
     const common = sharedPlaystyle(chosen.map(person => person.profile));
-    $('#party-common-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 함께 선호하는 방식을 살펴볼 수 있어요.' : '선택한 참가자 중 두 명 이상이 함께 가진 세션 취향 카드예요. 응답이 완전히 같을 필요는 없어요.';
+    $('#party-common-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 함께 선호하는 방식을 살펴볼 수 있어요.' : '선택한 참가자 모두가 가진 세션 취향 카드만 표시해요. 응답이 완전히 같을 필요는 없어요.';
     const commonItem = item => '<article class="common-item"><h4>' + e(item.title) + '</h4><p>' + e(item.text) + '</p><small>' + e(item.evidence) + '</small></article>';
     $('#party-common-list').innerHTML = common.length ? common.slice(0, 3).map(commonItem).join('') + (common.length > 3 ? '<details class="common-more"><summary>공통점 더 보기 (' + (common.length - 3) + ')</summary>' + common.slice(3).map(commonItem).join('') + '</details>' : '') : chosen.length >= 2 ? '<p class="common-empty">아직 함께 가진 세션 취향 카드가 없어요. 아래 분포에서 각자의 선호를 살펴보세요.</p>' : '';
   }

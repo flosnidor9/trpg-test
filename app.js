@@ -91,7 +91,7 @@
     // 가져온 계산 결과를 신뢰하지 않고 공유된 응답으로 다시 계산합니다.
     return makeProfile(clean, raw.displayName, typeof raw.createdAt === 'string' ? raw.createdAt.slice(0, 40) : undefined);
   }
-  function exportProfile(p, { boundaries = false, notes = false } = {}) {
+  function exportProfile(p, { boundaries = true, notes = true } = {}) {
     const clean = {};
     for (const q of D.questions) {
       const a = response(p, q.id);
@@ -101,7 +101,7 @@
         item.value = Object.fromEntries(Object.entries(a.value).filter(([, v]) => v !== 'private'));
         if (!Object.keys(item.value).length) continue;
       }
-      // 개인 일정·자유 입력·캐릭터 정보는 명시적으로 포함할 때만 공유합니다.
+      // 개인 일정·자유 입력·캐릭터 정보도 기본으로 포함합니다.
       if (a.fields) {
         item.fields = Object.fromEntries(Object.entries(a.fields).filter(([key]) => {
           const f = (q.fields || []).find(x => x.key === key);
@@ -305,13 +305,13 @@
     $('#display-name').value = p.displayName;
     const preview = () => {
       p.displayName = $('#display-name').value.trim().slice(0, 80) || '나의 모험가';
-      $('#export-preview').value = JSON.stringify(exportProfile(p, { boundaries: $('#share-boundaries').checked, notes: $('#share-notes').checked }), null, 2);
+      $('#export-preview').value = JSON.stringify(exportProfile(p), null, 2);
     };
-    ['#display-name', '#share-boundaries', '#share-notes'].forEach(s => $(s).addEventListener('input', preview));
+    $('#display-name').addEventListener('input', preview);
     $('#download').onclick = () => {
       preview(); localStorage.setItem(STORAGE, JSON.stringify(p));
-      downloadJSON(exportProfile(p, { boundaries: $('#share-boundaries').checked, notes: $('#share-notes').checked }));
-      $('#export-message').textContent = '선택한 범위의 결과를 저장했어요.';
+      downloadJSON(exportProfile(p));
+      $('#export-message').textContent = '결과를 JSON으로 저장했어요.';
     };
     preview();
   }

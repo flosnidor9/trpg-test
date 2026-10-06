@@ -193,19 +193,21 @@ test('가져온 레이더는 재계산하고 잘못된 값·버전·인원을 �
   assert.throws(() => A.validateProfile({ ...p, responses: { ...p.responses, P04: { value: 'x'.repeat(2001) } } }), /2,000자/);
 });
 
-test('기존 비공개 경계는 계속 제외하고 자유 입력·개인 일정은 기본 제외', () => {
+test('경계·자유 입력·개인 일정은 기본 포함하고 기존 비공개 항목은 제외', () => {
   const p = fixture(); p.responses.B01.value.pvp = 'private'; p.responses.B01.note = '비공개 상세';
   p.responses.O01.note = '개인 메모'; p.responses.maxHours.fields = { availability: '개인 일정' };
   p.responses.P04.value = '피하고 싶은 요소';
-  const basic = A.exportProfile(p);
+  const basic = A.exportProfile(p, { boundaries: false, notes: false });
   assert.equal(basic.responses.B01, undefined);
   assert.equal(basic.responses.O01.note, undefined);
   assert.equal(basic.responses.maxHours.fields.availability, undefined);
   assert.equal(basic.responses.P04, undefined);
-  const shared = A.exportProfile(p, { boundaries: true, notes: true });
+  const shared = A.exportProfile(p);
   assert.equal(shared.responses.B01.value.pvp, undefined);
   assert.equal(shared.responses.B01.note, undefined);
   assert.equal(shared.responses.O01.note, '개인 메모');
+  assert.equal(shared.responses.maxHours.fields.availability, '개인 일정');
+  assert.equal(shared.responses.B01.value.loss, 'ask');
   assert.equal(shared.responses.P04.value, '피하고 싶은 요소');
   assert.equal(A.validateProfile(shared).schemaVersion, '3.0');
 });
@@ -215,7 +217,7 @@ test('모두 같은 포함 제외·사전 확인 응답도 경계와 대화 대�
   assert.equal(no.restrictions.length, 15);
   const ask = C.groupAnalysis([fixture(50, 'ask'), fixture(50, 'ask')]);
   assert.equal(ask.pending.filter(c => c.label === '사전협의').length, 15);
-  const missing = C.groupAnalysis([A.exportProfile(fixture()), A.exportProfile(fixture())]);
+  const missing = C.groupAnalysis([A.exportProfile(fixture(), { boundaries: false }), A.exportProfile(fixture(), { boundaries: false })]);
   assert.equal(missing.pending.filter(c => c.label === '응답 확인').length, 15);
 });
 
@@ -437,14 +439,19 @@ test('사담 위치는 최다 득표를 표시하고 동률과 미확인을 구�
   assert.equal(C.governingAnswer(q, undefined, [missing]).label, '미확인');
 });
 
-test('공통 카드는 완전히 같은 응답 없이도 두 명 이상이 함께 가지면 표시', () => {
+test('공통 카드는 응답이 달라도 참가자 모두가 가진 경우에만 표시', () => {
   const first = fixture(75), second = fixture(100), missing = A.makeProfile({}, '미응답');
   first.displayName = '가람'; second.displayName = '누리';
-  const common = C.sharedPlaystyle([first, second, missing]);
+  const common = C.sharedPlaystyle([first, second]);
   const card = common.find(item => item.id === 'live-exchange');
   assert.ok(card);
   assert.equal(card.names.length, 2);
-  assert.match(card.evidence, /2\/3명/);
+  assert.match(card.evidence, /2\/2명/);
+  assert.equal(C.sharedPlaystyle([first, second, missing]).length, 0);
+  const third = fixture(75);
+  assert.ok(C.sharedPlaystyle([first, second, third]).every(item => item.names.length === 3));
+  assert.ok(C.sharedPlaystyle([first, second, third]).some(item => item.id === 'live-exchange'));
+  assert.equal(C.sharedPlaystyle([]).length, 0);
   assert.equal(C.sharedPlaystyle([first]).length, 0);
   assert.equal(C.sharedPlaystyle([first, missing]).length, 0);
 });

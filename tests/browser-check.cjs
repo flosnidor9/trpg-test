@@ -130,7 +130,7 @@ async function accessibility(page, name) {
     await noPageOverflow(page);
     await accessibility(page, '결과');
     await page.screenshot({ path: path.join(artifacts, 'result-desktop.png') });
-    await page.locator('#share-boundaries').check();
+    assert.equal(await page.locator('#share-boundaries, #share-notes').count(), 0);
     const preview = JSON.parse(await page.locator('#export-preview').inputValue());
     assert.equal(preview.schemaVersion, '3.0');
     assert.ok(preview.responses.B01);
