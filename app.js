@@ -44,7 +44,7 @@
     const priorToV5 = ['rp-2026-10-v1', 'rp-2026-10-v2', 'rp-2026-10-v3', 'rp-2026-10-v4'].includes(raw.questionnaireVersion);
     const previousVersion = priorToV5 || raw.questionnaireVersion === 'rp-2026-10-v5';
     const earlyVersion = ['rp-2026-10-v1', 'rp-2026-10-v2'].includes(raw.questionnaireVersion);
-    if (raw.questionnaireVersion !== D.version && !previousVersion) throw new Error('문항 버전이 다른 결과예요. 현재 테스트로 다시 답해주세요.');
+    if (raw.questionnaireVersion !== D.version && !previousVersion && raw.questionnaireVersion !== 'rp-2026-10-v6') throw new Error('문항 버전이 다른 결과예요. 현재 테스트로 다시 답해주세요.');
     if (!isObject(raw.responses)) throw new Error('문항별 응답이 없는 결과예요.');
     if (raw.displayName !== undefined && (typeof raw.displayName !== 'string' || raw.displayName.length > 80)) throw new Error('이름은 80자 이내의 문자열이어야 해요.');
     if (!isObject(raw.radar) || !D.axes.every(a => raw.radar[a.key] === null || (known(raw.radar[a.key]) && raw.radar[a.key] >= 0 && raw.radar[a.key] <= 100))) throw new Error('성향 좌표는 0–100의 유한한 수 또는 미확인 값이어야 해요.');
@@ -195,15 +195,15 @@
     else { c.moveTo(x, y - size - 1); c.lineTo(x + size + 1, y + size); c.lineTo(x - size - 1, y + size); c.closePath(); }
     c.fill();
   }
-  function drawRadar(canvas, sets, animate = true) {
+  function drawRadar(canvas, sets, animate = true, showAxisNames = true, axes = D.axes, drawAxisNames = true) {
     const c = canvas.getContext('2d');
     if (!c) return;
-    const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, radius = w * .31;
-    const n = D.axes.length;
+    const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, radius = w * (showAxisNames ? .31 : .27);
+    const n = axes.length;
     if (canvas._frame) cancelAnimationFrame(canvas._frame);
     const previous = canvas._sets || [];
     canvas._sets = sets;
-    const positions = D.axes.map((a, i) => { const angle = -Math.PI / 2 + i * Math.PI * 2 / n; return [Math.cos(angle), Math.sin(angle)]; });
+    const positions = axes.map((a, i) => { const angle = -Math.PI / 2 + i * Math.PI * 2 / n; return [Math.cos(angle), Math.sin(angle)]; });
     const paint = progress => {
       c.clearRect(0, 0, w, h);
       c.font = '14px Paperlogy, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -213,19 +213,20 @@
         positions.forEach(([x, y], i) => { const xx = cx + x * radius * level / 4, yy = cy + y * radius * level / 4; i ? c.lineTo(xx, yy) : c.moveTo(xx, yy); });
         c.closePath(); c.strokeStyle = '#e1dae9'; c.stroke();
       }
-      D.axes.forEach((a, i) => {
+      axes.forEach((a, i) => {
         const [x, y] = positions[i];
         c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + x * radius, cy + y * radius); c.strokeStyle = '#e1dae9'; c.stroke();
-        c.fillStyle = '#554767'; c.fillText(a.name, cx + x * (radius + 39), cy + y * (radius + 27));
+        if (showAxisNames && drawAxisNames) { c.fillStyle = '#554767'; c.fillText(a.name, cx + x * (radius + 39), cy + y * (radius + 27)); }
       });
       sets.forEach((set, i) => {
         const color = set.color || COLORS[i % 6], shape = set.index ?? i;
-        const coords = D.axes.map((a, ai) => {
+        const coords = axes.map((a, ai) => {
           const val = set.data[a.key]; if (!known(val)) return null;
           const oldSet = previous.find(s => s.id === set.id);
           const old = oldSet?.data[a.key];
           const v = known(old) ? old + (val - old) * progress : val;
-          return [cx + positions[ai][0] * radius * v / 100, cy + positions[ai][1] * radius * v / 100];
+          const distance = (set.minRadius || 0) + (1 - (set.minRadius || 0)) * v / 100;
+          return [cx + positions[ai][0] * radius * distance, cy + positions[ai][1] * radius * distance];
         });
         c.strokeStyle = color; c.lineWidth = 2.5; c.setLineDash(shape % 2 ? [7, 4] : []);
         if (coords.every(Boolean)) {
@@ -241,12 +242,6 @@
     const start = performance.now();
     const frame = time => { const t = Math.min(1, (time - start) / 220); paint(1 - Math.pow(1 - t, 3)); if (t < 1) canvas._frame = requestAnimationFrame(frame); };
     canvas._frame = requestAnimationFrame(frame);
-  }
-  function axisBars(p) {
-    return D.axes.map(a => {
-      const d = p.dimensions[a.key];
-      return '<article class="axis-row"><div class="axis-heading"><strong>' + a.name + '</strong><span>' + escape(dimensionLabel(p, a.key)) + '</span></div><div class="axis-track" aria-hidden="true">' + (d.value === null ? '' : '<i class="axis-marker" style="left:' + d.value + '%"></i>') + '</div><div class="axis-ends"><span>' + a.left + '</span><span>' + a.right + '</span></div></article>';
-    }).join('');
   }
   function responseHTML(p, q) {
     const a = response(p, q.id);
@@ -280,10 +275,13 @@
       p = validateProfile(raw);
     } catch (err) { resultNotice('결과를 읽지 못했어요.', err.message + ' 새 테스트로 다시 답할 수 있습니다.'); return; }
     $('#profile-title').textContent = p.displayName + '의 플레이 성향';
-    $('#profile-copy').textContent = 'RP의 호흡과 함께할 때 필요한 조건을 읽어보세요. 그래프는 취향의 방향이며 실력이나 등급이 아닙니다.';
-    drawRadar($('#radar'), [{ id: 'self', data: p.radar, color: COLORS[0] }]);
+    $('#profile-copy').textContent = '그래프는 취향의 방향이며 실력이나 등급이 아닙니다.';
+    drawRadar($('#radar'), [{ id: 'self', data: p.radar, color: COLORS[0] }], true, false);
     $('#radar-summary').textContent = D.axes.map(a => a.name + ': ' + dimensionLabel(p, a.key)).join(' · ');
-    $('#axis-bars').innerHTML = axisBars(p);
+    $('#radar-axis-labels').innerHTML = D.axes.map((a, i) => {
+      const [direction, condition] = dimensionLabel(p, a.key).split(' · ');
+      return '<div class="radar-axis radar-axis-' + i + '"><strong>' + escape(a.name) + '</strong><span>' + escape(direction) + '</span>' + (condition ? '<small>' + escape(condition) + '</small>' : '') + '</div>';
+    }).join('');
     $('#display-name').value = p.displayName;
     const preview = () => {
       p.displayName = $('#display-name').value.trim().slice(0, 80) || '나의 모험가';
@@ -297,6 +295,6 @@
     };
     preview();
   }
-  globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, drawRadar, axisBars };
+  globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, drawRadar };
   if (typeof document !== 'undefined' && document.querySelector('#result-content')) initResult();
 })();

@@ -11,7 +11,7 @@
   let resumed = false;
   try {
     const draft = JSON.parse(localStorage.getItem(draftKey) || 'null');
-    if ([D.version, 'rp-2026-10-v1', 'rp-2026-10-v2', 'rp-2026-10-v3', 'rp-2026-10-v4', 'rp-2026-10-v5'].includes(draft?.version) && A.isObject(draft.responses)) {
+    if ([D.version, 'rp-2026-10-v1', 'rp-2026-10-v2', 'rp-2026-10-v3', 'rp-2026-10-v4', 'rp-2026-10-v5', 'rp-2026-10-v6'].includes(draft?.version) && A.isObject(draft.responses)) {
       const saved = A.makeProfile(draft.responses);
       saved.questionnaireVersion = draft.version;
       responses = A.validateProfile(saved).responses;
@@ -124,7 +124,7 @@
     } else {
       controls = '<fieldset class="choices"><legend class="sr-only">' + e(q.text) + '</legend>' + q.options.map(([v, t], optionIndex) => '<label class="choice' + (a?.value === v ? ' selected' : '') + '"><input type="radio" name="' + inputName + '" value="' + e(v) + '"' + (a?.value === v ? ' checked' : '') + '><span>' + e(t) + (q.examples?.[optionIndex] ? '<small class="choice-example">예: ' + e(q.examples[optionIndex]) + '</small>' : '') + '</span></label>').join('') + '</fieldset>';
     }
-    card.innerHTML = '<p class="question-group">' + e(q.group) + ' · ' + e(q.name) + '</p><span class="question-num">' + String(index + 1).padStart(2, '0') + '</span><h2 id="question-title-' + q.id + '" tabindex="-1">' + e(q.text) + '</h2><p class="question-hint">' + e(q.hint || (q.type === 'trait' ? '잘하는 방식이나 캐릭터 성격이 아니라, 내가 편하게 즐길 방식을 골라주세요.' : q.explanation)) + '</p>' + controls + '<div class="question-fields"></div>';
+    card.innerHTML = '<p class="question-group">' + e(q.group) + ' · ' + e(q.name) + '</p><span class="question-num">' + String(index + 1).padStart(2, '0') + '</span><h2 id="question-title-' + q.id + '" tabindex="-1">' + e(q.text) + '</h2>' + (q.hint ? '<p class="question-hint">' + e(q.hint) + '</p>' : '') + controls + '<div class="question-fields"></div>';
     card.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => choose(q, q.type === 'trait' && /^\d+$/.test(input.value) ? Number(input.value) : input.value)));
     card.querySelector('[data-text-answer]')?.addEventListener('input', input => {
       responses[q.id] = { value: input.target.value };

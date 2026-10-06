@@ -1,16 +1,85 @@
-/* n명 비교: 전체 분포와 조건표를 기본으로, 레이더는 선택한 사람만 표시합니다. */
+/* n명 비교: 선택한 사람의 레이더와 전체 참가자의 조율 항목을 표시합니다. */
 (() => {
   'use strict';
   const A = globalThis.TRPGApp;
   const { D, escape: e } = A;
-  const unresolved = v => v === undefined || ['unknown', 'private', 'other', 'conditional'].includes(v);
+  const comparisonAxes = [
+    { key: 'rpFlow', name: 'RP 흐름', left: '천천히 정리', right: '바로 이어가기' },
+    { key: 'expression', name: '표현·장면', left: '간결하게 전환', right: '자세히 이어가기' },
+    { key: 'session', name: '세션 호흡', left: '짧고 자주 쉬기', right: '길고 드물게 쉬기' },
+    { key: 'chat', name: '사담 비중', left: '적게', right: '많게' },
+    { key: 'preparation', name: '롤방 준비', left: '간단히', right: '세밀히' },
+    { key: 'schedule', name: '일정 준비', left: '가까운 시점', right: '미리' }
+  ];
+  const preparationQuestions = D.operation.filter(q => q.preparation);
+  const comparisonQuestionIds = {
+    rpFlow: ['T1', 'I1', 'M1', 'P03'], expression: ['D1', 'S1'],
+    session: ['maxHours', 'O01', 'O02'], chat: ['O05'],
+    preparation: preparationQuestions.map(q => q.id), schedule: ['O13', 'O14']
+  };
+  function meanKnown(values, minimum) {
+    const known = values.filter(A.known);
+    return known.length >= minimum ? Math.round(known.reduce((sum, value) => sum + value, 0) / known.length) : null;
+  }
+  function comparisonValue(profile, key) {
+    const value = id => A.valueOf(profile, id);
+    if (key === 'rpFlow') return meanKnown([profile.radar.tempo, profile.radar.initiative, profile.radar.meta, { '1-3': 100, '5+': 50, '10+': 0 }[value('P03')]], 2);
+    if (key === 'expression') return meanKnown([profile.radar.detail, profile.radar.scene], 2);
+    if (key === 'session') return meanKnown([
+      { '2': 0, '3': 25, '4': 50, '6': 100 }[value('maxHours')],
+      { '120': 0, '240': 33, '360': 67, '480': 100 }[value('O01')],
+      { '5': 100, '10': 67, '15': 33, '20': 0 }[value('O02')]
+    ], 2);
+    if (key === 'chat') return { '0': 0, '1': 50, '2': 100 }[value('O05')] ?? null;
+    if (key === 'schedule') {
+      const scale = { '3': 0, '7': 33, '14': 67, '30': 100 };
+      return meanKnown([value('O13'), value('O14')].map(answer => scale[answer]), 1);
+    }
+    if (key === 'preparation') {
+      const levels = preparationQuestions.map(q => q.options.findIndex(([option]) => option === value(q.id)) / (q.options.length - 1) * 100);
+      return levels.every(level => level >= 0) ? Math.round(levels.reduce((sum, level) => sum + level, 0) / levels.length) : null;
+    }
+    return null;
+  }
+  const comparisonRadar = profile => Object.fromEntries(comparisonAxes.map(axis => [axis.key, comparisonValue(profile, axis.key)]));
+  function comparisonAnswer(profile, axis) {
+    return (comparisonQuestionIds[axis.key] || []).map(id => {
+      const q = D.questions.find(question => question.id === id);
+      return q.name + ': ' + A.answerLabel(q, A.response(profile, id));
+    }).join(' · ') || '미확인';
+  }
+  const unresolved = v => v == null || ['unknown', 'private', 'other', 'conditional'].includes(v);
+  const namesFor = (profiles, predicate) => profiles.filter(predicate).map(p => p.displayName).join(', ');
+  function answerGroups(profiles, q, valueOf = p => A.valueOf(p, q.id)) {
+    const groups = new Map();
+    profiles.forEach(p => {
+      const value = valueOf(p);
+      const label = q.options.find(([option]) => String(option) === String(value))?.[1] || '미확인';
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push(p.displayName);
+    });
+    return [...groups].map(([label, names]) => ({ label, names: names.join(', ') }));
+  }
   function groupAnalysis(profiles) {
     const restrictions = [], pending = [], suggestions = [];
+    const personDetails = ids => profiles.map(p => ({
+      label: p.displayName,
+      names: ids.map(id => {
+        const q = D.questions.find(question => question.id === id);
+        return q.name + ': ' + A.answerLabel(q, A.response(p, id));
+      }).join(' · ')
+    }));
     for (const q of D.boundaries) for (const [row, name] of q.rows) {
       const vals = profiles.map(p => A.valueOf(p, q.id)?.[row]);
-      if (vals.includes('no')) restrictions.push({ title: name + ' · 포함하지 않음', text: '이 소재나 전개는 제외합니다.' });
-      else if (vals.includes('ask')) pending.push({ title: name + ' · 사전 대화', text: '포함하려면 먼저 범위를 정해야 합니다.', label: '사전 대화' });
-      else if (vals.some(unresolved)) pending.push({ title: name + ' · 답변 없음·미공유', text: '답변이 없거나 공유되지 않았습니다.', label: '답변 없음·미공유' });
+      const details = [
+        { label: '포함하지 마세요', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'no') },
+        { label: '먼저 이야기해요', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'ask') },
+        { label: '가능해요', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'ok') },
+        { label: '미확인', names: namesFor(profiles, p => unresolved(A.valueOf(p, q.id)?.[row])) }
+      ].filter(item => item.names);
+      if (vals.includes('no')) restrictions.push({ title: name, text: '파티에서 이 소재나 전개를 제외합니다.', details });
+      else if (vals.includes('ask')) pending.push({ title: name, text: '포함 여부와 범위를 먼저 이야기해 주세요. 이 응답은 동의가 아닙니다.', label: '사전 대화', details });
+      else if (vals.some(unresolved)) pending.push({ title: name, text: '공유되지 않은 응답을 확인한 뒤 범위를 정해 주세요.', label: '응답 확인', details });
     }
     const values = id => profiles.map(p => A.valueOf(p, id));
     const breaks = values('O01').map(Number).filter(v => Number.isFinite(v) && v > 0);
@@ -18,28 +87,37 @@
     if (breaks.length || lengths.length) {
       const interval = breaks.length ? Math.min(...breaks) : null;
       const duration = lengths.length ? Math.max(...lengths) : null;
-      suggestions.push({ title: '휴식 주기', text: (interval ? '약 ' + interval + '분마다' : '필요할 때') + (duration ? ' ' + duration + '분 휴식' : ' 휴식') });
+      suggestions.push({ title: '휴식 주기', text: (interval ? '약 ' + interval + '분마다' : '필요할 때') + (duration ? ' ' + duration + '분 휴식' : ' 휴식'), details: personDetails(['O01', 'O02']), perPerson: true });
     }
     const schedules = ['O13', 'O14'];
     schedules.forEach(id => {
       const nums = values(id).map(Number).filter(v => Number.isFinite(v) && v > 0);
-      if (nums.length) suggestions.push({ title: D.operation.find(q => q.id === id).name, text: Math.max(...nums) + '일 전' });
+      if (nums.length) suggestions.push({ title: D.operation.find(q => q.id === id).name, text: Math.max(...nums) + '일 전', details: personDetails([id]), perPerson: true });
     });
     const durations = values('maxHours').map(Number).filter(v => Number.isFinite(v) && v > 0);
-    if (durations.length) suggestions.push({ title: '회차 길이', text: '휴식 포함 최대 ' + Math.min(...durations) + '시간' });
+    if (durations.length) suggestions.push({ title: '회차 길이', text: '휴식 포함 최대 ' + Math.min(...durations) + '시간', details: personDetails(['maxHours']), perPerson: true });
     const spreads = D.axes.map(axis => {
       const vals = profiles.map(p => p.radar[axis.key]).filter(A.known);
       return { axis, count: vals.length, spread: vals.length > 1 ? Math.max(...vals) - Math.min(...vals) : 0 };
     });
     const divergent = spreads.filter(s => s.count > 1 && s.spread >= 50).sort((a, b) => b.spread - a.spread);
-    divergent.forEach(({ axis }) => suggestions.push({ title: axis.name + ' 차이', text: '선호하는 방향이 다릅니다.' }));
+    divergent.forEach(({ axis }) => {
+      const q = D.traits.find(trait => trait.axis === axis.key);
+      suggestions.push({ title: axis.name, label: 'RP 성향 차이', text: '선호하는 방식이 달라요. 장면에서 어느 흐름을 따를지 함께 정해 보세요.', details: answerGroups(profiles, q) });
+    });
     D.operation.filter(q => q.preparation).forEach(q => {
       const wanted = profiles.map(p => Number(A.valueOf(p, q.id))).filter(v => Number.isInteger(v) && v >= 0);
+      if (q.id === 'A04') {
+        if (wanted.length > 1 && new Set(wanted).size > 1) suggestions.push({ title: q.name, text: '가장 낮은 선호 수준을 기준으로 스탠딩 사용 범위를 함께 정해 주세요.', label: '스탠딩 선호 차이', details: answerGroups(profiles, q) });
+        return;
+      }
       const providers = profiles.filter(p => ['GM', 'both'].includes(p.context.role));
       const offered = providers.map(p => p.responses[q.id]?.fields?.offered).filter(v => v !== undefined && v !== '').map(Number);
       const minimum = profiles.map(p => p.responses[q.id]?.fields?.minimum).filter(v => v !== undefined && v !== '').map(Number);
-      if (offered.length && minimum.some(v => v > Math.max(...offered))) pending.push({ title: q.name + ' · 준비 수준 차이', text: '필요 수준이 GM 제공 수준보다 높습니다.', label: '준비 수준 차이' });
-      else if (wanted.length > 1 && new Set(wanted).size > 1) suggestions.push({ title: q.name + ' · 선호 차이', text: '원하는 준비 수준이 다릅니다.' });
+      const fieldDetails = ['minimum', 'offered'].flatMap(key => profiles.filter(p => p.responses[q.id]?.fields?.[key] !== undefined && p.responses[q.id]?.fields?.[key] !== '').map(p => ({ label: (key === 'minimum' ? '최소 필요' : 'GM 제공 가능') + ' · ' + p.displayName, names: q.options.find(([value]) => value === p.responses[q.id].fields[key])?.[1] || '미확인' })));
+      const details = [...answerGroups(profiles, q), ...fieldDetails];
+      if (offered.length && minimum.some(v => v > Math.min(...offered))) pending.push({ title: q.name, text: '필요한 최소 수준이 GM의 제공 가능 범위보다 높습니다. 가능한 준비 범위를 함께 정해 주세요.', label: '준비 범위 확인', details });
+      else if (wanted.length > 1 && new Set(wanted).size > 1) suggestions.push({ title: q.name, text: '원하는 준비 수준을 비교하고 실제 준비 범위를 정해 주세요.', label: '준비 선호 차이', details });
     });
     return { restrictions, pending, suggestions };
   }
@@ -49,6 +127,11 @@
       return value === 'unknown' ? '모르겠음' : value === 'private' ? '비공개' : q.options.find(o => o[0] === value)?.[1] || '미확인';
     }
     let text = A.answerLabel(q, A.response(p, q.id));
+    if (q.preparation) {
+      const minimum = p.responses[q.id]?.fields?.minimum;
+      if (minimum !== undefined && minimum !== '') text += ' · 최소 필요: ' + (q.options.find(([value]) => value === minimum)?.[1] || '미확인');
+      return text;
+    }
     const fields = A.fieldLabels(q, A.response(p, q.id), p.context.role);
     if (fields.length) text += ' · ' + fields.join(' · ');
     return text;
@@ -56,13 +139,70 @@
   function constraintRank(q, p, row) {
     const value = row ? A.valueOf(p, q.id)?.[row] : A.valueOf(p, q.id);
     if (q.boundary || q.id === 'O07') return { ok: 1, ask: 2, no: 3 }[value] ?? null;
+    if (q.id === 'O03') return { '0': 1, '1': 2, '2': 3, '3': 4 }[value] ?? null;
+    if (q.id === 'O04') return { responsive: 1, outside: 2, break: 3, ask: 4 }[value] ?? null;
+    if (q.id === 'O05') return { '2': 1, '1': 2, '0': 3 }[value] ?? null;
+    if (q.id === 'O06') return { '0': 1, '1': 2, '2': 2, '3': 3 }[value] ?? null;
+    if (q.id === 'O08') return { '2': 1, '0': 2, '1': 3, '3': 4 }[value] ?? null;
+    if (q.id === 'O09') return { '2': 1, '0': 2, '1': 3, '3': 4 }[value] ?? null;
+    if (q.id === 'C02') return { '3': 1, '2': 2, '1': 3, '0': 4, ask: 5 }[value] ?? null;
+    if (q.id === 'C01') return { during: 1, channel: 2, between: 2, ask: 3 }[value] ?? null;
+    if (q.id === 'C03') return { ok: 1, short: 2, full: 3, ask: 4, na: 5 }[value] ?? null;
+    if (q.preparation) {
+      if (q.id === 'A02' && value === '0') return 100;
+      const preferred = /^\d+$/.test(value ?? '') ? Number(value) : null;
+      const minimum = p.responses[q.id]?.fields?.minimum;
+      return preferred === null ? null : Math.max(preferred, /^\d+$/.test(minimum ?? '') ? Number(minimum) : preferred);
+    }
     if (q.id === 'maxHours' || q.id === 'O01') return /^\d+$/.test(value ?? '') ? -Number(value) : null;
     if (['O02', 'O13', 'O14'].includes(q.id)) return /^\d+$/.test(value ?? '') ? Number(value) : null;
-    if (q.id === 'O16') return { now: 1, day: 2, three: 3, week: 4 }[value] ?? null;
+    if (q.id === 'O16') return { week: 1, three: 2, day: 3, now: 4 }[value] ?? null;
     if (q.id === 'P03') return { '1-3': 1, '5+': 2, '10+': 3 }[value] ?? null;
     return null;
   }
-  globalThis.TRPGCompare = { groupAnalysis, cellLabel, constraintRank };
+  function governingAnswer(q, row, profiles) {
+    const entries = profiles.map(profile => ({ label: cellLabel(q, profile, row), rank: constraintRank(q, profile, row), value: row ? A.valueOf(profile, q.id)?.[row] : A.valueOf(profile, q.id) }));
+    if (q.id === 'P01') {
+      const validValues = new Set(q.options.map(([value]) => value));
+      const votes = entries.filter(entry => validValues.has(entry.value));
+      const counts = new Map();
+      votes.forEach(entry => counts.set(entry.label, (counts.get(entry.label) || 0) + 1));
+      const mostVotes = Math.max(0, ...counts.values());
+      const winners = [...counts].filter(([, count]) => count === mostVotes);
+      const differs = new Set(entries.map(entry => entry.label)).size > 1;
+      return {
+        label: !votes.length ? '미확인' : winners.length > 1 ? '최다 득표 동률 · 조율 필요' : winners[0][0],
+        unknownCount: entries.length - votes.length,
+        incomparableCount: 0,
+        constrained: winners.length === 1,
+        differs,
+        voteCount: counts.size > 1 && winners.length === 1 ? mostVotes + '/' + votes.length + '명 선택' : ''
+      };
+    }
+    const ranked = entries.filter(entry => entry.rank !== null);
+    const unknownCount = entries.filter(entry => entry.rank === null && (entry.value == null || ['unknown', 'private'].includes(entry.value))).length;
+    const incomparableCount = entries.length - ranked.length - unknownCount;
+    const differs = new Set(entries.map(entry => entry.label)).size > 1;
+    if (ranked.length) {
+      const limiting = ranked.reduce((best, entry) => entry.rank > best.rank ? entry : best);
+      if (['O06', 'C01'].includes(q.id) && new Set(ranked.filter(entry => entry.rank === limiting.rank).map(entry => entry.value)).size > 1) {
+        return { label: '응답이 달라요', unknownCount, incomparableCount, constrained: false, differs };
+      }
+      return { label: limiting.label, unknownCount, incomparableCount, constrained: true, differs };
+    }
+    const labels = new Set(entries.map(entry => entry.label));
+    return { label: labels.size === 1 ? entries[0].label : '응답이 달라요', unknownCount, incomparableCount: 0, constrained: false, differs };
+  }
+  function preparationRepresentative(q, profiles) {
+    const allowed = new Set(q.options.map(([value]) => value));
+    const values = q.id === 'A04'
+      ? profiles.map(p => A.valueOf(p, q.id))
+      : profiles.filter(p => ['GM', 'both'].includes(p.context.role)).map(p => p.responses[q.id]?.fields?.offered);
+    const known = values.filter(value => allowed.has(value)).map(Number);
+    const selected = known.length ? String(Math.min(...known)) : null;
+    return { label: q.options.find(([value]) => value === selected)?.[1] || (q.id === 'A04' ? '미확인' : 'GM 응답 없음'), source: q.id === 'A04' ? '참가자 선호 중 가장 낮은 수준' : 'GM 제공 가능 중 가장 낮은 수준' };
+  }
+  globalThis.TRPGCompare = { groupAnalysis, cellLabel, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer };
   if (typeof document === 'undefined' || !document.querySelector('#comparison-output')) return;
   const { $ } = A;
   let people = [], nextId = 1, selected = new Set(), selectionTouched = false;
@@ -75,70 +215,104 @@
   function add(raw) {
     const profile = A.validateProfile(raw);
     people.push({ id: nextId++, profile });
-    if (!selectionTouched) selected = new Set(people.length <= 5 ? people.map(p => p.id) : []);
-  }
-  function distribution(axis) {
-    const values = people.filter(p => A.known(p.profile.radar[axis.key]));
-    const groups = new Map();
-    values.forEach(person => {
-      const value = person.profile.radar[axis.key];
-      if (!groups.has(value)) groups.set(value, []);
-      groups.get(value).push(person);
-    });
-    const missing = people.length - values.length;
-    const points = [...groups.entries()].map(([value, members]) => '<button type="button" class="distribution-marker" style="left:' + value + '%" aria-label="' + e(axis.name + ' 좌표 ' + value + ': ' + members.map(p => p.profile.displayName).join(', ')) + '" title="' + e(members.map(p => p.profile.displayName).join(', ')) + '">' + (members.length > 1 ? '<span class="cluster-count">' + members.length + '</span>' : marker(members[0])) + '</button>').join('');
-    const table = '<div class="table-scroll"><table><caption>' + axis.name + ' 참가자별 위치와 응답</caption><thead><tr><th>참가자</th><th>선호 방향</th><th>문항 응답</th></tr></thead><tbody>' + people.map(p => '<tr><th>' + e(p.profile.displayName) + '</th><td>' + e(A.dimensionLabel(p.profile, axis.key)) + '</td><td>' + D.traits.filter(q => q.axis === axis.key).map(q => e(A.answerLabel(q, A.response(p.profile, q.id)))).join('<br>') + '</td></tr>').join('') + '</tbody></table></div>';
-    return '<article class="distribution-card"><div class="axis-heading"><h3>' + axis.name + '</h3><span>' + values.length + '명 응답' + (missing ? ' · ' + missing + '명 좌표 미확인' : '') + '</span></div><div class="distribution-track">' + points + '</div><div class="axis-ends"><span>' + axis.left + '</span><span>' + axis.right + '</span></div><details><summary>참가자별 응답 보기</summary>' + table + '</details></article>';
+    if (!selectionTouched) selected = new Set(people.slice(0, 6).map(p => p.id));
   }
   function rowsFor(questions) {
-    return questions.flatMap(q => q.type === 'matrix' ? q.rows.map(([row, title]) => ({ q, row, title: q.name + ' · ' + title })) : [{ q, title: q.name }]);
+    return questions.flatMap(q => q.id === 'role' ? [{ q, role: 'GM', title: 'GM 역할' }, { q, role: 'PL', title: 'PL 역할' }] : q.type === 'matrix' ? q.rows.map(([row, title]) => ({ q, row, title: q.boundary ? title : q.name + ' · ' + title })) : [{ q, title: q.name }]);
   }
-  function fullTable(rows) {
-    return '<div class="table-scroll"><table><caption>전체 참가자의 응답과 조건</caption><thead><tr><th>항목</th>' + people.map(p => '<th>' + marker(p) + e(p.profile.displayName) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(({ q, row, title }) => {
-      const ranks = people.map(p => constraintRank(q, p.profile, row)).filter(rank => rank !== null);
-      const limit = ranks.length > 1 ? Math.max(...ranks) : null;
-      return '<tr><th>' + e(title) + '</th>' + people.map(p => {
-        const label = e(cellLabel(q, p.profile, row));
-        const answer = limit !== null && constraintRank(q, p.profile, row) === limit ? '<strong class="limiting-answer">' + label + '</strong>' : label;
-        return '<td>' + answer + (p.profile.responses[q.id]?.note ? '<p class="table-note">' + e(p.profile.responses[q.id].note) + '</p>' : '') + '</td>';
-      }).join('') + '</tr>';
+  function roleRow(role, title) {
+    const members = people.filter(p => p.profile.context.role === role || p.profile.context.role === 'both');
+    return '<tr><th scope="row">' + e(title) + '</th><td>' + (members.length ? members.map(p => '<span class="role-member">' + marker(p) + e(p.profile.displayName) + '</span>').join('') : '<span class="empty-answer">해당 참가자 없음</span>') + '</td></tr>';
+  }
+  function preparationTable(questions, analysis) {
+    const answer = (q, value) => q.options.find(([option]) => option === value)?.[1] || '미확인';
+    return '<div class="table-scroll compact-table preparation-table"><table><caption class="sr-only">각 행에 마우스를 올리거나 키보드로 선택하면 참가자별 선호와 최소 필요 수준을 볼 수 있습니다.</caption><thead><tr><th scope="col">항목</th><th scope="col">기준 응답</th></tr></thead><tbody>' + questions.map(q => {
+      const notice = analysis.pending.find(item => item.title === q.name && item.label === '준비 범위 확인') || analysis.suggestions.find(item => item.title === q.name && ['준비 선호 차이', '스탠딩 선호 차이'].includes(item.label));
+      const representative = preparationRepresentative(q, people.map(p => p.profile));
+      const members = people.map(p => {
+        const response = p.profile.responses[q.id];
+        const minimum = response?.fields?.minimum;
+        return '<li><span class="preparation-person">' + marker(p) + e(p.profile.displayName) + '</span><span class="preparation-values"><span>선호 <strong>' + e(answer(q, A.valueOf(p.profile, q.id))) + '</strong></span>' + (minimum !== undefined && minimum !== '' ? '<span>최소 필요 <strong>' + e(answer(q, minimum)) + '</strong></span>' : '') + '</span></li>';
+      }).join('');
+      const spoken = people.map(p => {
+        const minimum = p.profile.responses[q.id]?.fields?.minimum;
+        return p.profile.displayName + ': 선호 ' + answer(q, A.valueOf(p.profile, q.id)) + (minimum !== undefined && minimum !== '' ? ', 최소 필요 ' + answer(q, minimum) : '');
+      }).join('; ');
+      return '<tr class="preparation-row" tabindex="0" aria-label="' + e(q.name + ': ' + representative.label + '. ' + representative.source + '. 참가자별 선호와 최소 필요: ' + spoken) + '"><th scope="row">' + e(q.name) + (notice ? '<span class="preparation-status">' + e(notice.label) + '</span>' : '') + '</th><td><strong class="preparation-primary">' + e(representative.label) + '</strong><span class="preparation-source">' + e(representative.source) + '</span><div id="preparation-details-' + e(q.id) + '" class="preparation-popover"><strong class="preparation-popover-title">참가자별 선호와 최소 필요</strong><ul class="preparation-people">' + members + '</ul>' + (notice ? '<p class="preparation-note">' + e(notice.text) + '</p>' : '') + '</div></td></tr>';
     }).join('') + '</tbody></table></div>';
   }
-  function summaryTable(rows) {
-    return '<div class="table-scroll"><table><caption>많은 참가자의 전체 응답 분포</caption><thead><tr><th>항목</th><th>응답별 인원</th></tr></thead><tbody>' + rows.map(({ q, row, title }) => {
-      const counts = new Map();
-      const ranks = people.map(p => constraintRank(q, p.profile, row)).filter(rank => rank !== null);
-      const limit = ranks.length > 1 ? Math.max(...ranks) : null;
-      people.forEach(p => {
-        const label = cellLabel(q, p.profile, row);
-        const item = counts.get(label) || { count: 0, limiting: false };
-        item.count++;
-        item.limiting ||= limit !== null && constraintRank(q, p.profile, row) === limit;
-        counts.set(label, item);
-      });
-      return '<tr><th>' + e(title) + '</th><td>' + [...counts].map(([label, item]) => '<span class="count-chip' + (item.limiting ? ' limiting-answer' : '') + '">' + e(label) + ' · ' + item.count + '명</span>').join(' ') + '</td></tr>';
-    }).join('') + '</tbody></table></div><details><summary>이 구간의 참가자별 전체 표 보기</summary>' + fullTable(rows) + '</details>';
+  function summaryRow(item) {
+    const details = item.details || [];
+    const responseText = details.map(detail => detail.label + ': ' + detail.names).join('; ');
+    const popover = details.map(detail => '<span class="answer-person"><strong>' + e(detail.label) + '</strong><span>' + e(detail.names) + '</span></span>').join('');
+    const differs = new Set(details.map(detail => detail.names)).size > 1;
+    return '<tr class="combined-row"><th scope="row">' + e(item.title) + '</th><td><button type="button" class="group-answer" aria-label="' + e(item.title + ': ' + item.text + '. 참가자별 응답: ' + responseText) + '"><span class="' + (differs ? 'different-answer' : '') + '">' + e(item.text) + '</span><span class="answer-cue" aria-hidden="true">자세히</span><span class="answer-popover" aria-hidden="true"><span class="popover-title">참가자별 응답</span>' + popover + '</span></button></td></tr>';
   }
-  function renderTables() {
-    const groups = [...new Set([...D.setup, ...D.operation, ...D.boundaries].map(q => q.group))];
+  function compactTable(rows, analysis, caption = '파티에 적용할 응답 · 각 응답을 선택하면 참가자별 답을 볼 수 있습니다') {
+    const breakSummary = analysis.suggestions.find(item => item.title === '휴식 주기');
+    return '<div class="table-scroll compact-table"><table><caption>' + e(caption) + '</caption><thead><tr><th scope="col">항목</th><th scope="col">함께 적용할 응답</th></tr></thead><tbody>' + rows.map(({ q, row, role, title }) => {
+      if (role) return roleRow(role, title);
+      const governing = governingAnswer(q, row, people.map(p => p.profile));
+      const answers = people.map(p => '<span class="answer-person"><strong>' + marker(p) + e(p.profile.displayName) + '</strong><span>' + e(cellLabel(q, p.profile, row)) + (p.profile.responses[q.id]?.note ? ' · ' + e(p.profile.responses[q.id].note) : '') + '</span></span>').join('');
+      const notice = (governing.voteCount ? '<span class="vote-count">' + e(governing.voteCount) + '</span>' : '') + (governing.unknownCount ? '<span class="unconfirmed-count">미확인 ' + governing.unknownCount + '명</span>' : '') + (governing.incomparableCount ? '<span class="unconfirmed-count">별도 조율 ' + governing.incomparableCount + '명</span>' : '');
+      const spoken = people.map(p => p.profile.displayName + ': ' + cellLabel(q, p.profile, row)).join('; ');
+      const boundaryNote = q.boundary && governing.label === '먼저 이야기해요' ? '포함 여부와 범위를 먼저 이야기해 주세요. 이 응답은 동의가 아닙니다.' : '';
+      return '<tr><th scope="row">' + e(title) + '</th><td><button type="button" class="group-answer" aria-label="' + e(title + ': ' + governing.label + '. 참가자별 응답: ' + spoken) + '"><span class="' + (governing.differs ? 'different-answer' : '') + '">' + e(governing.label) + '</span>' + notice + '<span class="answer-cue" aria-hidden="true">자세히</span><span class="answer-popover" aria-hidden="true"><span class="popover-title">참가자별 응답</span>' + answers + '</span></button>' + (boundaryNote ? '<p class="group-note">' + e(boundaryNote) + '</p>' : '') + '</td></tr>' + (q.id === 'O02' && breakSummary ? summaryRow(breakSummary) : '');
+    }).join('') + '</tbody></table></div>';
+  }
+  function renderTables(analysis) {
+    const questionsForTables = [...D.setup, ...D.traits, ...D.operation, ...D.boundaries];
+    const groups = [...new Set(questionsForTables.map(q => q.group))];
     $('#group-tables').innerHTML = groups.map(group => {
-      const rows = rowsFor([...D.setup, ...D.operation, ...D.boundaries].filter(q => q.group === group));
-      return '<section class="operation-group"><h3>' + group + '</h3>' + (people.length > 6 ? summaryTable(rows) : fullTable(rows)) + '</section>';
+      const questions = questionsForTables.filter(q => q.group === group);
+      if (group === '경계 확인') return '<section class="operation-group boundary-group"><h3>' + e(group) + '</h3>' + questions.map(q => '<section class="boundary-subgroup" aria-labelledby="boundary-' + e(q.id) + '"><h4 id="boundary-' + e(q.id) + '">' + e(q.name) + '</h4>' + compactTable(rowsFor([q]), analysis, q.name + '의 세부 경계와 파티 응답') + '</section>').join('') + '</section>';
+      if (group === '롤방 준비') return '<section class="operation-group preparation-group"><h3>' + e(group) + '</h3>' + preparationTable(questions, analysis) + '</section>';
+      return '<section class="operation-group"><h3>' + e(group) + '</h3>' + compactTable(rowsFor(questions), analysis) + '</section>';
     }).join('');
   }
+  function closePreparationDetails() {
+    $('#group-tables').querySelectorAll('.preparation-row.is-open').forEach(row => row.classList.remove('is-open'));
+  }
+  $('#group-tables').addEventListener('click', event => {
+    const row = event.target.closest('.preparation-row');
+    if (!row) return;
+    const opening = !row.classList.contains('is-open');
+    closePreparationDetails();
+    row.classList.toggle('is-open', opening);
+  });
+  document.addEventListener('click', event => {
+    if (event.target.closest('.preparation-row')) return;
+    closePreparationDetails();
+  });
+  document.addEventListener('keydown', event => {
+    const row = event.target.closest?.('.preparation-row');
+    if (row && ['Enter', ' '].includes(event.key)) { event.preventDefault(); row.classList.toggle('is-open'); return; }
+    if (event.key !== 'Escape') return;
+    closePreparationDetails();
+    row?.blur();
+  });
   function renderRadar() {
     const chosen = people.filter(p => selected.has(p.id));
     $('#comparison-radar').closest('.comparison-radar-card').hidden = chosen.length === 0;
-    $('#radar-selection-copy').textContent = chosen.length ? chosen.map(p => p.profile.displayName).join(' · ') : '전체 분포를 먼저 읽고, 최대 6명을 선택해 레이더를 비교하세요.';
-    A.drawRadar($('#comparison-radar'), chosen.map(p => ({ id: p.id, data: p.profile.radar, index: p.id - 1, color: style(p).color })));
+    $('#radar-selection-copy').textContent = chosen.length ? '선택한 ' + chosen.length + '명의 여러 응답을 여섯 가지 성향으로 대략 묶었습니다. 위치는 취향의 방향이며 우열이 아닙니다. 가장 안쪽 눈금부터 표시해 낮은 값도 면적으로 보입니다. 축 이름에서 방향을 확인하고, 실제 응답과 경계·플랫폼은 아래 표에서 확인해 주세요.' : '위에서 참가자를 선택하면 레이더를 볼 수 있어요.';
+    A.drawRadar($('#comparison-radar'), chosen.map(p => ({ id: p.id, data: comparisonRadar(p.profile), index: p.id - 1, color: style(p).color, minRadius: .25 })), true, true, comparisonAxes, false);
     $('#selected-legend').innerHTML = chosen.map(p => '<span class="legend-item">' + marker(p) + e(p.profile.displayName) + '</span>').join('');
-    $('#radar-data-summary').innerHTML = chosen.map(p => '<p><strong>' + e(p.profile.displayName) + '</strong> · ' + D.axes.map(a => a.name + ': ' + e(A.dimensionLabel(p.profile, a.key))).join(' · ') + '</p>').join('');
+    $('#radar-axis-labels').innerHTML = chosen.length ? comparisonAxes.map((axis, index) => {
+      const angle = -Math.PI / 2 + index * Math.PI * 2 / comparisonAxes.length;
+      const x = 50 + Math.cos(angle) * 37.5;
+      const y = 50 + Math.sin(angle) * 35.5;
+      const side = x < 25 ? ' radar-axis-left' : x > 75 ? ' radar-axis-right' : '';
+      const vertical = y < 25 ? ' radar-axis-top' : '';
+      const direction = axis.left + ' → ' + axis.right;
+      return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + e(axis.name + ': ' + direction) + '">' + e(axis.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + e(direction) + '</span></button>';
+    }).join('') : '';
+    $('#radar-data-summary').innerHTML = '<table><caption>선택한 참가자의 RP·운영 레이더 응답</caption><thead><tr><th>참가자</th>' + comparisonAxes.map(axis => '<th>' + e(axis.name) + '</th>').join('') + '</tr></thead><tbody>' + chosen.map(person => '<tr><th>' + e(person.profile.displayName) + '</th>' + comparisonAxes.map(axis => '<td>' + e(comparisonAnswer(person.profile, axis)) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
   }
   function renderParticipants() {
     $('#legend').innerHTML = people.map(p => '<div class="participant-control"><label><input type="checkbox" aria-label="레이더에 표시: ' + e(p.profile.displayName) + '" data-person="' + p.id + '"' + (selected.has(p.id) ? ' checked' : '') + '>' + marker(p) + '</label><input class="participant-name" aria-label="참가자 ' + p.id + ' 이름" data-name="' + p.id + '" maxlength="80" value="' + e(p.profile.displayName) + '"><button class="remove-person" type="button" data-remove="' + p.id + '" aria-label="' + e(p.profile.displayName) + ' 제거">×</button></div>').join('');
     $('#legend').querySelectorAll('[data-person]').forEach(input => input.addEventListener('change', () => {
       const id = Number(input.dataset.person);
-      if (input.checked && selected.size >= 6) { input.checked = false; $('#selection-message').textContent = '레이더는 최대 6명까지 선택할 수 있어요. 전체 분포와 운영표에는 모두 포함됩니다.'; return; }
+      if (input.checked && selected.size >= 6) { input.checked = false; $('#selection-message').textContent = '레이더는 최대 6명까지 선택할 수 있어요. 아래 조건 표에는 모두 포함됩니다.'; return; }
       selectionTouched = true;
       if (input.checked) selected.add(id); else selected.delete(id);
       $('#selection-message').textContent = selected.size + '명을 레이더에 표시해요.';
@@ -162,15 +336,7 @@
     if (!people.length) { selected.clear(); selectionTouched = false; return; }
     renderParticipants();
     const analysis = groupAnalysis(people.map(p => p.profile));
-    const cards = [...analysis.restrictions.map(c => ({ ...c, kind: 'restriction', label: '제외할 항목' })), ...analysis.pending.map(c => ({ ...c, kind: 'pending' })), ...analysis.suggestions.map(c => ({ ...c, kind: 'suggestion', label: '운영 기준' }))];
-    const cardHTML = c => '<article class="alignment-card ' + c.kind + '"><p class="label">' + c.label + '</p><h3>' + e(c.title) + '</h3><p>' + e(c.text) + '</p></article>';
-    $('#alignment-title').textContent = people.length === 1 ? '한 명 더 불러오면 파티를 비교할 수 있어요.' : '필요한 조건과 경계를 먼저 확인하세요.';
-    $('#alignment-notes').innerHTML = cards.slice(0, 4).map(cardHTML).join('') || '<p>현재 응답에서 비교할 조건이 충분하지 않습니다. 미확인 항목을 먼저 나눠주세요.</p>';
-    $('#all-alignment').innerHTML = cards.slice(4).map(cardHTML).join('');
-    $('#all-alignment-details').hidden = cards.length <= 4;
-    $('#axis-distributions').innerHTML = D.axes.map(distribution).join('');
-    $('#axis-distributions').querySelectorAll('.distribution-marker').forEach(button => button.onclick = () => { button.closest('article').querySelector('details').open = true; });
-    renderRadar(); renderTables();
+    renderRadar(); renderTables(analysis);
   }
   $('#add-json').onclick = () => {
     try {

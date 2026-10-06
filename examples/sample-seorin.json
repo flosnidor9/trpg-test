@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "3.0",
+  "questionnaireVersion": "rp-2026-10-v6",
+  "displayName": "서린",
+  "context": {
+    "role": "PL",
+    "maxHours": "3"
+  },
+  "responses": {
+    "role": {
+      "value": "PL"
+    },
+    "maxHours": {
+      "value": "3"
+    },
+    "T1": {
+      "value": 75
+    },
+    "D1": {
+      "value": 0
+    },
+    "S1": {
+      "value": 25
+    },
+    "I1": {
+      "value": 25
+    },
+    "M1": {
+      "value": 75
+    },
+    "O01": {
+      "value": "120"
+    },
+    "O02": {
+      "value": "15"
+    },
+    "O03": {
+      "value": "0"
+    },
+    "O04": {
+      "value": {
+        "notes": "responsive",
+        "food": "responsive",
+        "message": "responsive",
+        "social": "responsive",
+        "work": "responsive"
+      }
+    },
+    "O05": {
+      "value": "1"
+    },
+    "O06": {
+      "value": "1"
+    },
+    "O07": {
+      "value": {
+        "friends": "ok",
+        "community": "ok",
+        "intro": "ok",
+        "public": "ok"
+      }
+    },
+    "O08": {
+      "value": "0"
+    },
+    "O09": {
+      "value": "0"
+    },
+    "O10": {
+      "value": "0"
+    },
+    "O11": {
+      "value": "0"
+    },
+    "O16": {
+      "value": "now"
+    },
+    "O15": {
+      "value": "0"
+    },
+    "O12": {
+      "value": "1"
+    },
+    "O13": {
+      "value": "7"
+    },
+    "O14": {
+      "value": "7"
+    },
+    "A01": {
+      "value": "0"
+    },
+    "A02": {
+      "value": "0"
+    },
+    "A03": {
+      "value": "0"
+    },
+    "A04": {
+      "value": "0"
+    },
+    "C01": {
+      "value": {
+        "rules": "during",
+        "intent": "during",
+        "direction": "during",
+        "planning": "during",
+        "information": "during"
+      }
+    },
+    "C02": {
+      "value": {
+        "character": "0",
+        "player": "0"
+      }
+    },
+    "C03": {
+      "value": {
+        "dialogue": "ok",
+        "description": "ok",
+        "ooc": "ok"
+      }
+    },
+    "P01": {
+      "value": "cocofolia"
+    },
+    "P02": {
+      "value": "discord"
+    },
+    "P03": {
+      "value": "1-3"
+    },
+    "B01": {
+      "value": {
+        "argument": "ok",
+        "pvp": "no",
+        "sabotage": "no",
+        "pcRomance": "ask",
+        "npcRomance": "ok",
+        "control": "no",
+        "change": "ok",
+        "loss": "ok"
+      }
+    },
+    "B02": {
+      "value": {
+        "violence": "ok",
+        "gore": "no",
+        "sexual": "no",
+        "discrimination": "no",
+        "abuse": "ok",
+        "fear": "ask",
+        "grief": "ok"
+      }
+    }
+  },
+  "radar": {
+    "tempo": 75,
+    "detail": 0,
+    "scene": 25,
+    "initiative": 25,
+    "meta": 75
+  },
+  "dimensions": {
+    "tempo": {
+      "value": 75,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "detail": {
+      "value": 0,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "scene": {
+      "value": 25,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "initiative": {
+      "value": 25,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "meta": {
+      "value": 75,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    }
+  },
+  "createdAt": "2026-10-07T00:00:00.000Z"
+}
