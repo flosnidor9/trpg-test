@@ -15,6 +15,11 @@
   </section>
   <div id="result-content">
     <section class="result-intro"><p class="eyebrow">YOUR PLAY PROFILE</p><h1 id="profile-title">나의 플레이 성향</h1><p id="profile-copy" class="lede"></p></section>
+    <section class="taste-section" aria-labelledby="taste-title">
+      <div class="taste-heading"><div><p class="label">SESSION CARDS</p><h2 id="taste-title">나의 세션 취향 카드</h2></div><p class="small-copy">응답이 분명하게 맞는 카드부터, 여러 영역을 고르게 보여줍니다. 순서는 사람의 우열이나 즐거움의 크기를 평가하지 않습니다.</p></div>
+      <div id="taste-cards" class="taste-cards"></div>
+      <p id="taste-empty" class="empty-card" hidden>아직 카드를 고를 응답이 충분하지 않아요. <a href="test.html?edit=1">답변을 확인해 주세요.</a></p>
+    </section>
     <div class="profile-grid result-profile-grid">
       <article class="radar-card"><p class="label">RP MAP</p><h2>나의 성향 지도</h2><p id="radar-summary" class="sr-only"></p><div class="result-radar-visual"><canvas id="radar" width="640" height="640" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels" aria-hidden="true"></div></div></article>
     </div>
@@ -29,6 +34,6 @@
   </div>
 </main>
 <footer>TRPG 성향 테스트 · 취향은 우열이 아니라, 더 좋은 대화를 위한 지도입니다.</footer>
-<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="app.js"></script>
+<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="app.js"></script>
 </body>
 </html>

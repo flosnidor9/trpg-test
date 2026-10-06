@@ -53,6 +53,19 @@ select { min-height: 46px; width: 100%; }
 .compare-intro .lede { word-break: keep-all; overflow-wrap: normal; text-wrap: pretty; }
 .compare-intro .lede span { display: block; }
 .result-main h2, .compare-main h2 { font-size: clamp(22px, 3vw, 30px); line-height: 1.4; letter-spacing: -.04em; }
+.taste-section { margin: 38px 0 48px; }
+.taste-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 20px; }
+.taste-heading .small-copy { max-width: 360px; margin: 0; }
+.taste-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.taste-card { min-width: 0; padding: 22px; background: #fff; border: 1px solid var(--line); border-radius: 9px; box-shadow: var(--shadow); }
+.taste-card-first { grid-column: span 2; grid-row: span 2; padding: clamp(26px, 4vw, 42px); background: #f3f0fc; border-color: #cfc3ee; display: flex; flex-direction: column; align-items: flex-start; }
+.taste-rank { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #eae4fa; color: #47349a; font-size: 11px; font-weight: 700; }
+.taste-category { display: block; margin-top: 16px; color: var(--muted); font-size: 11px; }
+.taste-card h3 { margin: 8px 0; font-size: 20px; line-height: 1.35; letter-spacing: -.04em; }
+.taste-card-first h3 { margin-top: 15px; font-size: clamp(28px, 3vw, 39px); }
+.taste-card p { color: #554b63; line-height: 1.7; font-size: 13px; margin: 0 0 18px; }
+.taste-card-first p { font-size: 16px; max-width: 420px; }
+.taste-card small { display: block; margin-top: auto; color: var(--muted); font-size: 11px; }
 .radar-card h2, .summary-card h2 { font-size: 21px; }
 .result-profile-grid { grid-template-columns: minmax(0, 1fr); }
 .result-profile-grid .radar-card { width: 100%; min-width: 0; max-width: 900px; margin: 0 auto; }
@@ -199,6 +212,10 @@ td { line-height: 1.8; }
 .preparation-values strong { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
 .preparation-note { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--line); color: #514561; font-size: 12px; line-height: 1.6; }
 @media (max-width: 700px) {
+  .taste-heading { display: block; }
+  .taste-heading .small-copy { margin-top: 10px; }
+  .taste-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .taste-card-first { grid-column: span 2; grid-row: auto; }
   header { height: 68px; gap: 12px; }
   .brand { font-size: 17px; }
   nav { gap: 14px; }
@@ -228,6 +245,7 @@ td { line-height: 1.8; }
   .preparation-table tbody th { width: 35%; }
   .preparation-table th, .preparation-table td { padding-left: 11px; padding-right: 11px; }
 }
+@media (max-width: 480px) { .taste-cards { grid-template-columns: 1fr; } .taste-card-first { grid-column: auto; } }
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

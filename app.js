@@ -275,7 +275,17 @@
       p = validateProfile(raw);
     } catch (err) { resultNotice('결과를 읽지 못했어요.', err.message + ' 새 테스트로 다시 답할 수 있습니다.'); return; }
     $('#profile-title').textContent = p.displayName + '의 플레이 성향';
-    $('#profile-copy').textContent = '그래프는 취향의 방향이며 실력이나 등급이 아닙니다.';
+    $('#profile-copy').textContent = '좋아하는 플레이 요소와 편하게 참여하는 조건을 카드로 읽어보세요. 아래 그래프는 RP 취향의 방향을 보여줍니다.';
+    const ranked = globalThis.TRPGCards?.featuredCards(p.responses) || [];
+    $('#taste-empty').hidden = ranked.length > 0;
+    $('#taste-cards').innerHTML = ranked.map((card, index) =>
+      '<article class="taste-card' + (index === 0 ? ' taste-card-first' : '') + '">' +
+      '<span class="taste-rank">' + (index + 1) + '위 카드</span>' +
+      '<span class="taste-category">' + escape(card.category) + '</span>' +
+      '<h3>' + escape(card.title) + '</h3>' +
+      '<p>' + escape(card.description) + '</p>' +
+      '<small>응답 근거 · ' + escape(card.evidence) + '</small></article>'
+    ).join('');
     drawRadar($('#radar'), [{ id: 'self', data: p.radar, color: COLORS[0] }], true, false);
     $('#radar-summary').textContent = D.axes.map(a => a.name + ': ' + dimensionLabel(p, a.key)).join(' · ');
     $('#radar-axis-labels').innerHTML = D.axes.map((a, i) => {
