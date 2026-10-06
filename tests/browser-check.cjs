@@ -67,7 +67,10 @@ async function accessibility(page, name) {
     const questionIds = await page.evaluate(() => TRPGData.questions.map(q => q.id));
     for (let i = 2; i < questionIds.length; i++) {
       const card = page.locator('#question-' + questionIds[i]);
-      if (questionIds[i] === 'D1') assert.equal(await card.locator('.choice-example').count(), 3);
+      if (questionIds[i] === 'D1') {
+        assert.equal(await card.locator('.choice-example').count(), 0);
+        assert.deepEqual(await card.locator('.choice > span').allTextContents(), ['단문 (1~2줄)', '중문 (3~4줄)', '장문 (5줄 이상)']);
+      }
       if (questionIds[i] === 'C02') {
         assert.equal(await card.locator('.possible-all').count(), 0);
         assert.equal(await card.locator('[data-row="character"] option[value="ok"]').count(), 0);
@@ -117,6 +120,13 @@ async function accessibility(page, name) {
     await page.waitForURL('**/result.html');
     assert.equal(await page.locator('#profile-reading, #answer-notes, #operation-notes, #talk-prompts').count(), 0);
     assert.ok(await page.locator('#radar-summary').textContent());
+    assert.equal(await page.locator('#radar-axis-labels button').count(), 6);
+    assert.equal(await page.locator('#profile-copy').evaluate(el => getComputedStyle(el).whiteSpace), 'pre-line');
+    assert.equal((await page.locator('#profile-copy').textContent()).split('\n').length, 2);
+    assert.equal(await page.evaluate(() => document.querySelector('#radar')._sets[0].minRadius), .25);
+    assert.deepEqual(await page.evaluate(() => document.querySelector('#radar')._sets[0].data), await page.evaluate(() => TRPGCompare.comparisonRadar(JSON.parse(localStorage.getItem(TRPGApp.STORAGE)))));
+    await page.locator('#radar-axis-labels button').first().focus();
+    assert.equal(await page.locator('#radar-axis-labels button').first().locator('.radar-axis-tooltip').isVisible(), true);
     await noPageOverflow(page);
     await accessibility(page, '결과');
     await page.screenshot({ path: path.join(artifacts, 'result-desktop.png') });

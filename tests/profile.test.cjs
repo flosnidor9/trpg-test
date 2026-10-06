@@ -37,8 +37,8 @@ test('36개 문항 묶음: 시작 2, RP 5, 운영 27, 경계 2', () => {
   assert.equal(D.operation.find(q => q.id === 'P03').group, 'RP');
   D.axes.forEach(a => assert.equal(D.traits.filter(q => q.axis === a.key).length, 1));
   D.questions.forEach(q => q.options.forEach(([, label]) => assert.doesNotMatch(label, /편이다|편이 좋음|편해요/)));
-  assert.equal(D.traits.find(q => q.id === 'D1').examples.length, 3);
-  assert.deepEqual(Array.from(D.traits.find(q => q.id === 'D1').options, ([v, t]) => [v, t]), [[0, '단문'], [50, '중문'], [100, '장문']]);
+  assert.equal(D.traits.find(q => q.id === 'D1').examples, undefined);
+  assert.deepEqual(Array.from(D.traits.find(q => q.id === 'D1').options, ([v, t]) => [v, t]), [[0, '단문 (1~2줄)'], [50, '중문 (3~4줄)'], [100, '장문 (5줄 이상)']]);
   assert.ok(!D.questions.some(q => q.id === 'E1'));
   assert.ok(D.questions.some(q => q.id === 'O15'));
   assert.ok(!D.questions.some(q => ['basis', 'medium', 'format', 'groupSize', 'A05'].includes(q.id)));
@@ -214,17 +214,17 @@ test('모두 같은 포함 제외·사전 확인 응답도 경계와 대화 대�
   const no = C.groupAnalysis([fixture(0, 'no'), fixture(100, 'no')]);
   assert.equal(no.restrictions.length, 15);
   const ask = C.groupAnalysis([fixture(50, 'ask'), fixture(50, 'ask')]);
-  assert.equal(ask.pending.filter(c => c.label === '사전 대화').length, 15);
+  assert.equal(ask.pending.filter(c => c.label === '사전협의').length, 15);
   const missing = C.groupAnalysis([A.exportProfile(fixture()), A.exportProfile(fixture())]);
   assert.equal(missing.pending.filter(c => c.label === '응답 확인').length, 15);
 });
 
-test('묶음의 모두 먼저 이야기해요 응답은 사전 대화 대상으로 유지', () => {
+test('묶음의 모두 사전협의 응답은 사전 대화 대상으로 유지', () => {
   const p = fixture();
   p.responses.B02.value = Object.fromEntries(D.boundaries.find(q => q.id === 'B02').rows.map(([row]) => [row, 'ask']));
   const loaded = A.validateProfile(p);
   assert.equal(loaded.responses.B02.value.violence, 'ask');
-  assert.equal(C.groupAnalysis([loaded]).pending.filter(c => c.label === '사전 대화').length, 15);
+  assert.equal(C.groupAnalysis([loaded]).pending.filter(c => c.label === '사전협의').length, 15);
 });
 
 test('조율 카드 제목은 항목명으로 두고 참가자별 실제 응답을 설명', () => {
@@ -232,7 +232,7 @@ test('조율 카드 제목은 항목명으로 두고 참가자별 실제 응답�
   first.displayName = '가람'; second.displayName = '누리';
   const analysis = C.groupAnalysis([first, second]);
   const boundary = analysis.restrictions.find(c => c.title === 'PC 간 공격');
-  assert.deepEqual(Array.from(boundary.details, item => [item.label, item.names]), [['포함하지 마세요', '가람'], ['먼저 이야기해요', '누리']]);
+  assert.deepEqual(Array.from(boundary.details, item => [item.label, item.names]), [['포함하지 마세요', '가람'], ['사전협의', '누리']]);
   const tempo = analysis.suggestions.find(c => c.title === 'RP 템포');
   assert.equal(tempo.label, 'RP 성향 차이');
   assert.match(tempo.details[0].label, /반응을 충분히 정리/);
@@ -394,7 +394,7 @@ test('순서를 정할 수 있는 운영 응답은 더 조심스러운 조건을
   open.responses.C03.value.dialogue = 'ok'; careful.responses.C03.value.dialogue = 'na';
   assert.equal(C.governingAnswer(q('C03'), 'dialogue', [open, careful]).label, '사용하지 않음');
   open.responses.C01.value.rules = 'during'; careful.responses.C01.value.rules = 'ask';
-  assert.equal(C.governingAnswer(q('C01'), 'rules', [open, careful]).label, '먼저 합의 필요');
+  assert.equal(C.governingAnswer(q('C01'), 'rules', [open, careful]).label, '사전협의');
 });
 
 test('고정 일정 등 비교할 수 없는 답은 미확인으로 표시하지 않음', () => {

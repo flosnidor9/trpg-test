@@ -69,7 +69,7 @@ select { min-height: 46px; width: 100%; }
 .radar-card h2, .summary-card h2 { font-size: 21px; }
 .result-profile-grid { grid-template-columns: minmax(0, 1fr); }
 .result-profile-grid .radar-card { width: 100%; min-width: 0; max-width: 900px; margin: 0 auto; }
-.result-radar-visual { position: relative; width: 100%; min-width: 0; max-width: 800px; margin: 12px auto 0; }
+.result-radar-visual { position: relative; width: 100%; min-width: 0; max-width: 640px; margin: 12px auto 0; }
 .result-radar-visual canvas { width: 100%; max-width: 640px; height: auto; }
 .radar-axis { position: absolute; width: 25%; display: grid; gap: 2px; color: var(--ink); font-size: 13px; line-height: 1.35; word-break: keep-all; text-wrap: balance; }
 .radar-axis strong { font-size: 15px; }
@@ -249,3 +249,8 @@ td { line-height: 1.8; }
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* 문장과 지문 예시의 의도한 줄바꿈을 유지합니다. */
+#profile-copy, .choice-example { white-space: pre-line; }
+
+.result-intro h1 { word-break: keep-all; overflow-wrap: anywhere; }

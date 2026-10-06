@@ -8,29 +8,45 @@ const context = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'cards.js'), 'utf8'), context);
 const { cards, rankCards, featuredCards } = context.TRPGCards;
 
-test('32개 카드는 응답이 없으면 배정되지 않는다', () => {
-  assert.equal(cards.length, 32);
+test('응답이 없거나 하나의 문항만 맞으면 카드를 배정하지 않는다', () => {
   assert.equal(rankCards({}).length, 0);
-  assert.equal(featuredCards({}).length, 0);
+  assert.equal(featuredCards({ T1: { value: 100 } }).length, 0);
 });
 
-test('사담과 휴식 응답은 RP 카드보다 앞에 올 수 있다', () => {
-  const result = featuredCards({ O05: { value: '2' }, O01: { value: '120' }, T1: { value: 75 } });
-  assert.deepEqual(Array.from(result, card => card.id), ['campfire-chat', 'frequent-break', 'rapid-talk']);
+test('빠른 응답과 장면 시작 선호를 하나의 취향 카드로 묶는다', () => {
+  const result = rankCards({ T1: { value: 100 }, I1: { value: 75 } });
+  assert.deepEqual(Array.from(result, card => card.id), ['live-exchange']);
+  assert.equal(result[0].matchCount, 2);
+  assert.match(result[0].evidence, /RP 템포 · RP 시작/);
+  assert.match(result[0].description, /빠른 반응/);
+  assert.match(result[0].description, /상호작용/);
 });
 
-test('서로 반대인 선호와 경계 응답을 같은 카드로 읽지 않는다', () => {
-  const result = rankCards({ A02: { value: '0' }, B01: { value: { pvp: 'ok' } } });
-  assert.deepEqual(Array.from(result, card => card.id), ['quiet-scene']);
+test('연관 응답이 많이 모인 카드가 두 응답으로 만든 카드보다 먼저 나온다', () => {
+  const result = featuredCards({
+    T1: { value: 100 }, I1: { value: 100 }, M1: { value: 100 },
+    O05: { value: '2' }, C02: { value: { character: '2' } }
+  });
+  assert.deepEqual(Array.from(result, card => card.id), ['live-exchange', 'social-table']);
+  assert.ok(result[0].strength > result[1].strength);
 });
 
-test('대표 카드는 한 영역에 몰리지 않게 고른다', () => {
+test('반대 방향과 경계 응답은 묶음 근거로 사용하지 않는다', () => {
+  const result = rankCards({ T1: { value: 100 }, I1: { value: 0 }, B01: { value: { pvp: 'ok' } } });
+  assert.equal(result.length, 0);
+  const quiet = rankCards({ A02: { value: '0' }, D1: { value: 100 } });
+  assert.deepEqual(Array.from(quiet, card => card.id), ['quiet-roleplay']);
+});
+
+test('관측된 선호만 카드 설명에 포함하고 최대 다섯 장을 선택한다', () => {
   const responses = {
     T1: { value: 100 }, D1: { value: 100 }, S1: { value: 100 }, I1: { value: 100 }, M1: { value: 100 },
-    O05: { value: '2' }, O01: { value: '120' }, A02: { value: '4' }, O13: { value: 'fixed' }
+    O05: { value: '2' }, C02: { value: { character: '3', player: '3' } },
+    O01: { value: '480' }, O03: { value: '0' }, A01: { value: '3' }, A02: { value: '4' }, A03: { value: '3' }
   };
   const result = featuredCards(responses);
   assert.equal(result.length, 5);
-  assert.equal(result[0].id, 'rapid-talk');
-  assert.ok(new Set(Array.from(result, card => card.category)).size >= 3);
+  assert.ok(result.every(card => card.matchCount >= 2));
+  assert.ok(result.every((card, index) => !index || result[index - 1].strength >= card.strength));
+  assert.doesNotMatch(result.find(card => card.id === 'cinematic-table').description, /스탠딩/);
 });

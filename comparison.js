@@ -125,12 +125,12 @@
       const vals = profiles.map(p => A.valueOf(p, q.id)?.[row]);
       const details = [
         { label: '포함하지 마세요', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'no') },
-        { label: '먼저 이야기해요', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'ask') },
+        { label: '사전협의', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'ask') },
         { label: '가능해요', names: namesFor(profiles, p => A.valueOf(p, q.id)?.[row] === 'ok') },
         { label: '미확인', names: namesFor(profiles, p => unresolved(A.valueOf(p, q.id)?.[row])) }
       ].filter(item => item.names);
       if (vals.includes('no')) restrictions.push({ title: name, text: '파티에서 이 소재나 전개를 제외합니다.', details });
-      else if (vals.includes('ask')) pending.push({ title: name, text: '포함 여부와 범위를 먼저 이야기해 주세요. 이 응답은 동의가 아닙니다.', label: '사전 대화', details });
+      else if (vals.includes('ask')) pending.push({ title: name, text: '', label: '사전협의', details });
       else if (vals.some(unresolved)) pending.push({ title: name, text: '공유되지 않은 응답을 확인한 뒤 범위를 정해 주세요.', label: '응답 확인', details });
     }
     const values = id => profiles.map(p => A.valueOf(p, id));
@@ -310,8 +310,7 @@
       const answers = people.map(p => '<span class="answer-person"><strong>' + marker(p) + e(p.profile.displayName) + '</strong><span>' + e(cellLabel(q, p.profile, row)) + (p.profile.responses[q.id]?.note ? ' · ' + e(p.profile.responses[q.id].note) : '') + '</span></span>').join('');
       const notice = (governing.voteCount ? '<span class="vote-count">' + e(governing.voteCount) + '</span>' : '') + (governing.unknownCount ? '<span class="unconfirmed-count">미확인 ' + governing.unknownCount + '명</span>' : '') + (governing.incomparableCount ? '<span class="unconfirmed-count">별도 조율 ' + governing.incomparableCount + '명</span>' : '');
       const spoken = people.map(p => p.profile.displayName + ': ' + cellLabel(q, p.profile, row)).join('; ');
-      const boundaryNote = q.boundary && governing.label === '먼저 이야기해요' ? '포함 여부와 범위를 먼저 이야기해 주세요. 이 응답은 동의가 아닙니다.' : '';
-      return '<tr><th scope="row">' + e(title) + '</th><td><button type="button" class="group-answer" aria-label="' + e(title + ': ' + governing.label + '. 참가자별 응답: ' + spoken) + '"><span class="' + (governing.differs ? 'different-answer' : '') + '">' + e(governing.label) + '</span>' + notice + '<span class="answer-cue" aria-hidden="true">자세히</span><span class="answer-popover" aria-hidden="true"><span class="popover-title">참가자별 응답</span>' + answers + '</span></button>' + (boundaryNote ? '<p class="group-note">' + e(boundaryNote) + '</p>' : '') + '</td></tr>' + (q.id === 'O02' && breakSummary ? summaryRow(breakSummary) : '');
+      return '<tr><th scope="row">' + e(title) + '</th><td><button type="button" class="group-answer" aria-label="' + e(title + ': ' + governing.label + '. 참가자별 응답: ' + spoken) + '"><span class="' + (governing.differs ? 'different-answer' : '') + '">' + e(governing.label) + '</span>' + notice + '<span class="answer-cue" aria-hidden="true">자세히</span><span class="answer-popover" aria-hidden="true"><span class="popover-title">참가자별 응답</span>' + answers + '</span></button>' + '</td></tr>' + (q.id === 'O02' && breakSummary ? summaryRow(breakSummary) : '');
     }).join('') + '</tbody></table></div>';
   }
   function renderTables(analysis) {

@@ -275,7 +275,7 @@
       p = validateProfile(raw);
     } catch (err) { resultNotice('결과를 읽지 못했어요.', err.message + ' 새 테스트로 다시 답할 수 있습니다.'); return; }
     $('#profile-title').textContent = p.displayName + '의 플레이 성향';
-    $('#profile-copy').textContent = '좋아하는 플레이 요소와 편하게 참여하는 조건을 카드로 읽어보세요. 아래 그래프는 RP 취향의 방향을 보여줍니다.';
+    $('#profile-copy').textContent = '함께 나타나는 취향을 세션 카드로 모았어요.\n성향 지도에서 RP와 세션 운영의 방향을 살펴보세요.';
     const ranked = globalThis.TRPGCards?.featuredCards(p.responses) || [];
     $('#taste-empty').hidden = ranked.length > 0;
     $('#taste-cards').innerHTML = ranked.map((card, index) =>
@@ -286,11 +286,16 @@
       '<p>' + escape(card.description) + '</p>' +
       '<small>응답 근거 · ' + escape(card.evidence) + '</small></article>'
     ).join('');
-    drawRadar($('#radar'), [{ id: 'self', data: p.radar, color: COLORS[0] }], true, false);
-    $('#radar-summary').textContent = D.axes.map(a => a.name + ': ' + dimensionLabel(p, a.key)).join(' · ');
-    $('#radar-axis-labels').innerHTML = D.axes.map((a, i) => {
-      const [direction, condition] = dimensionLabel(p, a.key).split(' · ');
-      return '<div class="radar-axis radar-axis-' + i + '"><strong>' + escape(a.name) + '</strong><span>' + escape(direction) + '</span>' + (condition ? '<small>' + escape(condition) + '</small>' : '') + '</div>';
+    const { comparisonAxes: axes, comparisonRadar, comparisonAnswer } = globalThis.TRPGCompare;
+    drawRadar($('#radar'), [{ id: 'self', data: comparisonRadar(p), color: COLORS[0], minRadius: .25 }], true, true, axes, false);
+    $('#radar-summary').textContent = axes.map(a => a.name + ': ' + comparisonAnswer(p, a)).join(' · ');
+    $('#radar-axis-labels').innerHTML = axes.map((a, i) => {
+      const angle = -Math.PI / 2 + i * Math.PI * 2 / axes.length;
+      const x = 50 + Math.cos(angle) * 42, y = 50 + Math.sin(angle) * 40;
+      const side = x < 25 ? ' radar-axis-left' : x > 75 ? ' radar-axis-right' : '';
+      const vertical = y < 25 ? ' radar-axis-top' : '';
+      const direction = a.left + ' → ' + a.right;
+      return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + escape(a.name + ': ' + direction) + '">' + escape(a.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + escape(direction) + '</span></button>';
     }).join('');
     $('#display-name').value = p.displayName;
     const preview = () => {
@@ -306,5 +311,5 @@
     preview();
   }
   globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, drawRadar };
-  if (typeof document !== 'undefined' && document.querySelector('#result-content')) initResult();
+  if (typeof document !== 'undefined' && document.querySelector('#result-content')) document.addEventListener('DOMContentLoaded', initResult, { once: true });
 })();

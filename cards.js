@@ -11,7 +11,7 @@
     return n === 0 ? 3 : n === 25 ? 2 : 0;
   };
   const row = (id, key, scores) => r => scores[value(r, id)?.[key]] || 0;
-  const cards = [
+  const signals = [
     ['rapid-talk', 'RP', '번개 대화', '빠른 반응으로 대사와 행동을 주고받는 호흡이 편해요.', 'RP 템포', trait('T1', 'high')],
     ['thinking-space', 'RP', '생각의 틈', '반응을 정리할 시간을 두고 이어가는 호흡이 편해요.', 'RP 템포', trait('T1', 'low')],
     ['short-brush', 'RP', '짧은 붓', '한 번의 지문을 간결하게 쓰고 싶어요.', '표현 분량', trait('D1', 'low')],
@@ -48,26 +48,38 @@
     ['everyone-present', '운영', '모두 모이는 장면', '본 세션은 전원이 참여할 때 진행하는 기준이 편해요.', '진행 인원', choice('O12', { '0': 2 })],
     ['keep-going', '운영', '이어지는 모험', '최소 인원이 모이면 진행할 수 있는 기준이 편해요.', '진행 인원', choice('O12', { '2': 2 })]
   ].map(([id, category, title, description, evidence, match]) => ({ id, category, title, description, evidence, match }));
+  // 서로 관련된 응답을 묶습니다. 한 문항만으로는 카드를 만들지 않습니다.
+  const cards = [
+    ['live-exchange', 'RP', '주고받는 모험', ['rapid-talk', 'first-spark', 'open-map']],
+    ['thoughtful-roleplay', 'RP', '차분히 여는 장면', ['thinking-space', 'echo', 'bookmark']],
+    ['rich-scenes', 'RP', '깊게 머무는 이야기', ['long-brush', 'lingering-scene', 'thinking-space']],
+    ['light-scenes', 'RP', '가볍게 이어가는 이야기', ['short-brush', 'next-scene', 'rapid-talk']],
+    ['social-table', '대화', '웃음이 모이는 테이블', ['campfire-chat', 'character-humor', 'player-humor']],
+    ['scene-boundaries', '대화', '장면에 집중하는 호흡', ['interlude-chat', 'serious-tone', 'bookmark']],
+    ['open-coordination', '대화', '함께 맞추는 흐름', ['open-map', 'rules-signal', 'intent-signal', 'side-chat']],
+    ['restful-session', '휴식과 참여', '쉼이 있는 모험', ['frequent-break', 'long-interlude', 'turn-signal']],
+    ['focused-session', '휴식과 참여', '몰입을 이어가는 모험', ['long-focus', 'follow-all', 'lingering-scene']],
+    ['cinematic-table', '연출', '눈과 귀로 만나는 세계', ['session-card', 'scene-music', 'scene-map', 'character-standing']],
+    ['quiet-roleplay', '연출', '말과 글에 머무는 세계', ['quiet-scene', 'long-brush', 'lingering-scene']],
+    ['planned-party', '운영', '미리 준비하는 파티', ['early-calendar', 'everyone-present']],
+    ['steady-adventure', '운영', '꾸준히 이어가는 파티', ['fixed-calendar', 'keep-going']]
+  ].map(([id, category, title, members]) => ({ id, category, title, members }));
   function rankCards(responses) {
-    return cards.map((card, index) => ({ id: card.id, category: card.category, title: card.title, description: card.description, evidence: card.evidence, strength: card.match(responses), index }))
-      .filter(card => card.strength > 0)
-      .sort((a, b) => b.strength - a.strength || a.index - b.index);
+    return cards.map((card, index) => {
+      const matched = card.members.map(id => signals.find(signal => signal.id === id))
+        .map(signal => ({ ...signal, strength: signal.match(responses) })).filter(signal => signal.strength > 0);
+      return {
+        id: card.id, category: card.category, title: card.title, index,
+        strength: matched.reduce((sum, signal) => sum + signal.strength, 0),
+        matchCount: matched.length,
+        description: matched.map(signal => signal.description).join(' '),
+        evidence: [...new Set(matched.map(signal => signal.evidence))].join(' · ')
+      };
+    }).filter(card => card.matchCount >= 2)
+      .sort((a, b) => b.strength - a.strength || b.matchCount - a.matchCount || a.index - b.index);
   }
   function featuredCards(responses, limit = 5) {
-    const ranked = rankCards(responses);
-    const chosen = [];
-    const categoryCount = new Map();
-    for (const card of ranked) {
-      if (chosen.length >= limit) break;
-      if ((categoryCount.get(card.category) || 0) >= 2) continue;
-      chosen.push(card);
-      categoryCount.set(card.category, (categoryCount.get(card.category) || 0) + 1);
-    }
-    for (const card of ranked) {
-      if (chosen.length >= limit) break;
-      if (!chosen.includes(card)) chosen.push(card);
-    }
-    return chosen;
+    return rankCards(responses).slice(0, limit);
   }
   globalThis.TRPGCards = { cards, rankCards, featuredCards };
 })();
