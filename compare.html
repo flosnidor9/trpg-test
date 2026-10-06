@@ -8,7 +8,7 @@
 <body>
 <header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a><nav aria-label="주 메뉴"><a href="test.html">테스트</a><a href="result.html">내 결과</a></nav></header>
 <main class="compare-main">
-  <section class="compare-intro"><p class="eyebrow">PARTY COMPASS</p><h1>서로의 방향을<br><em>함께 읽어보세요.</em></h1><p class="lede">전체 분포에서 차이를 보고, 필요한 조건과 운영안을 맞춰보세요. JSON은 이 브라우저에서만 읽습니다.</p></section>
+  <section class="compare-intro"><p class="eyebrow">PARTY COMPASS</p><h1>서로의 방향을<br><em>함께 읽어보세요.</em></h1><p class="lede"><span>레이더로 RP와 운영 선호를 살펴보고, 서로 다른 응답과 필요한 조건을 맞춰보세요.</span><span>JSON은 이 브라우저에서만 읽습니다.</span></p></section>
   <div class="import-grid">
     <div id="dropzone" class="dropzone"><label for="file-input"><strong>결과 JSON 불러오기</strong></label><input id="file-input" type="file" accept=".json,application/json" multiple><small>파일을 선택하거나 여기로 끌어오세요.</small><button type="button" id="use-my-profile" class="text-button">이 기기의 내 결과 추가</button></div>
     <div class="paste-box"><label for="json-input">JSON 직접 붙여넣기</label><textarea id="json-input" placeholder="{ … }" spellcheck="false"></textarea><button type="button" id="add-json">참가자 추가 →</button></div>
@@ -17,12 +17,10 @@
   <section id="comparison-empty" class="empty-card"><h2>아직 참가자가 없어요.</h2><p>한 명의 결과부터 읽을 수 있습니다. 두 명 이상을 추가하면 공통점과 조율할 항목을 확인해요.</p></section>
   <section id="comparison-output" hidden>
     <div class="participant-row"><div><p class="label">PARTY MEMBERS</p><h2>참가자 <span id="participant-count">0</span>명</h2></div></div>
-    <p class="small-copy">이름 옆 체크로 최대 6명을 레이더에 표시합니다. 전체 분포와 운영표에는 모든 참가자가 포함됩니다.</p>
+    <p class="small-copy">이름 옆 체크로 레이더에 표시할 참가자를 최대 6명까지 고를 수 있습니다. 아래 조건 표에는 모든 참가자가 포함됩니다.</p>
     <div id="legend" class="participant-list"></div><p id="selection-message" class="form-message" role="status"></p>
-    <section class="details"><p class="label">ALIGNMENT FIRST</p><h2 id="alignment-title">먼저 맞출 내용</h2><div id="alignment-notes" class="alignment-grid"></div><details id="all-alignment-details"><summary>다른 조율 항목 보기</summary><div id="all-alignment" class="alignment-grid"></div></details></section>
-    <section class="details"><p class="label">EVERYONE'S POSITION</p><h2>평균 대신, 모두의 분포</h2><p class="section-copy">같은 위치의 인원은 묶어 표시합니다. 점을 선택하면 이름과 응답을 볼 수 있어요. 미확인은 별도로 표시합니다.</p><div id="axis-distributions" class="distribution-grid"></div></section>
-    <section class="details"><p class="label">SELECTED PROFILES</p><h2>선택한 참가자의 레이더</h2><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><canvas id="comparison-radar" width="520" height="520" aria-hidden="true"></canvas><aside class="radar-overlap" aria-label="레이더 공통 면적"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note">두 명 이상을 선택하면 공통 면적을 볼 수 있어요.</p></aside></div><div id="radar-data-summary" class="small-copy"></div></div></section>
-    <section class="details"><p class="label">TABLE AGREEMENTS</p><h2>참여 조건과 운영 응답</h2><p class="section-copy">굵은 글씨는 함께 적용할 때 기준이 되는 가장 제한적인 응답입니다. 기준을 정할 수 없는 선호는 굵게 표시하지 않습니다. 7명 이상이면 인원 요약을 먼저 보여줍니다.</p><div id="group-tables"></div></section>
+    <section class="details compare-radar-section"><p class="label">PARTY RADAR</p><h2>파티의 플레이 성향</h2><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><div class="comparison-radar-visual"><canvas id="comparison-radar" width="600" height="600" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels"></div></div><aside class="radar-overlap" aria-label="레이더 공통 면적"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note">두 명 이상을 선택하면 공통 면적을 볼 수 있어요.</p></aside></div><div id="radar-data-summary" class="sr-only"></div></div></section>
+    <section class="details"><p class="label">TABLE AGREEMENTS</p><h2>함께 적용할 조건</h2><p class="section-copy">응답이 다를 때 적용할 기준을 굵게 보여줍니다. 선호 플랫폼은 최다 득표를 따르고, 동률이면 함께 정해요. 응답 위에 마우스를 올리거나 키보드로 선택하면 참가자별 답을 볼 수 있어요.</p><div id="group-tables"></div></section>
   </section>
 </main>
 <footer>TRPG 성향 테스트 · 비교 결과는 자동으로 공유되지 않습니다.</footer>

@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "3.0",
+  "questionnaireVersion": "rp-2026-10-v6",
+  "displayName": "도윤",
+  "context": {
+    "role": "GM",
+    "maxHours": "4"
+  },
+  "responses": {
+    "role": {
+      "value": "GM"
+    },
+    "maxHours": {
+      "value": "4"
+    },
+    "T1": {
+      "value": 25
+    },
+    "D1": {
+      "value": 100
+    },
+    "S1": {
+      "value": 75
+    },
+    "I1": {
+      "value": 75
+    },
+    "M1": {
+      "value": 25
+    },
+    "O01": {
+      "value": "240"
+    },
+    "O02": {
+      "value": "10"
+    },
+    "O03": {
+      "value": "0"
+    },
+    "O04": {
+      "value": {
+        "notes": "responsive",
+        "food": "responsive",
+        "message": "responsive",
+        "social": "responsive",
+        "work": "responsive"
+      }
+    },
+    "O05": {
+      "value": "2"
+    },
+    "O06": {
+      "value": "2"
+    },
+    "O07": {
+      "value": {
+        "friends": "ok",
+        "community": "ok",
+        "intro": "ok",
+        "public": "ok"
+      }
+    },
+    "O08": {
+      "value": "0"
+    },
+    "O09": {
+      "value": "0"
+    },
+    "O10": {
+      "value": "0"
+    },
+    "O11": {
+      "value": "0"
+    },
+    "O16": {
+      "value": "now"
+    },
+    "O15": {
+      "value": "0"
+    },
+    "O12": {
+      "value": "2"
+    },
+    "O13": {
+      "value": "14"
+    },
+    "O14": {
+      "value": "14"
+    },
+    "A01": {
+      "value": "0",
+      "fields": {
+        "offered": "1"
+      }
+    },
+    "A02": {
+      "value": "0",
+      "fields": {
+        "offered": "1"
+      }
+    },
+    "A03": {
+      "value": "0",
+      "fields": {
+        "offered": "1"
+      }
+    },
+    "A04": {
+      "value": "0",
+      "fields": {
+        "offered": "1"
+      }
+    },
+    "C01": {
+      "value": {
+        "rules": "during",
+        "intent": "during",
+        "direction": "during",
+        "planning": "during",
+        "information": "during"
+      }
+    },
+    "C02": {
+      "value": {
+        "character": "0",
+        "player": "0"
+      }
+    },
+    "C03": {
+      "value": {
+        "dialogue": "ok",
+        "description": "ok",
+        "ooc": "ok"
+      }
+    },
+    "P01": {
+      "value": "roll20"
+    },
+    "P02": {
+      "value": "discord"
+    },
+    "P03": {
+      "value": "5+"
+    },
+    "B01": {
+      "value": {
+        "argument": "ok",
+        "pvp": "ask",
+        "sabotage": "no",
+        "pcRomance": "ask",
+        "npcRomance": "ok",
+        "control": "no",
+        "change": "ok",
+        "loss": "ok"
+      }
+    },
+    "B02": {
+      "value": {
+        "violence": "ok",
+        "gore": "no",
+        "sexual": "ask",
+        "discrimination": "no",
+        "abuse": "ok",
+        "fear": "ok",
+        "grief": "ok"
+      }
+    }
+  },
+  "radar": {
+    "tempo": 25,
+    "detail": 100,
+    "scene": 75,
+    "initiative": 75,
+    "meta": 25
+  },
+  "dimensions": {
+    "tempo": {
+      "value": 25,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "detail": {
+      "value": 100,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "scene": {
+      "value": 75,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "initiative": {
+      "value": 75,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    },
+    "meta": {
+      "value": 25,
+      "count": 1,
+      "spread": 0,
+      "conditional": 0
+    }
+  },
+  "createdAt": "2026-10-07T00:00:00.000Z"
+}

@@ -16,13 +16,14 @@ const server = http.createServer((req, res) => {
   try { res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' }); res.end(fs.readFileSync(file)); }
   catch { res.writeHead(404).end('Not found'); }
 });
-function fixtureInBrowser({ value = 75, name = '참가자', boundary = 'ask' } = {}) {
+function fixtureInBrowser({ value = 75, name = '참가자', boundary = 'ask', role = 'PL' } = {}) {
   const A = globalThis.TRPGApp, D = globalThis.TRPGData;
   const responses = {};
   D.questions.forEach(q => {
-    responses[q.id] = { value: q.type === 'trait' ? value : q.type === 'matrix' ? Object.fromEntries(q.rows.map(([id]) => [id, q.boundary ? boundary : q.options[0][0]])) : q.options[0][0] };
+    responses[q.id] = { value: q.type === 'trait' ? (q.options.some(([v]) => v === value) ? value : 50) : q.type === 'matrix' ? Object.fromEntries(q.rows.map(([id]) => [id, q.boundary ? boundary : q.options[0][0]])) : q.type === 'text' ? '' : q.options[0][0] };
     if (q.fields) responses[q.id].fields = Object.fromEntries(q.fields.filter(f => !f.when || f.when === responses[q.id].value).map(f => [f.key, f.type === 'select' ? f.options[0][0] : f.type === 'number' ? '3' : '메모']));
   });
+  responses.role.value = role;
   return A.makeProfile(responses, name);
 }
 async function noPageOverflow(page) {
@@ -50,32 +51,47 @@ async function accessibility(page, name) {
     await page.goto(base + '/test.html');
     assert.equal(await page.locator('#prev, #next').count(), 0);
     assert.equal(await page.locator('.question-card').count(), 1);
-    await page.locator('#question-basis .choice input').first().focus();
+    await page.locator('#question-role .choice input').first().focus();
     await page.keyboard.press('ArrowDown');
-    assert.equal(await page.locator('#question-basis .choice input').nth(1).isChecked(), true);
+    assert.equal(await page.locator('#question-role .choice input').nth(1).isChecked(), true);
     assert.equal(await page.locator('.question-card').count(), 2);
     await page.waitForFunction(() => window.scrollY > 0);
-    await page.locator('#question-basis .choice').first().click();
+    await page.locator('#question-role .choice').first().click();
     assert.equal(await page.locator('.question-card').count(), 2, '이전 답변 수정은 다음 문항을 추가하지 않음');
     await accessibility(page, '테스트');
     await page.reload();
-    assert.equal(await page.locator('#question-basis .choice input').first().isChecked(), true);
+    assert.equal(await page.locator('#question-role .choice input').first().isChecked(), true);
     assert.equal(await page.locator('.question-card').count(), 2);
-    // 필수 자유 입력은 작성 도중 이동하지 않고, 작성 완료 후 다음 문항을 표시합니다.
-    await page.locator('#question-medium input[value="other"]').check();
-    await page.locator('#field-medium-note').fill('별도 매체에서 참여하고 싶어요');
-    assert.equal(await page.locator('.question-card').count(), 2);
-    await page.keyboard.press('Tab');
-    assert.equal(await page.locator('.question-card').count(), 3);
-    await page.locator('#question-medium input[value="voice"]').check();
+    await page.locator('#question-maxHours .choice').first().click();
     assert.equal(await page.locator('.question-card').count(), 3);
     const questionIds = await page.evaluate(() => TRPGData.questions.map(q => q.id));
     for (let i = 2; i < questionIds.length; i++) {
       const card = page.locator('#question-' + questionIds[i]);
+      if (questionIds[i] === 'D1') assert.equal(await card.locator('.choice-example').count(), 3);
+      if (questionIds[i] === 'C02') {
+        assert.equal(await card.locator('.possible-all').count(), 0);
+        assert.equal(await card.locator('[data-row="character"] option[value="ok"]').count(), 0);
+      }
+      if (questionIds[i] === 'T1') assert.equal(await card.locator('.choice').count(), 5);
       const rows = card.locator('[data-row]');
-      if (await rows.count()) {
+      if (questionIds[i] === 'O04') {
+        await card.locator('.possible-all').click();
+        assert.equal(await card.locator('[data-row="notes"]').inputValue(), 'responsive');
+      } else if (questionIds[i] === 'O07') {
+        assert.deepEqual(await card.locator('.matrix-actions button').allTextContents(), ['모두 사전확인', '모두 가능', '모두 불가능']);
+        await card.locator('.impossible-all').click();
+        assert.equal(await card.locator('[data-row="friends"]').inputValue(), 'no');
+      } else if (questionIds[i] === 'B02') {
+        await card.locator('.talk-all').click();
+        assert.equal(await card.locator('[data-row="violence"]').inputValue(), 'ask');
+      } else if (questionIds[i] === 'P04') {
+        await card.locator('.suggestion-chip').first().click();
+        assert.equal(await card.locator('.suggestion-chip').first().getAttribute('aria-pressed'), 'true');
+        await card.locator('[data-text-answer]').fill('조용한 사담방\n피하고 싶은 요소');
+        await card.locator('.text-next').click();
+      } else if (await rows.count()) {
         for (let j = 0; j < await rows.count(); j++) await rows.nth(j).selectOption({ index: 1 });
-        if (await card.locator('[data-row="pvp"]').count()) await card.locator('[data-row="pvp"]').selectOption('private');
+        if (await card.locator('[data-row="pvp"]').count()) await card.locator('[data-row="pvp"]').selectOption('no');
       } else await card.locator('.choice').first().click();
       const fields = card.locator('[data-field][required]');
       for (let j = 0; j < await fields.count(); j++) {
@@ -91,16 +107,16 @@ async function accessibility(page, name) {
     const desktopReset = await page.locator('#reset-test').boundingBox();
     assert.ok(desktopReset.y >= 0 && desktopReset.y + desktopReset.height < 100, '데스크톱 스크롤 중 우측 상단 초기화 유지');
     // 앞선 필수 답변을 지우면 결과를 확정할 수 없고, 뒤 문항은 유지합니다.
-    await page.locator('#field-O01-need').selectOption('');
+    await page.locator('#question-O12 input[value="2"]').check();
     assert.equal(await page.locator('#finish-test').isDisabled(), true);
-    assert.equal(await page.locator('.question-card').count(), 42);
-    await page.locator('#field-O01-need').selectOption('need');
+    assert.equal(await page.locator('.question-card').count(), questionIds.length);
+    await page.locator('#field-O12-minimum').fill('3');
+    await page.locator('#field-O12-minimum').blur();
     assert.equal(await page.locator('#finish-test').isEnabled(), true);
     await page.locator('#finish-test').click();
     await page.waitForURL('**/result.html');
-    assert.equal(await page.locator('#answer-notes .narrative-card').count(), 6);
-    assert.equal(await page.locator('#operation-notes .narrative-card').count(), 22);
-    assert.ok(await page.locator('#profile-story').textContent());
+    assert.equal(await page.locator('#profile-reading, #answer-notes, #operation-notes, #talk-prompts').count(), 0);
+    assert.ok(await page.locator('#radar-summary').textContent());
     await noPageOverflow(page);
     await accessibility(page, '결과');
     await page.screenshot({ path: path.join(artifacts, 'result-desktop.png') });
@@ -108,35 +124,81 @@ async function accessibility(page, name) {
     const preview = JSON.parse(await page.locator('#export-preview').inputValue());
     assert.equal(preview.schemaVersion, '3.0');
     assert.ok(preview.responses.B01);
-    assert.equal(preview.responses.B01.value.pvp, undefined);
+    assert.equal(preview.responses.B01.value.pvp, 'no');
     const downloadEvent = page.waitForEvent('download');
     await page.locator('#download').click();
     const download = await downloadEvent;
     await download.saveAs(path.join(artifacts, 'export-check.json'));
     const exported = JSON.parse(fs.readFileSync(path.join(artifacts, 'export-check.json'), 'utf8'));
-    assert.equal(exported.responses.B01.value.pvp, undefined);
+    assert.equal(exported.responses.B01.value.pvp, 'no');
     const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-playstyle-profile')));
     await page.goto(base + '/compare.html');
     await page.locator('#json-input').fill('{invalid'); await page.locator('#add-json').click();
     await page.getByText('JSON 형식을 읽지 못했어요.', { exact: false }).waitFor();
     await page.locator('#json-input').fill(JSON.stringify(profile)); await page.locator('#add-json').click();
     assert.equal(await page.locator('#participant-count').textContent(), '1');
-    await page.getByText('한 명 더 불러오면 파티를 비교할 수 있어요.', { exact: true }).waitFor();
+    assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'GM 역할' }).count());
+    assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'PL 역할' }).count());
+    assert.equal(await page.locator('#group-tables').getByRole('rowheader', { name: '타이핑 시간' }).count(), 1);
+    assert.equal(await page.locator('#group-tables').getByRole('rowheader', { name: 'RP 템포' }).count(), 1);
+    assert.equal(await page.locator('#radar-axis-labels button').count(), 6);
+    assert.equal(await page.locator('#radar-axis-guide').count(), 0);
+    assert.match(await page.locator('#radar-axis-labels button').first().getAttribute('aria-label'), /천천히 정리 → 바로 이어가기/);
+    assert.match(await page.locator('#radar-data-summary').textContent(), /타이핑 시간/);
     for (let i = 1; i <= 7; i++) {
-      const generated = await page.evaluate(fixtureInBrowser, { name: '참가자 ' + (i + 1), value: i % 5 * 25, boundary: i === 1 ? 'no' : 'ask' });
+      const generated = await page.evaluate(fixtureInBrowser, { name: '참가자 ' + (i + 1), value: i % 5 * 25, boundary: i === 1 ? 'no' : 'ask', role: i <= 2 ? 'GM' : 'PL' });
       await page.locator('#json-input').fill(JSON.stringify(generated)); await page.locator('#add-json').click();
-      if (i === 1) { assert.equal(await page.locator('#participant-count').textContent(), '2'); assert.ok((await page.locator('#alignment-notes').textContent()).includes('포함하지 않음')); }
+      if (i === 1) {
+        assert.equal(await page.locator('#participant-count').textContent(), '2');
+        assert.equal(await page.locator('#alignment-section').count(), 0);
+        assert.equal(await page.locator('.boundary-subgroup').count(), 2);
+        assert.equal(await page.locator('.boundary-subgroup h4').first().textContent(), '캐릭터 권한과 경계');
+        assert.equal(await page.locator('.boundary-subgroup tbody th').first().textContent(), 'PC 간 말다툼');
+        assert.equal(await page.locator('#group-tables').getByRole('rowheader', { name: 'PC 간 말다툼' }).count(), 1);
+        assert.ok((await page.locator('#group-tables').textContent()).includes('포함하지 마세요'));
+        assert.equal(await page.locator('#group-story').count(), 0);
+        assert.ok(await page.locator('.different-answer').count() > 0);
+        assert.equal(await page.locator('.preparation-table tbody tr').count(), 4);
+        assert.equal(await page.locator('.preparation-table tbody tr').first().locator('.preparation-primary').textContent(), '없어도 됨');
+        assert.match(await page.locator('.preparation-table tbody tr').first().locator('.preparation-popover').textContent(), /최소 필요/);
+        await page.locator('.preparation-table tbody tr').first().hover();
+        assert.equal(await page.locator('.preparation-popover').first().isVisible(), true);
+        const breakRow = page.locator('#group-tables tr.combined-row').filter({ hasText: '휴식 주기' });
+        await breakRow.locator('.group-answer').hover();
+        assert.match(await breakRow.locator('.answer-popover').textContent(), /휴식 간격:.*휴식 길이:/);
+        assert.match(await breakRow.locator('.answer-popover').textContent(), /참가자 2/);
+        await page.locator('.group-answer').first().hover();
+        assert.equal(await page.locator('.answer-popover').first().isVisible(), true);
+        assert.match(await page.locator('.answer-popover').first().textContent(), /참가자 2/);
+        await page.locator('.group-answer').first().focus();
+        assert.equal(await page.locator('.answer-popover').first().isVisible(), true);
+      }
+      if (i === 2) {
+        assert.equal(await page.locator('.preparation-table tbody tr').first().locator('.preparation-primary').textContent(), '없어도 됨');
+        assert.match(await page.locator('.preparation-table tbody tr').last().locator('.preparation-source').textContent(), /참가자 선호/);
+      }
     }
     assert.equal(await page.locator('#participant-count').textContent(), '8');
-    assert.equal(await page.locator('[data-person]:checked').count(), 0);
-    assert.equal(await page.locator('.distribution-card').count(), 6);
-    assert.ok(await page.locator('.count-chip').count() > 0);
+    assert.equal(await page.locator('.preparation-table tbody tr').count(), 4);
+    assert.equal(await page.locator('.preparation-table thead').textContent(), '항목기준 응답');
+    assert.equal(await page.locator('.preparation-table tbody button').count(), 0);
+    await page.locator('.preparation-table tbody tr').first().focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('.preparation-table tbody tr').first().getAttribute('class'), 'preparation-row is-open');
+    assert.equal(await page.locator('.preparation-popover').first().isVisible(), true);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.preparation-table tbody tr').first().getAttribute('class'), 'preparation-row');
+    assert.equal(await page.locator('[data-person]:checked').count(), 6);
+    assert.equal(await page.locator('#axis-distributions').count(), 0);
+    assert.equal(await page.locator('.count-chip').count(), 0);
+    assert.ok(await page.locator('.group-answer').count() > 0);
     await accessibility(page, '다수 비교');
-    for (let i = 0; i < 6; i++) await page.locator('[data-person]').nth(i).check();
+    assert.equal(await page.locator('.compare-radar-section').evaluate(el => el.compareDocumentPosition(document.querySelector('.combined-row')) & Node.DOCUMENT_POSITION_FOLLOWING), 4);
     await page.locator('[data-person]').nth(6).click();
     assert.equal(await page.locator('[data-person]:checked').count(), 6);
-    await page.locator('.distribution-marker').first().click();
-    assert.equal(await page.locator('.distribution-card details').first().getAttribute('open'), '');
+    assert.equal(await page.locator('#radar-data-summary summary').count(), 0);
+    assert.equal(await page.locator('#radar-points, .radar-point-target, .radar-point-tooltip').count(), 0);
+    assert.match(await page.locator('#radar-data-summary').textContent(), /RP 템포/);
     await noPageOverflow(page);
     await page.screenshot({ path: path.join(artifacts, 'comparison-desktop.png') });
     const malicious = await page.evaluate(fixtureInBrowser, { name: '<img src=x onerror="window.pwned=true">' });
@@ -153,12 +215,11 @@ async function accessibility(page, name) {
     await accessibility(page, '모바일 결과');
     await page.screenshot({ path: path.join(artifacts, 'result-mobile.png') });
     await page.goto(base + '/test.html?edit=1');
-    assert.equal(await page.locator('.question-card').count(), 42);
-    await page.locator('#question-medium .choice').nth(2).click();
+    assert.equal(await page.locator('.question-card').count(), questionIds.length);
     await page.locator('#question-role .choice').nth(1).click();
     assert.equal(await page.locator('#field-A01-offered').count(), 1, '역할 수정 시 GM 추가 입력도 갱신');
-    await page.locator('#question-basis').scrollIntoViewIfNeeded();
-    assert.equal(await page.locator('#question-basis .choice input').first().isChecked(), true);
+    await page.locator('#question-role').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#question-role .choice input').nth(1).isChecked(), true);
     await noPageOverflow(page);
     assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.question-card')).animationName), 'none');
     await page.screenshot({ path: path.join(artifacts, 'test-mobile.png') });
@@ -177,7 +238,7 @@ async function accessibility(page, name) {
     assert.equal(await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile')), savedResult);
     await page.reload();
     assert.equal(await page.locator('.question-card').count(), 1, '초기화 후 새로고침에도 이전 답변을 복원하지 않음');
-    await page.locator('#question-basis .choice').first().click();
+    await page.locator('#question-role .choice').first().click();
     assert.equal(await page.locator('.question-card').count(), 2, '초기화 후 다시 응답 가능');
     await noPageOverflow(page);
     await page.evaluate(() => localStorage.setItem('trpg-playstyle-profile', JSON.stringify({ schemaVersion: '2.0', radar: { pace: 50 } })));
