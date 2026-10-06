@@ -1,8 +1,9 @@
 /* 빠른 회전의 관성, 포인터를 따라 눌리는 카드와 대각선 반사광. */
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
+function init(root = document) {
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const pointer = matchMedia('(hover: hover) and (pointer: fine)');
-  const slots = document.querySelectorAll('.handout-slot');
+  const slots = root.querySelectorAll('.handout-slot');
   const resets = [];
   let observer;
   if (!motion.matches && globalThis.IntersectionObserver) {
@@ -88,8 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
       slot.classList.remove('is-active', 'motion-ready');
     });
   });
-  motion.addEventListener('change', event => {
+  const onMotionChange = event => {
     if (!event.matches) return;
     observer?.disconnect(); resets.forEach(reset => reset());
-  });
-}, { once: true });
+  };
+  motion.addEventListener('change', onMotionChange);
+  return () => { observer?.disconnect(); resets.forEach(reset => reset()); motion.removeEventListener('change', onMotionChange); };
+}
+globalThis.TRPGResultMotion = { init };
+document.addEventListener('DOMContentLoaded', () => { if (document.body.classList.contains('result-page')) init(); }, { once: true });
+})();

@@ -3,18 +3,20 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>파티 비교 — TRPG 성향 테스트</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="app.css"><link rel="stylesheet" href="compare.css"><link rel="stylesheet" href="result.css">
 </head>
-<body>
-<header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a><nav aria-label="주 메뉴"><a href="test.html">테스트</a><a href="result.html">내 결과</a></nav></header>
+<body class="compare-page">
+<header class="compare-header"><a class="brand" href="index.html"><span class="compare-brand-mark" aria-hidden="true">↗</span> TRPG 성향 테스트</a><nav aria-label="주 메뉴"><a href="test.html">테스트</a><a href="result.html">내 결과</a></nav></header>
 <main class="compare-main">
-  <section class="compare-intro"><p class="eyebrow">PARTY COMPASS</p><h1>서로의 방향을<br><em>함께 읽어보세요.</em></h1><p class="lede"><span>레이더로 RP와 운영 선호를 살펴보고, 서로 다른 응답과 필요한 조건을 맞춰보세요.</span><span>JSON은 이 브라우저에서만 읽습니다.</span></p></section>
-  <div class="import-grid">
-    <div id="dropzone" class="dropzone"><label for="file-input"><strong>결과 JSON 불러오기</strong></label><input id="file-input" type="file" accept=".json,application/json" multiple><small>파일을 선택하거나 여기로 끌어오세요.</small><button type="button" id="use-my-profile" class="text-button">이 기기의 내 결과 추가</button></div>
-    <div class="paste-box"><label for="json-input">JSON 직접 붙여넣기</label><textarea id="json-input" placeholder="{ … }" spellcheck="false"></textarea><button type="button" id="add-json">참가자 추가 →</button></div>
-  </div>
+  <section class="party-import" id="party-import" aria-labelledby="import-title">
+    <div class="import-heading"><div><p class="eyebrow">PARTY COMPARE</p><h1 id="import-title">파티 비교하기</h1></div><p>각자의 결과 JSON을 준비해주세요.<br>파일을 선택하거나 이곳에 놓으면 됩니다.</p></div>
+    <div class="import-grid">
+      <div id="dropzone" class="dropzone"><div class="import-file-mark" aria-hidden="true">↥</div><label for="file-input"><strong>결과 JSON 불러오기</strong></label><input id="file-input" type="file" accept=".json,application/json" multiple><small>여러 파일을 한 번에 추가할 수 있어요.</small></div>
+      <div class="import-alternatives"><button type="button" id="use-my-profile" class="local-profile"><span><small>ON THIS DEVICE</small><strong>내 결과로 시작하기</strong><span>이 기기에 저장한 결과를 추가해요.</span></span><b aria-hidden="true">↗</b></button><details class="paste-disclosure"><summary>JSON 직접 붙여넣기 <span aria-hidden="true">＋</span></summary><div class="paste-box"><label for="json-input">결과 JSON 전체 내용</label><textarea id="json-input" placeholder="{ … }" spellcheck="false"></textarea><button type="button" id="add-json">참가자 추가 ↗</button></div></details></div>
+    </div>
+  </section>
   <p id="import-message" class="form-message" role="status" aria-live="polite"></p>
-  <section id="comparison-empty" class="empty-card"><h2>아직 참가자가 없어요.</h2><p>한 명의 결과부터 읽을 수 있습니다. 두 명 이상을 추가하면 공통점과 조율할 항목을 확인해요.</p></section>
+  <section id="comparison-empty" class="empty-card"><p class="eyebrow">YOUR PARTY STARTS HERE</p><h2>아직 참가자가 없어요.</h2><p>한 명의 결과부터 읽을 수 있습니다. 두 명 이상을 추가하면 공통점과 조율할 항목을 확인해요.</p><div class="party-steps"><span><b>01</b> 결과 모으기</span><span><b>02</b> 취향 겹쳐보기</span><span><b>03</b> 세션 함께 정하기</span></div></section>
   <section id="comparison-output" hidden>
     <div class="participant-row"><div><p class="label">PARTY MEMBERS</p><h2>참가자 <span id="participant-count">0</span>명</h2></div></div>
     <p class="small-copy">이름 옆 체크로 레이더에 표시할 참가자를 최대 6명까지 고를 수 있습니다. 아래 조건 표에는 모든 참가자가 포함됩니다.</p>
@@ -22,12 +24,13 @@
     <div id="comparison-tabs" class="comparison-tabs" role="tablist" aria-label="파티 결과 보기"></div>
     <div id="party-panel" role="tabpanel" aria-labelledby="party-tab">
     <section class="details compare-radar-section"><p class="label">PARTY RADAR</p><h2>파티의 플레이 성향</h2><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><div class="comparison-radar-visual"><canvas id="comparison-radar" width="600" height="600" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels"></div></div><aside class="party-common" aria-labelledby="party-common-title"><div class="radar-overlap"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note"></p></div><p class="label">SHARED SESSION CARDS</p><h3 id="party-common-title">함께 가진 취향 카드</h3><p id="party-common-note"></p><div id="party-common-list" aria-live="polite"></div></aside></div><div id="radar-data-summary" class="sr-only"></div></div></section>
-    <section class="details"><p class="label">TABLE AGREEMENTS</p><h2>함께 적용할 조건</h2><p class="section-copy">응답이 다를 때 적용할 기준을 굵게 보여줍니다. 선호 플랫폼·연락 채널·사담 위치·일정과 변경은 최다 득표를 따르고, 동률이면 함께 정해요. 불호 요소는 공유된 내용을 참가자별로 모두 표시합니다. 다른 응답 위에 마우스를 올리거나 키보드로 선택하면 참가자별 답을 볼 수 있어요.</p><div id="group-tables"></div></section>
+    <section class="party-conversation" aria-labelledby="conversation-title"><div><p class="label">START THE CONVERSATION</p><h2 id="conversation-title">모험 전에 나눌 이야기</h2></div><div id="party-conversation-list"></div></section>
+    <section class="details agreements-section"><div class="agreements-heading"><p class="label">TABLE AGREEMENTS</p><h2>함께 적용할 조건</h2><p class="section-copy">응답이 다를 때 적용할 기준을 굵게 보여줍니다. 선호 플랫폼·연락 채널·사담 위치·일정과 변경은 최다 득표를 따르고, 동률이면 함께 정해요. 불호 요소는 공유된 내용을 참가자별로 모두 표시합니다. 다른 응답 위에 마우스를 올리거나 키보드로 선택하면 참가자별 답을 볼 수 있어요.</p></div><div id="group-tables"></div></section>
     </div>
     <div id="personal-panel" class="personal-panel" role="tabpanel" hidden></div>
   </section>
 </main>
 <footer>TRPG 성향 테스트 · 비교 결과는 자동으로 공유되지 않습니다.</footer>
-<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="profile-view.js"></script><script src="app.js"></script><script src="comparison.js"></script>
+<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="profile-view.js"></script><script src="app.js"></script><script src="result-motion.js"></script><script src="compare-motion.js"></script><script src="comparison.js"></script>
 </body>
 </html>

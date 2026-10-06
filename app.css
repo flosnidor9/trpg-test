@@ -121,7 +121,7 @@ summary { color: #5738c4; cursor: pointer; padding: 8px 0; }
 .export-section .question-field { max-width: 440px; }
 .share-options { display: grid; gap: 12px; margin-top: 24px; font-size: 13px; }
 .share-options label { display: flex; align-items: flex-start; gap: 8px; }
-#export-preview { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+#export-preview, #personal-export-preview { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .empty-card { background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 32px; margin-top: 28px; }
 .empty-card h1 { font-size: 36px; }
 .empty-card .button { margin: 10px 8px 0 0; }

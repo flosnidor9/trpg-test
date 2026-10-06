@@ -31,6 +31,11 @@ async function noPageOverflow(page) {
 }
 async function accessibility(page, name) {
   if (!AxeBuilder) return;
+  // 스크롤로 등장하는 비교 내용은 각 영역을 실제로 열고 최종 상태를 검사합니다.
+  for (const section of await page.locator('#comparison-output:not([hidden]) #party-panel:not([hidden]) .scroll-reveal-pending').elementHandles()) {
+    await section.scrollIntoViewIfNeeded();
+    await section.evaluate(element => element.dispatchEvent(new Event('scroll', { bubbles: true })));
+  }
   // 등장 중의 투명도가 아니라 읽을 수 있는 최종 상태의 대비를 검사합니다.
   await page.evaluate(() => Promise.all(document.getAnimations()
     .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
@@ -150,9 +155,17 @@ async function accessibility(page, name) {
     assert.equal(exported.responses.B01.value.pvp, 'no');
     const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-playstyle-profile')));
     await page.goto(base + '/compare.html');
+    await accessibility(page, '비교 빈 화면');
+    await page.locator('.paste-disclosure summary').focus();
+    await page.keyboard.press('Enter');
     await page.locator('#json-input').fill('{invalid'); await page.locator('#add-json').click();
     await page.getByText('JSON 형식을 읽지 못했어요.', { exact: false }).waitFor();
     await page.locator('#json-input').fill(JSON.stringify(profile)); await page.locator('#add-json').click();
+    assert.equal(await page.locator('.compare-radar-section').getAttribute('data-reveal-state'), 'waiting', '불러오기만으로 결과 연출을 시작하지 않음');
+    assert.equal(await page.locator('.party-conversation').getAttribute('data-reveal-state'), 'waiting');
+    await page.locator('.compare-radar-section').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => document.querySelector('.compare-radar-section').dataset.revealState === 'revealed');
+    assert.equal(await page.locator('.party-conversation').getAttribute('data-reveal-state'), 'waiting', '아직 내려가지 않은 다음 영역은 대기');
     assert.equal(await page.locator('#participant-count').textContent(), '1');
     assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'GM 역할' }).count());
     assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'PL 역할' }).count());
@@ -213,8 +226,17 @@ async function accessibility(page, name) {
     assert.equal(await page.locator('#personal-profile-title').textContent(), '참가자 2의 플레이 성향');
     assert.equal(await page.locator('#personal-radar-axis-labels button').count(), 6);
     assert.ok(await page.locator('#personal-taste-cards .taste-card').count() > 0);
+    assert.equal(await page.locator('#personal-panel .profile-overview > .result-intro + .radar-card').count(), 1, '내 결과와 같은 소개·레이더 배치');
+    assert.equal(await page.locator('#personal-taste-cards .handout-slot .handout-art').count(), await page.locator('#personal-taste-cards .taste-card').count(), '내 결과와 같은 핸드아웃 카드');
+    await page.locator('#personal-display-name').fill('개인 탭 내보내기');
+    assert.equal(JSON.parse(await page.locator('#personal-export-preview').inputValue()).displayName, '개인 탭 내보내기');
+    const personalDownloadEvent = page.waitForEvent('download');
+    await page.locator('#personal-download').click();
+    await personalDownloadEvent;
+    assert.equal(await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile')), storedBeforeTabs, '참가자 JSON 저장은 내 결과를 덮어쓰지 않음');
     await accessibility(page, '개인 탭');
     await noPageOverflow(page);
+    await page.getByRole('tab', { selected: true }).focus();
     await page.keyboard.press('Home');
     assert.equal(await page.locator('#party-panel').isVisible(), true);
     assert.equal(await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile')), storedBeforeTabs);

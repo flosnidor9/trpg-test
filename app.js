@@ -294,8 +294,8 @@
     } catch (err) { resultNotice('결과를 읽지 못했어요.', err.message + ' 새 테스트로 다시 답할 수 있습니다.'); return; }
     renderProfile(document.querySelector('#result-content'), p);
   }
-  function renderProfile(root, p, { allowExport = true } = {}) {
-    const $ = selector => root.querySelector(selector);
+  function renderProfile(root, p, { allowExport = true, persistProfile = true, idPrefix = '' } = {}) {
+    const $ = selector => root.querySelector(selector.replace(/#([\w-]+)/g, (_, id) => '#' + idPrefix + id));
     $('#profile-title').textContent = p.displayName + '의 플레이 성향';
     $('#profile-copy').textContent = '함께 나타나는 취향을 세션 카드로 모았어요.\n성향 지도에서 RP와 세션 운영의 방향을 살펴보세요.';
     const ranked = globalThis.TRPGCards?.featuredCards(p.responses) || [];
@@ -324,7 +324,34 @@
     ).join('');
     const { comparisonAxes: axes, comparisonRadar, comparisonAnswer } = globalThis.TRPGCompare;
     drawRadar($('#radar'), [{ id: 'self', data: comparisonRadar(p), color: COLORS[0], minRadius: .25 }], true, true, axes, false, { revealFromCenter: handouts });
-    $('#radar-summary').textContent = axes.map(a => a.name + ': ' + comparisonAnswer(p, a)).join(' · ');
+    $('#radar-summary').innerHTML = axes.map(a => '<li><strong>' + escape(a.name) + '</strong>\n' + escape(comparisonAnswer(p, a, '\n')) + '</li>').join('\n');
+    const reading = root.querySelector('.map-reading');
+    const readingContent = reading.querySelector('.map-reading-content');
+    const readingSummary = reading.querySelector('summary');
+    let readingAnimation;
+    let readingExpanded = reading.open;
+    readingSummary.setAttribute('aria-expanded', String(readingExpanded));
+    readingSummary.addEventListener('click', event => {
+      event.preventDefault();
+      readingExpanded = !readingExpanded;
+      readingSummary.setAttribute('aria-expanded', String(readingExpanded));
+      const currentHeight = reading.open ? readingContent.getBoundingClientRect().height : 0;
+      const currentOpacity = reading.open ? getComputedStyle(readingContent).opacity : 0;
+      readingAnimation?.cancel();
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        reading.open = readingExpanded;
+        return;
+      }
+      reading.open = true;
+      readingAnimation = readingContent.animate([
+        { height: currentHeight + 'px', opacity: currentOpacity },
+        { height: (readingExpanded ? readingContent.scrollHeight : 0) + 'px', opacity: readingExpanded ? 1 : 0 }
+      ], { duration: 240, easing: 'ease-out' });
+      readingAnimation.onfinish = () => {
+        reading.open = readingExpanded;
+        readingAnimation = null;
+      };
+    });
     $('#radar-axis-labels').innerHTML = axes.map((a, i) => {
       const angle = -Math.PI / 2 + i * Math.PI * 2 / axes.length;
       const x = 50 + Math.cos(angle) * 42, y = 50 + Math.sin(angle) * 40;
@@ -341,7 +368,8 @@
     };
     $('#display-name').addEventListener('input', preview);
     $('#download').onclick = () => {
-      preview(); localStorage.setItem(STORAGE, JSON.stringify(p));
+      preview();
+      if (persistProfile) localStorage.setItem(STORAGE, JSON.stringify(p));
       downloadJSON(exportProfile(p));
       $('#export-message').textContent = '결과를 JSON으로 저장했어요.';
     };

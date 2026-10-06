@@ -94,11 +94,11 @@
     }
     return union > 1e-12 ? Math.round(Math.max(0, Math.min(100, intersection / union * 100))) : null;
   }
-  function comparisonAnswer(profile, axis) {
+  function comparisonAnswer(profile, axis, separator = ' · ') {
     return (comparisonQuestionIds[axis.key] || []).map(id => {
       const q = D.questions.find(question => question.id === id);
       return q.name + ': ' + A.answerLabel(q, A.response(profile, id));
-    }).join(' · ') || '미확인';
+    }).join(separator) || '미확인';
   }
   const unresolved = v => v == null || ['unknown', 'private', 'other', 'conditional'].includes(v);
   function sharedPlaystyle(profiles) {
@@ -387,7 +387,8 @@
     const radars = chosen.map(p => comparisonRadar(p.profile));
     $('#comparison-radar').closest('.comparison-radar-card').hidden = chosen.length === 0;
     $('#radar-selection-copy').textContent = chosen.length ? '선택한 ' + chosen.length + '명의 여러 응답을 여섯 가지 성향으로 대략 묶었습니다. 위치는 취향의 방향이며 우열이 아닙니다. 가장 안쪽 눈금부터 표시해 낮은 값도 면적으로 보입니다. 축 이름에서 방향을 확인하고, 실제 응답과 경계·플랫폼은 아래 표에서 확인해 주세요.' : '위에서 참가자를 선택하면 레이더를 볼 수 있어요.';
-    A.drawRadar($('#comparison-radar'), chosen.map((p, i) => ({ id: p.id, data: radars[i], index: p.id - 1, color: style(p).color, minRadius: .25 })), true, true, comparisonAxes, false);
+    const radarVisible = globalThis.TRPGCompareMotion?.radarVisible() ?? true;
+    A.drawRadar($('#comparison-radar'), chosen.map((p, i) => ({ id: p.id, data: radars[i], index: p.id - 1, color: style(p).color, minRadius: .25 })), radarVisible, true, comparisonAxes, false, { revealFromCenter: radarVisible });
     $('#selected-legend').innerHTML = chosen.map(p => '<span class="legend-item">' + marker(p) + e(p.profile.displayName) + '</span>').join('');
     $('#radar-axis-labels').innerHTML = chosen.length ? comparisonAxes.map((axis, index) => {
       const angle = -Math.PI / 2 + index * Math.PI * 2 / comparisonAxes.length;
@@ -407,7 +408,12 @@
     const commonItem = item => '<article class="common-item"><h4>' + e(item.title) + '</h4><p>' + e(item.text) + '</p><small>' + e(item.evidence) + '</small></article>';
     $('#party-common-list').innerHTML = common.length ? common.slice(0, 3).map(commonItem).join('') + (common.length > 3 ? '<details class="common-more"><summary>공통점 더 보기 (' + (common.length - 3) + ')</summary>' + common.slice(3).map(commonItem).join('') + '</details>' : '') : chosen.length >= 2 ? '<p class="common-empty">아직 함께 가진 세션 취향 카드가 없어요. 아래 분포에서 각자의 선호를 살펴보세요.</p>' : '';
   }
+  let disposePersonalMotion;
   function renderTabs() {
+    disposePersonalMotion?.();
+    const oldRadar = $('#personal-panel canvas');
+    if (oldRadar?._frame) cancelAnimationFrame(oldRadar._frame);
+    oldRadar?._revealObserver?.disconnect();
     if (!people.some(person => person.id === activePerson)) activePerson = null;
     const tabs = [{ id: null, name: '전체' }, ...people.map(person => ({ id: person.id, name: person.profile.displayName }))];
     $('#comparison-tabs').innerHTML = tabs.map(tab => '<button type="button" role="tab" id="' + (tab.id === null ? 'party-tab' : 'person-tab-' + tab.id) + '" data-tab="' + (tab.id ?? 'all') + '" aria-selected="' + (activePerson === tab.id) + '" aria-controls="' + (tab.id === null ? 'party-panel' : 'personal-panel') + '" tabindex="' + (activePerson === tab.id ? '0' : '-1') + '">' + e(tab.name) + '</button>').join('');
@@ -419,11 +425,19 @@
       $('#personal-panel').setAttribute('aria-labelledby', 'person-tab-' + activePerson);
       // Prefix IDs so the personal radar and the party radar remain independently addressable.
       const container = document.createElement('div');
+      container.className = 'result-page';
       container.innerHTML = globalThis.TRPGProfileView;
-      A.renderProfile(container, person.profile, { allowExport: false });
       container.querySelectorAll('[id]').forEach(element => { element.id = 'personal-' + element.id; });
-      container.querySelectorAll('[aria-labelledby]').forEach(element => { element.setAttribute('aria-labelledby', element.getAttribute('aria-labelledby').split(' ').map(id => 'personal-' + id).join(' ')); });
+      for (const attribute of ['aria-labelledby', 'aria-describedby', 'for']) {
+        container.querySelectorAll('[' + attribute + ']').forEach(element => { element.setAttribute(attribute, element.getAttribute(attribute).split(' ').map(id => 'personal-' + id).join(' ')); });
+      }
       $('#personal-panel').append(container);
+      A.renderProfile(container, structuredClone(person.profile), { idPrefix: 'personal-', persistProfile: false });
+      container.querySelector('.profile-cta').setAttribute('href', '#comparison-tabs');
+      container.querySelector('.profile-cta').addEventListener('click', event => { event.preventDefault(); $('#party-tab').click(); $('#comparison-tabs').scrollIntoView({ block: 'start' }); });
+      container.querySelector('#personal-taste-empty').textContent = '아직 카드를 고를 응답이 충분하지 않아요. 공유한 응답을 확인해 주세요.';
+      container.querySelector('.export-heading .section-copy').textContent = '이 참가자의 결과 JSON을 저장해 파티 비교에 다시 불러올 수 있어요.';
+      disposePersonalMotion = globalThis.TRPGResultMotion.init(container);
     }
   }
   $('#comparison-tabs').addEventListener('click', event => {
@@ -431,6 +445,7 @@
     if (!tab) return;
     activePerson = tab.dataset.tab === 'all' ? null : Number(tab.dataset.tab);
     renderTabs();
+    globalThis.TRPGCompareMotion?.panel();
     document.getElementById(tab.id).focus();
   });
   $('#comparison-tabs').addEventListener('keydown', event => {
@@ -467,10 +482,13 @@
     $('#comparison-output').hidden = !people.length;
     $('#comparison-empty').hidden = Boolean(people.length);
     $('#participant-count').textContent = String(people.length);
-    if (!people.length) { selected.clear(); selectionTouched = false; return; }
+    if (!people.length) { selected.clear(); selectionTouched = false; globalThis.TRPGCompareMotion?.update([]); return; }
     renderParticipants(); renderTabs();
     const analysis = groupAnalysis(people.map(p => p.profile));
     renderRadar(); renderTables(analysis);
+    const topics = [...analysis.restrictions.map(item => ({ ...item, label: '존중할 경계' })), ...analysis.pending, ...analysis.suggestions.filter(item => item.label)];
+    $('#party-conversation-list').innerHTML = topics.length ? topics.slice(0, 3).map(item => '<article><p class="conversation-label">' + e(item.label || '함께 확인') + '</p><h3>' + e(item.title) + '</h3><p>' + e(item.text || '사전협의는 동의가 아니에요. 세션 전에 각자의 범위를 함께 확인해주세요.') + '</p></article>').join('') + (topics.length > 3 ? '<a class="conversation-more" href="#group-tables">전체 응답에서 나머지 항목 확인 ↗</a>' : '') : '<article class="conversation-empty"><h3>' + (people.length < 2 ? '동료의 결과를 더해보세요.' : '서로의 응답을 천천히 읽어보세요.') + '</h3><p>아래 전체 응답에서 편안한 세션의 조건을 함께 정할 수 있어요.</p></article>';
+    globalThis.TRPGCompareMotion?.update(people.map(p => p.id));
   }
   $('#add-json').onclick = () => {
     try {

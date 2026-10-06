@@ -1,0 +1,46 @@
+.compare-page { background: #faf8f5; --muted: #6c6179; }
+.compare-header { max-width:1320px; height:88px; padding:0 48px; }
+.compare-header .brand { font-size:17px; display:flex; align-items:center; gap:8px; }
+.compare-brand-mark { display:grid; place-items:center; width:30px; height:30px; background:#ede7fa; color:#6547da; border-radius:9px; }
+.compare-main { max-width:1320px; padding:0 48px 80px; }
+.compare-page .scroll-reveal-pending { opacity:0; transform:translateY(28px); }
+
+.compare-page :is(button,a,input,textarea,summary):focus-visible { outline:3px solid #6547da; outline-offset:4px; }
+
+.party-import { padding-top:36px; scroll-margin-top:24px; }
+.import-heading { display:flex; justify-content:space-between; align-items:center; gap:24px; }
+.compare-page h2, .compare-page #import-title { font-size:clamp(24px,2.8vw,34px); line-height:1.4; letter-spacing:-.05em; }
+.import-heading .eyebrow { font-size:10px; margin:0 0 12px; }
+.import-heading > p { color:#6c6179; font-size:12px; }
+.compare-page .import-grid { margin-top:24px; grid-template-columns:1.15fr 1fr; gap:20px; align-items:start; }
+.compare-page .dropzone { min-height:238px; border:1px dashed #b7a7ce; border-radius:16px; padding:24px 36px; background:#fff; transition:transform 220ms,background 220ms,border-color 220ms; }
+.import-file-mark { width:48px; height:48px; display:grid; place-items:center; background:#f0eafa; border-radius:14px; font-size:30px; color:#6547da; margin-bottom:12px; }
+.compare-page .dropzone input { width:min(100%,330px); color:#5c506b; cursor:pointer; }
+.compare-page .dropzone input::file-selector-button { padding:9px 13px; margin-right:12px; border:1px solid #d9cfe6; border-radius:6px; background:#f7f3fc; color:#534461; cursor:pointer; font:inherit; }
+.compare-page .dropzone.drag-active { background:#eee7fb; border-color:#6547da; transform:scale(1.015); }
+.import-alternatives { display:grid; gap:16px; }
+.local-profile { display:flex; justify-content:space-between; align-items:center; text-align:left; background:#fff; border:1px solid #e6deed; border-radius:16px; padding:25px 28px; color:#382451; cursor:pointer; font:inherit; transition:transform 220ms,border-color 220ms; }
+.local-profile:hover { transform:translateX(4px); border-color:#b7a7ce; }
+.local-profile > span { display:grid; gap:8px; }.local-profile small { color:#71569b; font-size:9px; letter-spacing:.13em; }.local-profile strong { font-size:18px; }.local-profile span span { color:#6c6179; font-size:12px; }.local-profile b { font-size:23px; font-weight:400; }
+.paste-disclosure { background:#fff; border:1px solid #e6deed; border-radius:12px; }
+.paste-disclosure summary { padding:18px 26px; cursor:pointer; font-size:13px; }.paste-disclosure summary span { float:right; }.paste-disclosure[open] summary span { transform:rotate(45deg); }
+.compare-page .paste-box { border:0; padding:0 26px 10px; min-height:0; background:transparent; }
+.compare-page .paste-box label { font-size:12px; }.compare-page .paste-box textarea { resize:vertical; border-radius:8px; width:100%; }
+.compare-page .empty-card { padding:30px 36px; border-radius:16px; background:#f2edf7; box-shadow:none; }.empty-card h2 { font-size:23px; }.empty-card p { font-size:13px; color:#6c6179; }
+.party-steps { display:flex; gap:38px; margin-top:26px; font-size:13px; }.party-steps b { color:#765a9c; font-size:11px; margin-right:10px; }
+.compare-page .participant-row { margin-top:38px; }.compare-page .participant-row h2 { font-size:27px; }.compare-page .participant-row .label { margin:0 0 8px; }
+.compare-page .participant-control { border-radius:10px; padding:9px; }.compare-page .small-copy { color:#6c6179; }
+.compare-page .comparison-tabs { margin-top:24px; }
+.compare-page .details { margin-top:36px; }.compare-page .comparison-radar-card { border-radius:20px; padding:24px; background:#fff; box-shadow:0 16px 45px #38245108; }
+.compare-page .comparison-radar-layout { grid-template-columns:minmax(0,1.4fr) minmax(230px,1fr); }
+.compare-page .party-common { background:#f5f1f9; border-radius:14px; }
+.party-conversation { margin-top:38px; }.party-conversation .label { font-size:10px; }
+#party-conversation-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:22px; }
+#party-conversation-list article { padding:24px; background:#fff; border:1px solid #e6deed; border-radius:14px; }
+#party-conversation-list h3 { font-size:18px; margin:8px 0 12px; }#party-conversation-list p { color:#6c6179; font-size:13px; margin:0; word-break:keep-all; }#party-conversation-list .conversation-label { font-size:11px; color:#71569b; }
+.conversation-more { grid-column:1/-1; color:#6547da; font-size:12px; justify-self:end; text-underline-offset:4px; }.conversation-empty { grid-column:1/-1; }
+.compare-page .agreements-section { margin-top:46px; padding-top:34px; border-top:1px solid #e7e1ea; }
+.compare-page footer { max-width:1224px; margin:auto; color:#6c6179; font-size:11px; text-align:left; }
+@media(max-width:1000px) { .compare-header { padding-inline:28px; }.compare-main { padding-inline:28px; }.compare-page .comparison-radar-layout { grid-template-columns:minmax(0,1.25fr) minmax(220px,1fr); } }
+@media(max-width:760px) { .compare-header { height:72px; padding-inline:20px; }.compare-header .brand { font-size:14px; }.compare-header nav { gap:16px; }.compare-main { padding:0 20px 48px; }.import-heading { display:block; }.import-heading > p { margin-top:16px; }.compare-page .import-grid { grid-template-columns:1fr; }.compare-page .dropzone { padding:24px; }.local-profile { padding:22px 24px; }.compare-page .empty-card { padding:24px; }.party-steps { flex-direction:column; gap:10px; }.compare-page .comparison-radar-layout { grid-template-columns:1fr; }.compare-page .comparison-radar-card { padding:16px 10px; }.compare-page .party-common { padding:22px; }.compare-page .radar-axis-label { font-size:11px; padding:4px; }#party-conversation-list { grid-template-columns:1fr; }.compare-page footer { margin:0 20px; }.compare-page .participant-control { max-width:100%; } }
+@media(prefers-reduced-motion:reduce) { .compare-page *, .compare-page *::before, .compare-page *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } .compare-page .scroll-reveal-pending { opacity:1; transform:none; } }
