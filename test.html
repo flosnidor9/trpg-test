@@ -1,1 +1,20 @@
-<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>테스트 — TRPG 성향 테스트</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"></head><body><header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a><span class="header-note">PLAYSTYLE TEST</span></header><main class="test-main"><div class="test-top"><a href="index.html">← 나가기</a><span id="progress-label">1 / 8</span></div><div class="progress"><i id="progress-bar"></i></div><section id="question-card" class="question-card" aria-live="polite"></section><div class="test-actions"><button class="button secondary" id="prev">이전</button><button class="button primary" id="next" disabled>다음 →</button></div></main><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>테스트 — TRPG 성향 테스트</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a><span class="header-note">YOUR PLAYSTYLE</span></header>
+<main class="test-main">
+  <div class="test-top"><a href="index.html">← 나가기</a><span id="progress-label"></span></div>
+  <div class="progress" id="test-progress" role="progressbar" aria-label="답변 진행도" aria-valuemin="0" aria-valuemax="42" aria-valuenow="0"><i id="progress-bar"></i></div>
+  <p id="resume-message" class="small-copy"></p>
+  <section id="question-card" class="question-card" aria-labelledby="question-title"></section>
+  <div class="test-actions"><button type="button" class="button secondary" id="prev">← 이전</button><button type="button" class="button primary" id="next" disabled>다음 →</button></div>
+  <p id="answered-status" class="small-copy" aria-live="polite"></p>
+</main>
+<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="app.js"></script><script src="test-flow.js"></script>
+</body>
+</html>
