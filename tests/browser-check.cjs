@@ -48,36 +48,55 @@ async function accessibility(page, name) {
     await page.goto(base + '/result.html');
     await page.getByText('아직 결과가 없어요.', { exact: true }).waitFor();
     await page.goto(base + '/test.html');
-    assert.equal(await page.locator('#next').isDisabled(), true);
-    await page.locator('.choice input').first().focus();
+    assert.equal(await page.locator('#prev, #next').count(), 0);
+    assert.equal(await page.locator('.question-card').count(), 1);
+    await page.locator('#question-basis .choice input').first().focus();
     await page.keyboard.press('ArrowDown');
-    assert.equal(await page.locator('.choice input').nth(1).isChecked(), true);
-    await page.locator('.choice').first().click();
+    assert.equal(await page.locator('#question-basis .choice input').nth(1).isChecked(), true);
+    assert.equal(await page.locator('.question-card').count(), 2);
+    await page.waitForFunction(() => window.scrollY > 0);
+    await page.locator('#question-basis .choice').first().click();
+    assert.equal(await page.locator('.question-card').count(), 2, '이전 답변 수정은 다음 문항을 추가하지 않음');
     await accessibility(page, '테스트');
-    assert.equal(await page.locator('#question-title').textContent(), '어떤 기준으로 답하시겠어요?');
     await page.reload();
-    assert.equal(await page.locator('.choice input').first().isChecked(), true);
-    await page.locator('#next').click();
-    await page.locator('.choice').first().click();
-    await page.locator('#prev').click();
-    assert.equal(await page.locator('.choice input').first().isChecked(), true);
-    await page.locator('#next').click();
-    for (let i = 1; i < 42; i++) {
-      const rows = page.locator('[data-row]');
+    assert.equal(await page.locator('#question-basis .choice input').first().isChecked(), true);
+    assert.equal(await page.locator('.question-card').count(), 2);
+    // 필수 자유 입력은 작성 도중 이동하지 않고, 작성 완료 후 다음 문항을 표시합니다.
+    await page.locator('#question-medium input[value="other"]').check();
+    await page.locator('#field-medium-note').fill('별도 매체에서 참여하고 싶어요');
+    assert.equal(await page.locator('.question-card').count(), 2);
+    await page.keyboard.press('Tab');
+    assert.equal(await page.locator('.question-card').count(), 3);
+    await page.locator('#question-medium input[value="voice"]').check();
+    assert.equal(await page.locator('.question-card').count(), 3);
+    const questionIds = await page.evaluate(() => TRPGData.questions.map(q => q.id));
+    for (let i = 2; i < questionIds.length; i++) {
+      const card = page.locator('#question-' + questionIds[i]);
+      const rows = card.locator('[data-row]');
       if (await rows.count()) {
         for (let j = 0; j < await rows.count(); j++) await rows.nth(j).selectOption({ index: 1 });
-        if (await page.locator('#row-pvp').count()) await page.locator('#row-pvp').selectOption('private');
-      } else await page.locator('.choice').first().click();
-      const fields = page.locator('[data-field][required]');
+        if (await card.locator('[data-row="pvp"]').count()) await card.locator('[data-row="pvp"]').selectOption('private');
+      } else await card.locator('.choice').first().click();
+      const fields = card.locator('[data-field][required]');
       for (let j = 0; j < await fields.count(); j++) {
         const field = fields.nth(j);
         const tag = await field.evaluate(el => el.tagName);
         if (tag === 'SELECT') await field.selectOption({ index: 1 });
-        else await field.fill('3');
+        else { await field.fill('3'); await field.blur(); }
       }
-      assert.equal(await page.locator('#next').isEnabled(), true, '문항 ' + (i + 1));
-      await page.locator('#next').click();
+      assert.equal(await page.locator('.question-card').count(), Math.min(i + 2, questionIds.length), '문항 ' + (i + 1));
     }
+    assert.equal(await page.locator('#finish-test').isEnabled(), true);
+    await page.locator('#finish-test').scrollIntoViewIfNeeded();
+    const desktopReset = await page.locator('#reset-test').boundingBox();
+    assert.ok(desktopReset.y >= 0 && desktopReset.y + desktopReset.height < 100, '데스크톱 스크롤 중 우측 상단 초기화 유지');
+    // 앞선 필수 답변을 지우면 결과를 확정할 수 없고, 뒤 문항은 유지합니다.
+    await page.locator('#field-O01-need').selectOption('');
+    assert.equal(await page.locator('#finish-test').isDisabled(), true);
+    assert.equal(await page.locator('.question-card').count(), 42);
+    await page.locator('#field-O01-need').selectOption('need');
+    assert.equal(await page.locator('#finish-test').isEnabled(), true);
+    await page.locator('#finish-test').click();
     await page.waitForURL('**/result.html');
     assert.equal(await page.locator('#answer-notes .narrative-card').count(), 6);
     assert.equal(await page.locator('#operation-notes .narrative-card').count(), 22);
@@ -134,12 +153,33 @@ async function accessibility(page, name) {
     await accessibility(page, '모바일 결과');
     await page.screenshot({ path: path.join(artifacts, 'result-mobile.png') });
     await page.goto(base + '/test.html?edit=1');
-    await page.locator('#next').click();
-    await page.locator('.choice').nth(2).click(); await page.locator('#next').click();
-    await page.locator('.choice').nth(1).click(); await page.locator('#next').click();
+    assert.equal(await page.locator('.question-card').count(), 42);
+    await page.locator('#question-medium .choice').nth(2).click();
+    await page.locator('#question-role .choice').nth(1).click();
+    assert.equal(await page.locator('#field-A01-offered').count(), 1, '역할 수정 시 GM 추가 입력도 갱신');
+    await page.locator('#question-basis').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#question-basis .choice input').first().isChecked(), true);
     await noPageOverflow(page);
     assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.question-card')).animationName), 'none');
     await page.screenshot({ path: path.join(artifacts, 'test-mobile.png') });
+    await page.locator('#finish-test').scrollIntoViewIfNeeded();
+    const mobileReset = await page.locator('#reset-test').boundingBox();
+    assert.ok(mobileReset.y >= 0 && mobileReset.y + mobileReset.height < 100, '모바일 스크롤 중 초기화 유지');
+    const savedResult = await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile'));
+    await page.locator('#reset-test').focus();
+    await page.keyboard.press('Space');
+    assert.equal(await page.locator('.question-card').count(), 1);
+    assert.equal(await page.locator('input:checked').count(), 0);
+    assert.equal(await page.locator('#test-progress').getAttribute('aria-valuenow'), '0');
+    assert.equal(await page.locator('#finish-test').isVisible(), false);
+    assert.equal(await page.evaluate(() => localStorage.getItem('trpg-rp-draft-v3')), null);
+    assert.equal(await page.evaluate(() => new URL(location.href).searchParams.has('edit')), false);
+    assert.equal(await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile')), savedResult);
+    await page.reload();
+    assert.equal(await page.locator('.question-card').count(), 1, '초기화 후 새로고침에도 이전 답변을 복원하지 않음');
+    await page.locator('#question-basis .choice').first().click();
+    assert.equal(await page.locator('.question-card').count(), 2, '초기화 후 다시 응답 가능');
+    await noPageOverflow(page);
     await page.evaluate(() => localStorage.setItem('trpg-playstyle-profile', JSON.stringify({ schemaVersion: '2.0', radar: { pace: 50 } })));
     await page.goto(base + '/result.html'); await page.getByText('이전 설계의 결과입니다.', { exact: true }).waitFor();
     assert.equal(await page.locator('#legacy-download').isVisible(), true);

@@ -8,11 +8,13 @@
 <body>
 <header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a><span class="header-note">YOUR PLAYSTYLE</span></header>
 <main class="test-main">
-  <div class="test-top"><a href="index.html">← 나가기</a><span id="progress-label"></span></div>
-  <div class="progress" id="test-progress" role="progressbar" aria-label="답변 진행도" aria-valuemin="0" aria-valuemax="42" aria-valuenow="0"><i id="progress-bar"></i></div>
+  <div class="test-toolbar">
+    <div class="test-top"><a href="index.html">← 나가기</a><span id="progress-label"></span><button type="button" class="button secondary test-reset" id="reset-test" aria-label="저장된 테스트 답변 초기화">초기화</button></div>
+    <div class="progress" id="test-progress" role="progressbar" aria-label="답변 진행도" aria-valuemin="0" aria-valuemax="42" aria-valuenow="0"><i id="progress-bar"></i></div>
+  </div>
   <p id="resume-message" class="small-copy"></p>
-  <section id="question-card" class="question-card" aria-labelledby="question-title"></section>
-  <div class="test-actions"><button type="button" class="button secondary" id="prev">← 이전</button><button type="button" class="button primary" id="next" disabled>다음 →</button></div>
+  <div id="question-list"></div>
+  <div class="test-completion"><button type="button" class="button primary" id="finish-test" hidden disabled>결과 보기 →</button></div>
   <p id="answered-status" class="small-copy" aria-live="polite"></p>
 </main>
 <script src="questionnaire.js"></script><script src="narratives.js"></script><script src="app.js"></script><script src="test-flow.js"></script>

@@ -1,4 +1,4 @@
-/* 한 화면에 한 문항. 선택한 뒤 다음 버튼으로 진행합니다. */
+/* 답변한 문항은 남겨두고, 다음 문항을 아래에 이어서 표시합니다. */
 (() => {
   'use strict';
   const A = globalThis.TRPGApp;
@@ -34,16 +34,31 @@
       return f.type !== 'number' || (Number.isInteger(Number(value)) && Number(value) >= f.min && Number(value) <= f.max);
     });
   }
+  const cardFor = q => document.getElementById('question-' + q.id);
   const status = () => {
-    const q = D.questions[current];
-    $('#next').disabled = !complete(q);
     const done = D.questions.filter(complete).length;
-    $('#progress-label').textContent = (current + 1) + ' / ' + D.questions.length + ' · ' + q.group;
+    $('#progress-label').textContent = done + ' / ' + D.questions.length + ' 완료';
     $('#progress-bar').style.width = done / D.questions.length * 100 + '%';
     $('#test-progress').setAttribute('aria-valuenow', String(done));
     $('#test-progress').setAttribute('aria-valuetext', done + '개 문항에 답했어요');
     $('#answered-status').textContent = done + '개 문항에 답했어요 · 자동으로 이 기기에 저장돼요';
+    $('#finish-test').hidden = current < D.questions.length - 1;
+    $('#finish-test').disabled = done !== D.questions.length;
   };
+  function advance(q) {
+    // 이전 답변을 수정할 때는 현재 위치와 뒤에 이어진 문항을 유지합니다.
+    if (D.questions[current].id !== q.id || !complete(q)) return;
+    let target;
+    if (current < D.questions.length - 1) {
+      current++;
+      renderQuestion(current);
+      target = cardFor(D.questions[current]);
+    } else target = $('#finish-test');
+    save(); status();
+    target.querySelector('h2')?.focus({ preventScroll: true });
+    if (target === $('#finish-test')) target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  }
   function fieldHTML(q) {
     const answer = responses[q.id] || {};
     const generic = ['unknown', 'other', 'conditional'].includes(answer.value);
@@ -61,13 +76,18 @@
     }).join('');
   }
   function renderFields(q) {
-    $('#question-fields').innerHTML = fieldHTML(q);
-    $('#question-fields').querySelectorAll('[data-field]').forEach(input => input.addEventListener('input', () => {
-      const a = responses[q.id] ||= {};
-      if (input.dataset.field === 'note') a.note = input.value;
-      else { a.fields ||= {}; a.fields[input.dataset.field] = input.value; }
-      save(); status();
-    }));
+    const container = cardFor(q).querySelector('.question-fields');
+    container.innerHTML = fieldHTML(q);
+    container.querySelectorAll('[data-field]').forEach(input => {
+      input.addEventListener('input', () => {
+        const a = responses[q.id] ||= {};
+        if (input.dataset.field === 'note') a.note = input.value;
+        else { a.fields ||= {}; a.fields[input.dataset.field] = input.value; }
+        save(); status();
+      });
+      // 자유 입력은 입력을 마친 뒤 이동해 작성 중 포커스를 빼앗지 않습니다.
+      input.addEventListener('change', () => advance(q));
+    });
   }
   function choose(q, value) {
     const previous = responses[q.id] || {};
@@ -79,47 +99,69 @@
       }));
     }
     save(); renderFields(q); status();
-    $('#question-card').querySelectorAll('.choice').forEach(label => label.classList.toggle('selected', label.querySelector('input')?.checked));
+    cardFor(q).querySelectorAll('.choice').forEach(label => label.classList.toggle('selected', label.querySelector('input')?.checked));
+    if (q.id === 'role') D.questions.slice(0, current + 1).filter(item => item.preparation).forEach(renderFields);
     if (['conditional', 'other'].includes(value)) $('#field-' + q.id + '-note')?.focus();
+    else if (!complete(q)) cardFor(q).querySelector('[data-field][required]')?.focus();
+    advance(q);
   }
-  function render(focus = false) {
-    const q = D.questions[current];
+  function renderQuestion(index) {
+    const q = D.questions[index];
+    let card = cardFor(q);
+    if (!card) {
+      card = document.createElement('section');
+      card.id = 'question-' + q.id;
+      card.className = 'question-card';
+      card.setAttribute('aria-labelledby', 'question-title-' + q.id);
+      $('#question-list').append(card);
+    }
     const a = responses[q.id];
     const inputName = 'answer-' + q.id;
     let controls;
     if (q.type === 'matrix') {
-      controls = '<div class="matrix-questions">' + q.rows.map(([key, label]) => '<div class="matrix-question"><label for="row-' + key + '">' + e(label) + '</label><select id="row-' + key + '" data-row="' + key + '"><option value="">선택해주세요</option>' + q.options.map(([v, t]) => '<option value="' + e(v) + '"' + (a?.value?.[key] === v ? ' selected' : '') + '>' + e(t) + '</option>').join('') + '</select></div>').join('') + '</div><button class="text-button" id="unknown-all" type="button">이 묶음은 아직 판단하기 어려워요</button>';
+      controls = '<div class="matrix-questions">' + q.rows.map(([key, label]) => '<div class="matrix-question"><label for="row-' + q.id + '-' + key + '">' + e(label) + '</label><select id="row-' + q.id + '-' + key + '" data-row="' + key + '"><option value="">선택해주세요</option>' + q.options.map(([v, t]) => '<option value="' + e(v) + '"' + (a?.value?.[key] === v ? ' selected' : '') + '>' + e(t) + '</option>').join('') + '</select></div>').join('') + '</div><button class="text-button unknown-all" type="button">이 묶음은 아직 판단하기 어려워요</button>';
     } else {
       const extra = q.type === 'trait' ? [['conditional', '상황에 따라 선호가 달라요'], ['unknown', '아직 판단하기 어려워요'], ['other', '두 설명 모두 맞지 않아요']] : [['unknown', '아직 모르겠어요'], ['other', '다른 방식이 필요해요']];
       controls = '<fieldset class="choices"><legend class="sr-only">' + e(q.text) + '</legend>' + [...q.options, ...extra].map(([v, t]) => '<label class="choice' + (a?.value === v ? ' selected' : '') + '"><input type="radio" name="' + inputName + '" value="' + e(v) + '"' + (a?.value === v ? ' checked' : '') + '><span>' + e(t) + '</span></label>').join('') + '</fieldset>';
     }
-    $('#question-card').innerHTML = '<p class="question-group">' + e(q.group) + ' · ' + e(q.name) + '</p><span class="question-num">' + String(current + 1).padStart(2, '0') + '</span><h2 id="question-title" tabindex="-1">' + e(q.text) + '</h2><p class="question-hint">' + e(q.hint || (q.type === 'trait' ? '잘하는 방식이나 캐릭터 성격이 아니라, 내가 편하게 즐길 방식을 골라주세요.' : q.explanation)) + '</p>' + controls + '<div id="question-fields"></div>';
+    card.innerHTML = '<p class="question-group">' + e(q.group) + ' · ' + e(q.name) + '</p><span class="question-num">' + String(index + 1).padStart(2, '0') + '</span><h2 id="question-title-' + q.id + '" tabindex="-1">' + e(q.text) + '</h2><p class="question-hint">' + e(q.hint || (q.type === 'trait' ? '잘하는 방식이나 캐릭터 성격이 아니라, 내가 편하게 즐길 방식을 골라주세요.' : q.explanation)) + '</p>' + controls + '<div class="question-fields"></div>';
     if (q.type === 'matrix' && a?.value === 'unknown') {
-      $('#question-fields').insertAdjacentHTML('beforebegin', '<p class="selected-answer">이 묶음은 미확인으로 기록했어요.</p>');
+      card.querySelector('.question-fields').insertAdjacentHTML('beforebegin', '<p class="selected-answer">이 묶음은 미확인으로 기록했어요.</p>');
     }
-    $('#question-card').querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => choose(q, q.type === 'trait' && /^\d+$/.test(input.value) ? Number(input.value) : input.value)));
-    $('#question-card').querySelectorAll('[data-row]').forEach(input => input.addEventListener('change', () => {
+    card.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => choose(q, q.type === 'trait' && /^\d+$/.test(input.value) ? Number(input.value) : input.value)));
+    card.querySelectorAll('[data-row]').forEach(input => input.addEventListener('change', () => {
       const before = responses[q.id] || {};
       const value = A.isObject(before.value) ? { ...before.value } : {};
       if (input.value) value[input.dataset.row] = input.value; else delete value[input.dataset.row];
       responses[q.id] = { ...before, value }; save(); status();
+      card.querySelector('.selected-answer')?.remove();
+      advance(q);
     }));
-    if ($('#unknown-all')) $('#unknown-all').onclick = () => {
+    if (card.querySelector('.unknown-all')) card.querySelector('.unknown-all').onclick = () => {
       if (q.options.some(o => o[0] === 'unknown')) {
         choose(q, Object.fromEntries(q.rows.map(r => [r[0], 'unknown'])));
       } else choose(q, 'unknown');
-      render(); $('#question-title').focus();
+      renderQuestion(index);
     };
     renderFields(q);
-    $('#prev').disabled = current === 0;
-    $('#next').textContent = current === D.questions.length - 1 ? '결과 보기 →' : '다음 →';
-    status();
-    if (focus) { $('#question-title').focus(); window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); }
   }
-  $('#prev').onclick = () => { if (current > 0) { current--; save(); render(true); } };
-  $('#next').onclick = () => {
-    if (!complete(D.questions[current])) return;
-    if (current < D.questions.length - 1) { current++; save(); render(true); return; }
+  $('#reset-test').onclick = () => {
+    responses = {};
+    current = 0;
+    localStorage.removeItem(draftKey);
+    // 결과 수정 경로에서도 새로고침으로 이전 답변이 다시 들어오지 않게 합니다.
+    const url = new URL(location.href);
+    url.searchParams.delete('edit');
+    history.replaceState(null, '', url);
+    $('#question-list').replaceChildren();
+    renderQuestion(0);
+    status();
+    $('#resume-message').textContent = '답변을 초기화했어요. 첫 문항부터 다시 시작하세요.';
+    $('#question-title-' + D.questions[0].id).focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+  $('#finish-test').onclick = () => {
+    if (!D.questions.every(complete)) return;
     const previous = localStorage.getItem(A.STORAGE);
     if (previous) localStorage.setItem('trpg-playstyle-profile-previous', previous);
     let name = '나의 모험가';
@@ -128,7 +170,12 @@
     localStorage.removeItem(draftKey);
     location.href = 'result.html';
   };
-  $('#resume-message').textContent = resumed ? '이 기기에 저장한 답변을 이어서 볼 수 있어요.' : '답변은 이 기기에 저장됩니다. 선택한 뒤 다음 버튼으로 진행하세요.';
+  $('#resume-message').textContent = (resumed ? '저장한 답변을 이어서 볼 수 있어요. ' : '') + '답변하면 다음 문항으로 내려갑니다. 이전 답변은 위로 스크롤해 수정할 수 있어요.';
   $('#test-progress').setAttribute('aria-valuemax', String(D.questions.length));
-  render();
+  // 기존 버튼 방식의 중간 저장도 답변을 잃지 않고 이어서 보여줍니다.
+  const lastAnswered = D.questions.reduce((last, q, index) => responses[q.id] ? index : last, -1);
+  const nextIndex = lastAnswered < 0 ? 0 : lastAnswered + (complete(D.questions[lastAnswered]) ? 1 : 0);
+  current = Math.max(current, Math.min(nextIndex, D.questions.length - 1));
+  for (let index = 0; index <= current; index++) renderQuestion(index);
+  status();
 })();

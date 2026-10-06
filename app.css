@@ -15,7 +15,10 @@ button:disabled { cursor: default; }
 .small-copy { line-height: 1.7; }
 .section-copy { font-size: 15px; max-width: 760px; }
 .test-main { max-width: 820px; padding-top: 30px; }
-.test-top { gap: 14px; font-size: 12px; }
+.test-toolbar { position: sticky; top: 0; z-index: 10; padding: 14px 0; background: var(--paper); }
+.test-top { gap: 14px; font-size: 12px; align-items: center; }
+.test-top #progress-label { margin-left: auto; }
+.test-reset { padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
 .question-card { padding: 32px; animation-duration: 220ms; }
 .question-card h2 { margin-bottom: 16px; font-size: 25px; }
 .question-group { font-size: 12px; color: var(--muted); }
@@ -25,8 +28,9 @@ button:disabled { cursor: default; }
 .choice input { margin-top: 5px; flex-shrink: 0; width: 16px; height: 16px; }
 .choice.selected:after { content: none; }
 .choice:focus-within { outline: 2px solid var(--violet); outline-offset: 2px; }
-.test-actions { position: sticky; bottom: 0; padding: 14px 0; background: var(--paper); gap: 16px; }
-.test-actions button:disabled { opacity: .6; }
+.test-completion { padding: 14px 0; }
+.test-completion button:disabled { opacity: .6; }
+.question-card, #finish-test { scroll-margin-top: 100px; }
 .question-field { display: flex; flex-direction: column; gap: 7px; margin-top: 20px; font-size: 13px; }
 .question-field label { color: var(--ink); }
 input:not([type=radio]):not([type=checkbox]):not([type=file]), select, textarea { min-width: 0; border: 1px solid #cfc6dd; padding: 11px 12px; border-radius: 6px; background: #fff; color: var(--ink); max-width: 100%; }
