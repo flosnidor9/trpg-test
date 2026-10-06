@@ -172,6 +172,10 @@ td { line-height: 1.8; }
 .role-member { display: inline-block; margin: 0 14px 3px 0; }
 .empty-answer { color: var(--muted); }
 .group-note { margin: 6px 0 0; color: #61526e; font-size: 11px; line-height: 1.6; }
+.all-dislikes { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.all-dislikes li { display: grid; gap: 3px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.all-dislikes li:last-child { border-bottom: 0; }
+.all-dislikes span { white-space: pre-wrap; overflow-wrap: anywhere; }
 .combined-row th, .combined-row td { background: #faf8ff; }
 .preparation-table tbody th { width: 32%; font-size: 14px; }
 .preparation-table tbody td { position: relative; padding-top: 10px; padding-bottom: 10px; }

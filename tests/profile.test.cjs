@@ -345,6 +345,33 @@ test('선호 플랫폼은 유효한 응답의 최다 득표를 따르고 동률�
   assert.equal(C.governingAnswer(q, undefined, [otherA, otherB]).label, '최다 득표 동률 · 조율 필요');
 });
 
+test('연락 채널도 유효한 응답의 최다 득표를 따르고 동률은 조율', () => {
+  const q = D.operation.find(item => item.id === 'P02');
+  const discord = fixture(), kakao = fixture(), secondKakao = fixture(), unknown = fixture();
+  kakao.responses.P02.value = 'openKakao';
+  secondKakao.responses.P02.value = 'openKakao';
+  delete unknown.responses.P02;
+  const result = C.governingAnswer(q, undefined, [discord, kakao, secondKakao, unknown]);
+  assert.equal(result.label, '오픈카톡');
+  assert.equal(result.voteCount, '2/3명 선택');
+  assert.equal(result.unknownCount, 1);
+  assert.equal(C.governingAnswer(q, undefined, [discord, kakao]).label, '최다 득표 동률 · 조율 필요');
+  const otherA = fixture(), otherB = fixture();
+  otherA.responses.P02 = { value: 'other', fields: { channel: 'A' } };
+  otherB.responses.P02 = { value: 'other', fields: { channel: 'B' } };
+  assert.equal(C.governingAnswer(q, undefined, [otherA, otherB]).label, '최다 득표 동률 · 조율 필요');
+});
+
+test('불호 요소는 모든 참가자의 공유된 원문을 유지한다', () => {
+  const first = fixture(), second = fixture(), empty = fixture();
+  first.displayName = '가'; second.displayName = '나'; empty.displayName = '다';
+  first.responses.P04.value = '긴 대기 시간\n큰 음량의 BGM';
+  second.responses.P04.value = '잦은 일정 변경';
+  assert.deepEqual(Array.from(C.dislikeEntries([first, second, empty]), item => [item.name, item.text]), [
+    ['가', '긴 대기 시간\n큰 음량의 BGM'], ['나', '잦은 일정 변경'], ['다', '']
+  ]);
+});
+
 test('순서를 정할 수 있는 운영 응답은 더 조심스러운 조건을 고름', () => {
   const open = fixture(), careful = fixture();
   const q = id => D.questions.find(item => item.id === id);

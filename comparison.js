@@ -188,6 +188,7 @@
     if (fields.length) text += ' · ' + fields.join(' · ');
     return text;
   }
+  const dislikeEntries = profiles => profiles.map(profile => ({ name: profile.displayName, text: A.valueOf(profile, 'P04')?.trim() || '' }));
   function constraintRank(q, p, row) {
     const value = row ? A.valueOf(p, q.id)?.[row] : A.valueOf(p, q.id);
     if (q.boundary || q.id === 'O07') return { ok: 1, ask: 2, no: 3 }[value] ?? null;
@@ -214,7 +215,7 @@
   }
   function governingAnswer(q, row, profiles) {
     const entries = profiles.map(profile => ({ label: cellLabel(q, profile, row), rank: constraintRank(q, profile, row), value: row ? A.valueOf(profile, q.id)?.[row] : A.valueOf(profile, q.id) }));
-    if (q.id === 'P01') {
+    if (q.id === 'P01' || q.id === 'P02') {
       const validValues = new Set(q.options.map(([value]) => value));
       const votes = entries.filter(entry => validValues.has(entry.value));
       const counts = new Map();
@@ -254,7 +255,7 @@
     const selected = known.length ? String(Math.min(...known)) : null;
     return { label: q.options.find(([value]) => value === selected)?.[1] || (q.id === 'A04' ? '미확인' : 'GM 응답 없음'), source: q.id === 'A04' ? '참가자 선호 중 가장 낮은 수준' : 'GM 제공 가능 중 가장 낮은 수준' };
   }
-  globalThis.TRPGCompare = { groupAnalysis, cellLabel, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, radarOverlap };
+  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, radarOverlap };
   if (typeof document === 'undefined' || !document.querySelector('#comparison-output')) return;
   const { $ } = A;
   let people = [], nextId = 1, selected = new Set(), selectionTouched = false;
@@ -304,6 +305,7 @@
     const breakSummary = analysis.suggestions.find(item => item.title === '휴식 주기');
     return '<div class="table-scroll compact-table"><table><caption>' + e(caption) + '</caption><thead><tr><th scope="col">항목</th><th scope="col">함께 적용할 응답</th></tr></thead><tbody>' + rows.map(({ q, row, role, title }) => {
       if (role) return roleRow(role, title);
+      if (q.id === 'P04') return '<tr><th scope="row">' + e(title) + '</th><td><ul class="all-dislikes">' + dislikeEntries(people.map(person => person.profile)).map((item, index) => '<li><strong>' + marker(people[index]) + e(item.name) + '</strong><span>' + e(item.text || '기재 없음 또는 공유하지 않음') + '</span></li>').join('') + '</ul></td></tr>';
       const governing = governingAnswer(q, row, people.map(p => p.profile));
       const answers = people.map(p => '<span class="answer-person"><strong>' + marker(p) + e(p.profile.displayName) + '</strong><span>' + e(cellLabel(q, p.profile, row)) + (p.profile.responses[q.id]?.note ? ' · ' + e(p.profile.responses[q.id].note) : '') + '</span></span>').join('');
       const notice = (governing.voteCount ? '<span class="vote-count">' + e(governing.voteCount) + '</span>' : '') + (governing.unknownCount ? '<span class="unconfirmed-count">미확인 ' + governing.unknownCount + '명</span>' : '') + (governing.incomparableCount ? '<span class="unconfirmed-count">별도 조율 ' + governing.incomparableCount + '명</span>' : '');
