@@ -1,0 +1,108 @@
+.playstyle-test {
+  --ink: #382451;
+  --muted: #686073;
+  --paper: #faf8f5;
+  --line: #e7dfed;
+  background: var(--paper);
+  font-family: Paperlogy, 'Malgun Gothic', sans-serif;
+}
+.test-header { max-width: 1320px; height: 88px; padding: 0 48px; }
+.test-header .brand { display: flex; align-items: center; gap: 8px; font-size: 17px; letter-spacing: -.04em; }
+.test-brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #ede7fa; }
+.test-brand-mark svg { width: 23px; height: 23px; }
+.test-header .header-note { font-size: 9px; color: #746984; }
+.playstyle-test .test-main { max-width: 1320px; padding: 0 48px 80px; }
+.playstyle-test .test-toolbar { padding: 15px 0 0; background: var(--paper); }
+.playstyle-test .test-top { margin-bottom: 15px; min-height: 32px; }
+.test-top a { font-size: 12px; padding: 6px 0; }
+.playstyle-test .test-reset { background: transparent; border-color: #ded5e5; border-radius: 7px; padding: 7px 12px; }
+.playstyle-test .button:hover { transform: none; box-shadow: none; }
+.playstyle-test .test-reset:hover { background: #fff; }
+.playstyle-test .progress { height: 3px; background: #e8e1ee; }
+.test-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr); gap: clamp(40px, 6vw, 88px); align-items: start; padding-top: 40px; }
+.test-intro { position: sticky; top: 112px; padding-top: 12px; }
+.test-intro .eyebrow { margin: 0 0 24px; font-size: 10px; letter-spacing: .16em; color: #6245bd; }
+.test-intro h1 { font-size: clamp(36px, 3.6vw, 52px); line-height: 1.25; letter-spacing: -.065em; font-weight: 800; }
+.test-description { margin: 24px 0 32px; font-size: 14px; line-height: 1.9; word-break: keep-all; }
+.test-journey { max-width: 350px; border-top: 1px solid #ded5e5; padding-top: 20px; }
+.journey-caption { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); }
+#question-position { font-variant-numeric: tabular-nums; }
+#test-chapters { padding: 0; margin: 18px 0 0; list-style: none; display: grid; gap: 6px; }
+#test-chapters li { display: grid; grid-template-columns: 29px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; font-size: 12px; color: var(--muted); border-radius: 7px; }
+.chapter-number { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid #ded5e5; border-radius: 50%; font-size: 10px; }
+.chapter-state { font-size: 10px; }
+#test-chapters .is-current { background: #eee8f8; color: #5134ae; font-weight: 600; }
+.is-current .chapter-number { color: #fff; background: var(--violet); border-color: var(--violet); }
+.is-complete .chapter-number { background: #fff; }
+.test-reassurance { max-width: 320px; margin: 22px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; word-break: keep-all; }
+.test-questions { min-width: 0; }
+.test-section-heading { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 9px; letter-spacing: .08em; padding-top: 12px; }
+.test-section-heading span:last-child { letter-spacing: 0; font-size: 11px; }
+.playstyle-test #resume-message { margin: 14px 0 20px; font-size: 12px; }
+.playstyle-test .question-card { position: relative; padding: 36px; margin: 0 0 22px; border: 0; border-radius: 14px; box-shadow: 0 8px 32px #38245106; scroll-margin-top: 98px; animation: arrive 220ms both; }
+.playstyle-test .question-group { margin: 0 52px 22px 0; font-size: 11px; letter-spacing: .02em; color: #6245bd; }
+.playstyle-test .question-num { position: absolute; top: 29px; right: 32px; display: grid; place-items: center; width: 36px; height: 36px; background: #f2edf9; border-radius: 50%; font-size: 12px; font-variant-numeric: tabular-nums; }
+.playstyle-test .question-card h2 { font-size: clamp(23px, 2.3vw, 29px); line-height: 1.45; letter-spacing: -.045em; margin: 0 0 20px; word-break: keep-all; overflow-wrap: anywhere; }
+.playstyle-test .question-hint { font-size: 12px; margin-bottom: 25px; }
+.playstyle-test .choices { gap: 10px; }
+.playstyle-test .choice { align-items: center; min-height: 64px; padding: 17px 20px; border-color: #e7dfed; border-radius: 8px; gap: 14px; color: #443552; font-family: inherit; transition: background 180ms, border-color 180ms; }
+.playstyle-test .choice input { margin: 0; width: 18px; height: 18px; }
+.playstyle-test .choice > span { flex: 1; min-width: 0; }
+.playstyle-test .choice:hover { background: #faf8fe; border-color: #b9a8e5; }
+.playstyle-test .choice.selected { background: #f2edfc; border-color: var(--violet); }
+.playstyle-test .choice.selected > span { color: #5134ae; font-weight: 600; }
+.playstyle-test .choice-example { font-weight: 400; }
+.playstyle-test .question-fields:not(:empty) { margin-top: 26px; padding-top: 4px; border-top: 1px solid #eee8f2; }
+.playstyle-test .question-field { font-size: 12px; }
+.playstyle-test .matrix-questions { gap: 0; }
+.playstyle-test .matrix-question { grid-template-columns: minmax(0, 1fr) minmax(150px, .85fr); align-items: center; gap: 18px; padding: 13px 0; border-bottom: 1px solid #eee8f2; }
+.playstyle-test .matrix-question label { font-size: 13px; font-weight: 500; }
+.playstyle-test .matrix-question:first-child { padding-top: 0; }
+.playstyle-test .test-completion { padding: 0; }
+.playstyle-test #finish-test { width: 100%; min-height: 62px; border-radius: 9px; margin: 0 0 20px; }
+.playstyle-test #finish-test:hover { background: #5638c9; }
+.playstyle-test #answered-status { text-align: center; font-size: 11px; margin: 22px 0 0; }
+@media (max-width: 1100px) {
+  .test-header { padding-inline: 28px; }
+  .playstyle-test .test-main { padding-inline: 28px; }
+  .test-layout { gap: 36px; grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr); }
+  .test-intro h1 { font-size: 38px; }
+  .playstyle-test .question-card { padding: 28px; }
+}
+@media (max-width: 800px) {
+  .test-header { height: 72px; padding-inline: 20px; }
+  .test-header .brand { font-size: 14px; gap: 6px; }
+  .test-brand-mark { width: 25px; height: 25px; }
+  .test-header .header-note { font-size: 8px; letter-spacing: .06em; }
+  .playstyle-test .test-main { padding: 0 20px 48px; }
+  .test-layout { grid-template-columns: 1fr; gap: 22px; padding-top: 22px; }
+  .test-intro { position: static; padding-top: 0; }
+  .test-intro .eyebrow { margin-bottom: 16px; font-size: 9px; }
+  .test-intro h1 { font-size: clamp(34px, 7vw, 46px); }
+  .test-description { display: none; }
+  .desktop-break { display: none; }
+  .test-journey { max-width: none; padding: 0; margin-top: 20px; border: 0; }
+  .journey-caption { display: none; }
+  #test-chapters { display: flex; gap: 6px; margin-top: 12px; }
+  #test-chapters li { display: flex; flex: 1; justify-content: center; padding: 9px 6px; gap: 7px; font-size: 11px; }
+  .chapter-number { width: 22px; height: 22px; flex-shrink: 0; }
+  .chapter-state { display: none; }
+  .test-reassurance { max-width: none; margin-top: 14px; }
+  .test-section-heading { padding-top: 0; }
+  .playstyle-test #resume-message { margin-bottom: 16px; font-size: 11px; }
+  .playstyle-test .question-card { padding: 27px 22px; border-radius: 12px; margin-bottom: 16px; }
+  .playstyle-test .question-group { margin-bottom: 22px; font-size: 10px; }
+  .playstyle-test .question-num { top: 21px; right: 22px; width: 32px; height: 32px; font-size: 11px; }
+  .playstyle-test .question-card h2 { font-size: 23px; }
+  .playstyle-test .choice { padding: 15px 16px; font-size: 13px; min-height: 60px; }
+  .playstyle-test .matrix-question { grid-template-columns: 1fr; gap: 8px; padding: 15px 0; }
+}
+@media (max-width: 380px) {
+  .test-header .header-note { display: none; }
+  .playstyle-test .test-main { padding-inline: 16px; }
+  #test-chapters li { font-size: 10px; gap: 5px; padding-inline: 4px; }
+  .playstyle-test .question-card { padding-inline: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .playstyle-test *, .playstyle-test *::before, .playstyle-test *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

@@ -9,6 +9,11 @@
   let current = 0;
   let responses = {};
   let resumed = false;
+  const chapters = [
+    { label: '시작하기', start: 0, end: 2 },
+    { label: '플레이 방식', start: 2, end: D.questions.findIndex(q => q.id === 'C01') },
+    { label: '소통과 경계', start: D.questions.findIndex(q => q.id === 'C01'), end: D.questions.length }
+  ];
   try {
     const draft = JSON.parse(localStorage.getItem(draftKey) || 'null');
     if ([D.version, 'rp-2026-10-v1', 'rp-2026-10-v2', 'rp-2026-10-v3', 'rp-2026-10-v4', 'rp-2026-10-v5', 'rp-2026-10-v6'].includes(draft?.version) && A.isObject(draft.responses)) {
@@ -46,6 +51,13 @@
     $('#answered-status').textContent = done + '개 문항에 답했어요 · 자동으로 이 기기에 저장돼요';
     $('#finish-test').hidden = current < D.questions.length - 1;
     $('#finish-test').disabled = done !== D.questions.length;
+    $('#question-position').textContent = String(current + 1).padStart(2, '0') + ' / ' + D.questions.length;
+    $('#test-chapters').innerHTML = chapters.map((chapter, index) => {
+      const finished = D.questions.slice(chapter.start, chapter.end).every(complete);
+      const active = current >= chapter.start && current < chapter.end;
+      const state = finished ? '답변 완료' : active ? '진행 중' : '이어서';
+      return '<li class="' + (active ? 'is-current' : finished ? 'is-complete' : '') + '"' + (active ? ' aria-current="step"' : '') + ' aria-label="' + e(chapter.label + ' · ' + state) + '"><span class="chapter-number" aria-hidden="true">' + (finished ? '✓' : String(index + 1).padStart(2, '0')) + '</span><span>' + e(chapter.label) + '</span><span class="chapter-state" aria-hidden="true">' + state + '</span></li>';
+    }).join('');
   };
   function advance(q) {
     // 이전 답변을 수정할 때는 현재 위치와 뒤에 이어진 문항을 유지합니다.

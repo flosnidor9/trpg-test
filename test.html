@@ -2,20 +2,36 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>테스트 — TRPG 성향 테스트</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="app.css">
+  <meta name="theme-color" content="#faf8f5">
+  <title>플레이 스타일 찾기 · TRPG 성향 테스트</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="app.css"><link rel="stylesheet" href="test.css">
 </head>
-<body>
-<header><a class="brand" href="index.html">✦ TRPG 성향 테스트</a><span class="header-note">YOUR PLAYSTYLE</span></header>
+<body class="playstyle-test">
+<header class="test-header"><a class="brand" href="index.html"><span class="test-brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m23 5-4 14L9 27l4-14Z" fill="#b5a3e8"/><path d="m23 5-4 14-6-6Z" fill="#6547da"/><circle cx="16" cy="16" r="2" fill="#fff"/></svg></span> TRPG 성향 테스트</a><span class="header-note">DISCOVER YOUR PLAYSTYLE</span></header>
 <main class="test-main">
   <div class="test-toolbar">
     <div class="test-top"><a href="index.html">← 나가기</a><span id="progress-label"></span><button type="button" class="button secondary test-reset" id="reset-test" aria-label="저장된 테스트 답변 초기화">초기화</button></div>
     <div class="progress" id="test-progress" role="progressbar" aria-label="답변 진행도" aria-valuemin="0" aria-valuemax="36" aria-valuenow="0"><i id="progress-bar"></i></div>
   </div>
-  <p id="resume-message" class="small-copy"></p>
-  <div id="question-list"></div>
-  <div class="test-completion"><button type="button" class="button primary" id="finish-test" hidden disabled>결과 보기 →</button></div>
-  <p id="answered-status" class="small-copy" aria-live="polite"></p>
+  <div class="test-layout">
+    <aside class="test-intro" aria-labelledby="test-title">
+      <p class="eyebrow">YOUR NEXT ADVENTURE</p>
+      <h1 id="test-title">나의<br>플레이스타일<br><em>찾기</em></h1>
+      <p class="test-description">어떤 이야기를 좋아하나요?<br>함께 즐기기 위한 당신의 방식을<br class="desktop-break"> 하나씩 들려주세요.</p>
+      <div class="test-journey">
+        <div class="journey-caption"><span>나를 알아가는 여정</span><span id="question-position"></span></div>
+        <ol id="test-chapters" aria-label="테스트 구성"></ol>
+      </div>
+      <p class="test-reassurance">정답은 없어요. 지금의 나와 가까운 답을 골라주세요.</p>
+    </aside>
+    <div class="test-questions">
+      <div class="test-section-heading"><span>PLAYSTYLE / 01</span><span>한 번에 하나씩, 나의 속도로</span></div>
+      <p id="resume-message" class="small-copy" role="status"></p>
+      <div id="question-list"></div>
+      <div class="test-completion"><button type="button" class="button primary" id="finish-test" hidden disabled>내 플레이 스타일 보기 ↗</button></div>
+      <p id="answered-status" class="small-copy" aria-live="polite"></p>
+    </div>
+  </div>
 </main>
 <script src="questionnaire.js"></script><script src="narratives.js"></script><script src="app.js"></script><script src="test-flow.js"></script>
 </body>

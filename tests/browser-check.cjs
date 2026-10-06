@@ -51,6 +51,9 @@ async function accessibility(page, name) {
     await page.goto(base + '/test.html');
     assert.equal(await page.locator('#prev, #next').count(), 0);
     assert.equal(await page.locator('.question-card').count(), 1);
+    await noPageOverflow(page);
+    await page.locator('.question-card').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+    await page.screenshot({ path: path.join(artifacts, 'test-desktop.png') });
     await page.locator('#question-role .choice input').first().focus();
     await page.keyboard.press('ArrowDown');
     assert.equal(await page.locator('#question-role .choice input').nth(1).isChecked(), true);
