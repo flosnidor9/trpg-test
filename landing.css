@@ -1,4 +1,14 @@
 .landing { background: #faf8f5; font-family: Paperlogy, 'Malgun Gothic', sans-serif; }
+.landing-intro { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: #faf8f5; }
+.intro-dice { position: absolute; inset: 0; width: 100%; height: 100%; }
+.intro-title { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: clamp(14px, 3vw, 48px); padding-bottom: 12vh; color: #382451; font-size: clamp(38px, 7.5vw, 112px); font-weight: 800; letter-spacing: -.055em; }
+.intro-title span { opacity: 0; will-change: transform, opacity; -webkit-text-stroke: clamp(6px, .7vw, 10px) #faf8f5; paint-order: stroke fill; text-shadow: 0 4px 18px #38245126; }
+.intro-title span:nth-child(2) { color: #6547da; }
+.intro-skip { position: absolute; right: clamp(20px, 4vw, 48px); top: 26px; padding: 12px 16px; border: 1px solid #ddd3e7; border-radius: 999px; background: #fff; color: #514363; font: 600 12px Paperlogy, 'Malgun Gothic', sans-serif; cursor: pointer; pointer-events: auto; }
+.intro-skip span { margin-left: 12px; }
+.intro-skip:focus-visible { outline: 3px solid #6547da; outline-offset: 4px; }
+@media (max-width: 600px) { .intro-title { flex-direction: column; gap: 8px; font-size: clamp(48px, 15vw, 78px); line-height: 1.2; } }
+@media (prefers-reduced-motion: reduce) { .landing-intro { display: none; } }
 .landing-header { max-width: 1320px; height: 88px; padding: 0 48px; }
 .landing .brand { font-size: 17px; letter-spacing: -.04em; }
 .brand-mark { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-right: 6px; border-radius: 9px; background: #ede7fa; color: #6547da; }
@@ -32,6 +42,8 @@
 .art-ring { position: absolute; border: 1px solid #dcd1ef; border-radius: 50%; animation: ring-enter 900ms 140ms cubic-bezier(.2,.7,.2,1) both; }
 .ring-outer { width: 420px; height: 420px; }
 .compass-dial { position: absolute; width: 420px; height: 420px; animation: ring-enter 900ms 200ms cubic-bezier(.2,.7,.2,1) both; }
+.compass-face { position: absolute; width: 420px; height: 420px; display: grid; place-items: center; pointer-events: none; transform-origin: center; }
+.compass-frame { position: absolute; width: 420px; height: 420px; overflow: clip; border-radius: 50%; pointer-events: none; }
 .orbit-trails { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .orbit-trails path { stroke: #b49bdb; stroke-width: 1; }
 .orbit-trails path[data-orbit="1"] { stroke: #a8c4bc; }
@@ -46,13 +58,15 @@
 .ring-inner { width: 370px; height: 370px; animation-delay: 200ms; }
 .emblem-wrap { width: 310px; height: 350px; position: relative; z-index: 2; animation: emblem-enter 800ms 160ms cubic-bezier(.16,.7,.2,1) both; }
 .playstyle-emblem { width: 100%; height: 100%; filter: drop-shadow(0 20px 14px #65518d22); transition: transform 280ms cubic-bezier(.2,.7,.2,1); }
+.compass-needle { pointer-events: visiblePainted; cursor: grab; touch-action: none; user-select: none; }
+.compass-needle.is-dragging { cursor: grabbing; }
 .art-coordinate { position: absolute; font-size: 9px; letter-spacing: .16em; color: #766985; animation: content-enter 280ms 500ms both; }
 .coordinate-top { top: 12px; }
 .coordinate-bottom { bottom: 12px; }
 .coordinate-left { left: 3%; top: calc(50% - 8px); }
 .coordinate-right { right: 3%; top: calc(50% - 8px); }
-.playstyle-art[data-feature="profile"] .playstyle-emblem { transform: rotate(18deg) scale(.94); }
-.playstyle-art[data-feature="party"] .playstyle-emblem { transform: rotate(-18deg) scale(1.04); }
+.playstyle-art[data-feature="profile"] .playstyle-emblem { transform: scale(.94); }
+.playstyle-art[data-feature="party"] .playstyle-emblem { transform: scale(1.04); }
 .journey-guide { max-width: 1320px; padding: 45px 48px 65px; margin: auto; border-top: 1px solid #e7e1ea; }
 .guide-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .guide-heading h2 { font-size: 23px; line-height: 1.5; letter-spacing: -.045em; }
@@ -86,7 +100,15 @@
   .landing-footer { margin-inline: 20px; flex-direction: column; gap: 5px; padding-block: 20px; }
 }
 @media (max-width: 360px) { .landing-header .header-note { display: none; } .ring-outer { width: 270px; height: 270px; } .art-bottomline { letter-spacing: 0; } }
-@media (max-width: 1100px) { .compass-dial { width: 340px; height: 340px; } }
-@media (max-width: 900px) { .compass-dial { width: 290px; height: 290px; } }
-@media (max-width: 360px) { .compass-dial { width: 270px; height: 270px; } }
+@media (max-width: 1100px) { .compass-dial, .compass-face, .compass-frame { width: 340px; height: 340px; } }
+@media (max-width: 900px) { .compass-dial, .compass-face, .compass-frame { width: 290px; height: 290px; } }
+@media (max-width: 360px) { .compass-dial, .compass-face, .compass-frame { width: 270px; height: 270px; } }
+.hero-title-line, .hero-description-line { display: block; }
+.landing[data-entrance] :is(.hero-copy > .eyebrow, h1, .hero-description, .landing-action, .hero-note, .art-topline, .art-bottomline, .art-halo, .art-ring, .compass-dial, .emblem-wrap, .art-coordinate) { animation: none; }
+.landing[data-entrance]:not([data-entrance="ready"]) :is(.hero-copy > .eyebrow, .hero-title-line, .hero-description-line, .landing-action, .hero-note, .landing-header, .art-topline, .art-bottomline, .journey-guide, .landing-footer) { opacity: 0; }
+.landing:is([data-entrance="waiting"], [data-entrance="compass"]) .playstyle-art .art-stage { visibility: hidden; }
+.landing[data-entrance]:not([data-entrance="ready"]) .landing-actions { pointer-events: none; }
+.entrance-compass { position: fixed; z-index: 80; margin: 0; pointer-events: none; transform-origin: center; will-change: transform, opacity; }
+.entrance-compass * { animation: none !important; transition: none !important; }
+.entrance-compass :is(.orbit-body, .compass-needle) { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .landing *, .landing *::before, .landing *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } .playstyle-emblem { transform: none !important; } .orbit-body { will-change: auto; } }

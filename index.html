@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="landing.css">
+  <script src="dice-geometry.js" defer></script>
+  <script src="landing-intro.js" defer></script>
+  <script src="landing-entrance.js" defer></script>
   <script src="landing.js" defer></script>
 </head>
 <body class="landing">
@@ -20,8 +23,8 @@
     <section class="landing-hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow"><span></span> DISCOVER YOUR PLAYSTYLE</p>
-        <h1 id="hero-title">모험의 시작은,<br><em>나를 아는 것.</em></h1>
-        <p class="hero-description">이야기를 만드는 방식도, 함께 즐기는 방식도.<br>당신만의 플레이 스타일을 발견하세요.</p>
+        <h1 id="hero-title"><span class="hero-title-line">모험의 시작은,</span><span class="hero-title-line"><em>나를 아는 것.</em></span></h1>
+        <p class="hero-description"><span class="hero-description-line">이야기를 만드는 방식도, 함께 즐기는 방식도.</span><span class="hero-description-line">당신만의 플레이 스타일을 발견하세요.</span></p>
         <nav class="landing-actions" aria-label="시작 메뉴">
           <a class="landing-action action-primary" href="test.html" data-feature="discover"><span class="action-number" aria-hidden="true">01</span><span>플레이 스타일 찾기</span><span class="action-arrow" aria-hidden="true">↗</span></a>
           <a class="landing-action" href="result.html" data-feature="profile"><span class="action-number" aria-hidden="true">02</span><span>내 결과 보기</span><span class="action-arrow" aria-hidden="true">↗</span></a>
@@ -34,12 +37,16 @@
         <div class="art-stage" aria-hidden="true">
           <div class="art-halo"></div>
           <div class="art-ring ring-outer"></div><div class="art-ring ring-inner"></div>
+          <div class="compass-frame"><div class="compass-face">
           <svg class="compass-dial" viewBox="0 0 400 400" fill="none">
             <circle cx="200" cy="200" r="176" stroke="#b8a7d4" stroke-width="8" stroke-dasharray="1 14.36"/>
             <path d="M200 14v27m186 159h-27M200 386v-27M14 200h27" stroke="#8d74b7" stroke-width="2"/>
             <path d="m70 70 13 13m247-13-13 13m13 247-13-13M70 330l13-13" stroke="#b8a7d4" stroke-width="2"/>
             <path d="M200 70v44m130 86h-44m-86 130v-44M70 200h44" stroke="#d6c9e9" stroke-width="1"/>
           </svg>
+          <span class="art-coordinate coordinate-top">N</span><span class="art-coordinate coordinate-bottom">S</span>
+          <span class="art-coordinate coordinate-left">W</span><span class="art-coordinate coordinate-right">E</span>
+          </div></div>
           <svg class="orbit-trails orbit-trails-back" fill="none"><path data-orbit="0"></path><path data-orbit="1"></path></svg>
           <svg class="orbit-trails orbit-trails-front" fill="none"><path data-orbit="0"></path><path data-orbit="1"></path></svg>
           <span class="orbit-body orbit-die" data-die="6" data-orbit="0" data-phase="0.4"><svg class="die-graphic" viewBox="0 0 64 64"></svg></span>
@@ -51,7 +58,7 @@
                 <linearGradient id="needle-north" x1="160" y1="25" x2="200" y2="180" gradientUnits="userSpaceOnUse"><stop stop-color="#a28ae7"/><stop offset="1" stop-color="#6547c9"/></linearGradient>
                 <linearGradient id="needle-south" x1="120" y1="180" x2="160" y2="335" gradientUnits="userSpaceOnUse"><stop stop-color="#e4dcee"/><stop offset="1" stop-color="#b4a7ce"/></linearGradient>
               </defs>
-              <g transform="rotate(28 160 180)">
+              <g class="compass-needle" transform="rotate(28 160 180)">
                 <path d="m160 24 40 156h-80Z" fill="url(#needle-north)"/>
                 <path d="m160 24 0 156h-40Z" fill="#b9a6ef"/>
                 <path d="m120 180 40 156 40-156Z" fill="url(#needle-south)"/>
@@ -62,8 +69,6 @@
               <circle cx="160" cy="180" r="8" fill="#7655c8"/>
             </svg>
           </div>
-          <span class="art-coordinate coordinate-top">N</span><span class="art-coordinate coordinate-bottom">S</span>
-          <span class="art-coordinate coordinate-left">W</span><span class="art-coordinate coordinate-right">E</span>
         </div>
         <div class="art-bottomline"><span>각자의 스타일이 만나는 곳</span><span class="art-line"></span><span>PLAY YOUR WAY</span></div>
       </div>

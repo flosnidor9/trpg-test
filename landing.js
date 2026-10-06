@@ -5,7 +5,37 @@
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let hovered = null;
   let focused = null;
-  const sync = () => { art.dataset.feature = (hovered || focused)?.dataset.feature || 'discover'; };
+  const needle = art.querySelector('.compass-needle');
+  const face = art.querySelector('.compass-face');
+  const compass = { angle: 28, target: 28, bearing: 0, faceAngle: 0, velocity: 0, drag: null, coasting: false };
+  const renderNeedle = () => needle.setAttribute('transform', `rotate(${compass.angle} 160 180)`);
+  const renderFace = () => { face.style.transform = `rotate(${compass.faceAngle}deg)`; };
+  function seekNorth() {
+    compass.coasting = false;
+    // Choose a nearby north alignment, keeping the momentum through the first overshoot.
+    compass.target = compass.bearing + Math.round((compass.angle + compass.velocity * .12 - compass.bearing) / 360) * 360;
+  }
+  function spinNeedle(velocity) {
+    // The compass plate receives some of the impulse; its N becomes the new heading.
+    compass.bearing += velocity * .12;
+    if (motion.matches) {
+      compass.angle = compass.target = compass.faceAngle = compass.bearing;
+      compass.velocity = 0;
+      compass.coasting = false;
+      renderNeedle();
+      renderFace();
+      return;
+    }
+    compass.velocity = velocity;
+    compass.coasting = true;
+  }
+  let activeAction = null;
+  const sync = () => {
+    const active = hovered || focused;
+    art.dataset.feature = active?.dataset.feature || 'discover';
+    if (active && active !== activeAction && !compass.drag) spinNeedle(active.dataset.feature === 'profile' ? -680 : 680);
+    activeAction = active;
+  };
   actions.querySelectorAll('[data-feature]').forEach(link => {
     link.addEventListener('pointerenter', event => { if (event.pointerType === 'touch') return; hovered = link; sync(); });
     link.addEventListener('pointerleave', () => { hovered = null; sync(); });
@@ -13,86 +43,51 @@
     link.addEventListener('blur', () => { focused = null; sync(); });
   });
   const stage = art.querySelector('.art-stage');
+  function pointerAngle(event) {
+    // Convert into SVG coordinates so scaling and mobile layouts keep the same pivot.
+    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(needle.ownerSVGElement.getScreenCTM().inverse());
+    const x = point.x - 160, y = point.y - 180;
+    return Math.hypot(x, y) < 12 ? null : Math.atan2(y, x) * 180 / Math.PI;
+  }
+  const angleDelta = (from, to) => ((to - from + 540) % 360) - 180;
+  needle.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || motion.matches || compass.drag) return;
+    compass.drag = { id: event.pointerId, angle: pointerAngle(event), time: event.timeStamp };
+    compass.velocity = 0;
+    compass.coasting = false;
+    needle.classList.add('is-dragging');
+    needle.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+  needle.addEventListener('pointermove', event => {
+    const drag = compass.drag;
+    if (!drag || drag.id !== event.pointerId || motion.matches) return;
+    const angle = pointerAngle(event);
+    if (angle !== null && drag.angle !== null) {
+      const delta = angleDelta(drag.angle, angle);
+      compass.angle += delta;
+      compass.bearing += delta * .25;
+      const seconds = Math.max((event.timeStamp - drag.time) / 1000, .008);
+      compass.velocity = Math.max(-1440, Math.min(1440, delta / seconds * 1.5));
+      renderNeedle();
+    }
+    drag.angle = angle;
+    drag.time = event.timeStamp;
+  });
+  function releaseNeedle(event) {
+    const drag = compass.drag;
+    if (!drag || drag.id !== event.pointerId) return;
+    // Holding still before release should stop the flick's momentum.
+    if (event.type === 'pointercancel' || event.timeStamp - drag.time > 100) compass.velocity = 0;
+    compass.drag = null;
+    spinNeedle(compass.velocity);
+    needle.classList.remove('is-dragging');
+    if (needle.hasPointerCapture(event.pointerId)) needle.releasePointerCapture(event.pointerId);
+  }
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => needle.addEventListener(type, releaseNeedle));
   const bodies = [...stage.querySelectorAll('.orbit-body')];
   const svgNS = 'http://www.w3.org/2000/svg';
-  const subtract = (a, b) => a.map((value, i) => value - b[i]);
-  const dot = (a, b) => a.reduce((sum, value, i) => sum + value * b[i], 0);
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const unit = vector => vector.map(value => value / Math.hypot(...vector));
-  // Numeral strokes live in each face's local plane, then share its 3D projection.
-  const numeralStrokes = {
-    0: [[[.3,0],[.12,.04],[.02,.2],[0,.5],[.02,.8],[.12,.96],[.3,1],[.48,.96],[.58,.8],[.6,.5],[.58,.2],[.48,.04],[.3,0]]],
-    1: [[[.08,.2],[.3,0],[.3,1]],[[.08,1],[.52,1]]],
-    2: [[[0,.18],[.08,.04],[.3,0],[.5,.04],[.6,.2],[.58,.36],[.44,.52],[.04,.86],[0,1],[.6,1]]],
-    3: [[[0,.1],[.2,0],[.44,.02],[.6,.16],[.58,.32],[.44,.46],[.24,.48]],[[.24,.48],[.46,.5],[.6,.66],[.58,.86],[.44,.98],[.2,1],[0,.9]]],
-    4: [[[.45,1],[.45,0],[0,.68],[.6,.68]]],
-    5: [[[.6,0],[.04,0],[0,.48],[.24,.42],[.48,.46],[.6,.62],[.58,.84],[.44,.98],[.2,1],[0,.9]]],
-    6: [[[.54,.08],[.36,0],[.16,.06],[.02,.26],[0,.66],[.06,.88],[.24,1],[.44,.98],[.58,.82],[.6,.62],[.48,.48],[.26,.46],[.04,.56]]],
-    7: [[[0,0],[.6,0],[.24,1]]],
-    8: [[[.3,.48],[.08,.36],[.02,.18],[.12,.04],[.3,0],[.48,.04],[.58,.18],[.52,.36],[.3,.48],[.06,.62],[0,.8],[.12,.96],[.3,1],[.48,.96],[.6,.8],[.54,.62],[.3,.48]]],
-    9: [[[.56,.44],[.34,.54],[.12,.52],[0,.38],[.02,.18],[.16,.02],[.36,0],[.54,.12],[.6,.34],[.58,.74],[.44,.94],[.24,1],[.06,.92]]]
-  };
-  function makeDie(sides) {
-    let vertices = [];
-    let faces = [];
-    if (sides === 6) {
-      vertices = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
-      faces = [[0,1,2,3],[4,7,6,5],[0,4,5,1],[3,2,6,7],[0,3,7,4],[1,5,6,2]];
-    } else if (sides === 10) {
-      vertices = [[0,0,1.3],[0,0,-1.3]];
-      const ringHeight = 1.3 * (1 - Math.cos(Math.PI / 5)) / (1 + Math.cos(Math.PI / 5));
-      for (let i = 0; i < 10; i++) {
-        const angle = i * Math.PI / 5;
-        vertices.push([Math.cos(angle), Math.sin(angle), i % 2 ? -ringHeight : ringHeight]);
-      }
-      for (let i = 0; i < 10; i += 2) {
-        faces.push([0, 2 + i, 2 + (i + 1) % 10, 2 + (i + 2) % 10]);
-        faces.push([1, 2 + (i + 1) % 10, 2 + (i + 2) % 10, 2 + (i + 3) % 10]);
-      }
-    } else {
-      const golden = (1 + Math.sqrt(5)) / 2;
-      for (const a of [-1,1]) for (const b of [-golden,golden]) {
-        vertices.push([0,a,b], [a,b,0], [b,0,a]);
-      }
-      for (let a = 0; a < vertices.length; a++) for (let b = a + 1; b < vertices.length; b++) for (let c = b + 1; c < vertices.length; c++) {
-        const normal = cross(subtract(vertices[b], vertices[a]), subtract(vertices[c], vertices[a]));
-        const distances = vertices.map(vertex => dot(normal, subtract(vertex, vertices[a])));
-        if (distances.every(value => value <= 1e-6) || distances.every(value => value >= -1e-6)) faces.push([a,b,c]);
-      }
-    }
-    const radius = Math.max(...vertices.map(vertex => Math.hypot(...vertex)));
-    vertices = vertices.map(vertex => vertex.map(value => value / radius));
-    faces = faces.map((indices, index) => {
-      const center = indices.reduce((sum, i) => sum.map((value, axis) => value + vertices[i][axis] / indices.length), [0,0,0]);
-      const normal = cross(subtract(vertices[indices[1]], vertices[indices[0]]), subtract(vertices[indices[2]], vertices[indices[0]]));
-      if (dot(normal, center) < 0) indices.reverse();
-      const outward = unit(dot(normal, center) < 0 ? normal.map(value => -value) : normal);
-      const horizontal = unit(subtract(vertices[indices[1]], vertices[indices[0]]));
-      const vertical = cross(outward, horizontal);
-      const inset = Math.min(...indices.map((vertexIndex, edgeIndex) => {
-        const start = vertices[vertexIndex];
-        const edge = subtract(vertices[indices[(edgeIndex + 1) % indices.length]], start);
-        return Math.hypot(...cross(subtract(center, start), edge)) / Math.hypot(...edge);
-      }));
-      const label = String(index + 1);
-      const height = inset * 1.12;
-      const width = label.length * .6 + (label.length - 1) * .18;
-      const ink = [...label].flatMap((digit, digitIndex) => numeralStrokes[digit].map(stroke => stroke.map(([x,y]) => {
-        const localX = (x + digitIndex * .78 - width / 2) * height;
-        const localY = (y - .5) * height;
-        return center.map((value, axis) => value + horizontal[axis] * localX + vertical[axis] * localY);
-      })));
-      return { indices, label, ink, height };
-    });
-    return { vertices, faces };
-  }
-  function rotate(vertex, angles) {
-    let [x,y,z] = vertex;
-    const [ax,ay,az] = angles;
-    [y,z] = [y * Math.cos(ax) - z * Math.sin(ax), y * Math.sin(ax) + z * Math.cos(ax)];
-    [x,z] = [x * Math.cos(ay) + z * Math.sin(ay), -x * Math.sin(ay) + z * Math.cos(ay)];
-    return [x * Math.cos(az) - y * Math.sin(az), x * Math.sin(az) + y * Math.cos(az), z];
-  }
+  const { makeDie, rotate, subtract, dot, cross } = window.TRPGDice;
   const dice = bodies.map((body, index) => {
     const mesh = makeDie(Number(body.dataset.die));
     const svg = body.querySelector('svg');
@@ -190,8 +185,22 @@
       z, scale, depth: Math.sin(angle)
     };
   }
+  const entranceDice = new WeakMap();
   function draw(time) {
-    dice.forEach(die => {
+    const entrance = document.querySelector('.entrance-compass');
+    if (entrance && !entranceDice.has(entrance)) {
+      entranceDice.set(entrance, dice.map(die => {
+        const body = entrance.querySelector(`[data-die="${die.body.dataset.die}"]`);
+        const svg = body.querySelector('svg');
+        const faces = die.faces.map(face => {
+          const inkElement = svg.querySelector(`[data-number="${face.label}"]`);
+          const group = inkElement.parentElement;
+          return { ...face, group, polygon: group.querySelector('polygon'), inkElement };
+        });
+        return { body, svg, faces };
+      }));
+    }
+    dice.forEach((die, index) => {
       const body = die.body;
       const plane = planes[Number(body.dataset.orbit)];
       const angle = Number(body.dataset.phase) + time / plane.period * Math.PI * 2;
@@ -201,6 +210,13 @@
       body.style.opacity = String(.58 + (point.depth + 1) * .21);
       body.style.zIndex = point.z >= 0 ? '4' : '-1';
       renderDie(die);
+      const copy = entrance && entranceDice.get(entrance)[index];
+      if (copy) {
+        copy.body.style.transform = body.style.transform;
+        copy.body.style.opacity = body.style.opacity;
+        copy.body.style.zIndex = body.style.zIndex;
+        renderDie({ ...die, ...copy });
+      }
     });
   }
   function measure() {
@@ -224,6 +240,29 @@
   function tick(now) {
     const delta = previous === null ? 0 : Math.min(now - previous, 64) / 1000;
     elapsed += delta * 1000;
+    compass.faceAngle += (compass.bearing - compass.faceAngle) * (1 - Math.exp(-8 * delta));
+    renderFace();
+    if (!compass.drag) {
+      if (compass.coasting) {
+        compass.angle += compass.velocity * (1 - Math.exp(-1.6 * delta)) / 1.6;
+        compass.velocity *= Math.exp(-1.6 * delta);
+        if (Math.abs(compass.velocity) < 190) seekNorth();
+      } else {
+        // A damped magnetic pull settles north with a small, decaying oscillation.
+        let remaining = delta;
+        while (remaining > 0) {
+          const step = Math.min(remaining, 1 / 120);
+          compass.velocity += ((compass.target - compass.angle) * 55 - compass.velocity * 7) * step;
+          compass.angle += compass.velocity * step;
+          remaining -= step;
+        }
+        if (Math.abs(compass.target - compass.angle) < .05 && Math.abs(compass.velocity) < .2) {
+          compass.angle = compass.target;
+          compass.velocity = 0;
+        }
+      }
+      renderNeedle();
+    }
     dice.forEach(die => {
       const speed = hovered || focused ? 2.4 : .12;
       die.angles = die.angles.map((angle, index) => (angle + (speed * [ .6, 1, .35 ][index] + die.velocity[index]) * delta) % (Math.PI * 2));
@@ -237,14 +276,28 @@
     cancelAnimationFrame(frame);
     frame = 0;
     previous = null;
-    if (motion.matches) draw(0);
-    else if (visible && !document.hidden) frame = requestAnimationFrame(tick);
+    if (motion.matches) {
+      if (compass.drag) {
+        const id = compass.drag.id;
+        compass.drag = null;
+        needle.classList.remove('is-dragging');
+        if (needle.hasPointerCapture(id)) needle.releasePointerCapture(id);
+      }
+      compass.velocity = 0;
+      compass.coasting = false;
+      compass.angle = compass.target = compass.faceAngle = compass.bearing;
+      renderNeedle();
+      renderFace();
+      draw(0);
+    }
+    else if (!document.hidden && (document.body.dataset.entrance === 'compass' || (visible && (!document.body.dataset.entrance || ['content', 'ready'].includes(document.body.dataset.entrance))))) frame = requestAnimationFrame(tick);
   }
   measure();
   if ('ResizeObserver' in window) new ResizeObserver(measure).observe(stage);
   else window.addEventListener('resize', measure);
   motion.addEventListener('change', updateAnimation);
   document.addEventListener('visibilitychange', updateAnimation);
+  document.addEventListener('landingphasechange', updateAnimation);
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(entries => {
       visible = entries[0].isIntersecting;
