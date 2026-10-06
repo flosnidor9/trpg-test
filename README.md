@@ -4,6 +4,10 @@
 
 ## 실행
 
+게시 주소: https://flosnidor9.github.io/trpg-test/
+
+GitHub Pages는 `main` 브랜치의 루트 디렉터리를 게시합니다. `main`에 변경 사항을 푸시하면 자동으로 반영됩니다. `.nojekyll`로 Jekyll 처리를 생략하고 HTML·CSS·JavaScript를 그대로 제공합니다.
+
 빌드나 서버 API는 필요하지 않습니다. 이 디렉터리에서 정적 서버를 실행하세요.
 
 ```sh
