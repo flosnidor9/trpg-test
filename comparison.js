@@ -4,6 +4,57 @@
   const A = globalThis.TRPGApp;
   const { D, escape: e } = A;
   const unresolved = v => v === undefined || ['unknown', 'private', 'other', 'conditional'].includes(v);
+  function polygonArea(points) {
+    return Math.abs(points.reduce((sum, [x, y], i) => {
+      const [nextX, nextY] = points[(i + 1) % points.length];
+      return sum + x * nextY - nextX * y;
+    }, 0)) / 2;
+  }
+  function clipPolygon(subject, clip) {
+    let result = subject;
+    for (let i = 0; i < clip.length && result.length; i++) {
+      const a = clip[i], b = clip[(i + 1) % clip.length], input = result;
+      result = [];
+      const side = p => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+      for (let j = 0; j < input.length; j++) {
+        const current = input[j], previous = input[(j + input.length - 1) % input.length];
+        const currentSide = side(current), previousSide = side(previous);
+        if ((currentSide >= 0) !== (previousSide >= 0)) {
+          const ratio = previousSide / (previousSide - currentSide);
+          result.push([previous[0] + (current[0] - previous[0]) * ratio, previous[1] + (current[1] - previous[1]) * ratio]);
+        }
+        if (currentSide >= 0) result.push(current);
+      }
+    }
+    return result;
+  }
+  function radarOverlap(radars) {
+    if (radars.length < 2 || radars.some(radar => D.axes.some(axis => !A.known(radar[axis.key])))) return null;
+    const directions = D.axes.map((_, i) => {
+      const angle = -Math.PI / 2 + i * Math.PI * 2 / D.axes.length;
+      return [Math.cos(angle), Math.sin(angle)];
+    });
+    let intersection = 0, union = 0;
+    for (let axis = 0; axis < D.axes.length; axis++) {
+      const next = (axis + 1) % D.axes.length;
+      const triangles = radars.map(radar => {
+        const first = radar[D.axes[axis].key] / 100, second = radar[D.axes[next].key] / 100;
+        return [[0, 0], [directions[axis][0] * first, directions[axis][1] * first], [directions[next][0] * second, directions[next][1] * second]];
+      });
+      for (let mask = 1; mask < 1 << triangles.length; mask++) {
+        let clipped = null, count = 0;
+        for (let i = 0; i < triangles.length; i++) if (mask & (1 << i)) {
+          clipped = clipped ? clipPolygon(clipped, triangles[i]) : triangles[i];
+          count++;
+          if (!clipped.length) break;
+        }
+        const area = clipped?.length >= 3 ? polygonArea(clipped) : 0;
+        if (count === triangles.length) intersection += area;
+        union += count % 2 ? area : -area;
+      }
+    }
+    return union > 1e-12 ? Math.round(Math.max(0, Math.min(100, intersection / union * 100))) : null;
+  }
   function groupAnalysis(profiles) {
     const restrictions = [], pending = [], suggestions = [];
     for (const q of D.boundaries) for (const [row, name] of q.rows) {
@@ -62,7 +113,7 @@
     if (q.id === 'P03') return { '1-3': 1, '5+': 2, '10+': 3 }[value] ?? null;
     return null;
   }
-  globalThis.TRPGCompare = { groupAnalysis, cellLabel, constraintRank };
+  globalThis.TRPGCompare = { groupAnalysis, cellLabel, constraintRank, radarOverlap };
   if (typeof document === 'undefined' || !document.querySelector('#comparison-output')) return;
   const { $ } = A;
   let people = [], nextId = 1, selected = new Set(), selectionTouched = false;
@@ -133,6 +184,9 @@
     A.drawRadar($('#comparison-radar'), chosen.map(p => ({ id: p.id, data: p.profile.radar, index: p.id - 1, color: style(p).color })));
     $('#selected-legend').innerHTML = chosen.map(p => '<span class="legend-item">' + marker(p) + e(p.profile.displayName) + '</span>').join('');
     $('#radar-data-summary').innerHTML = chosen.map(p => '<p><strong>' + e(p.profile.displayName) + '</strong> · ' + D.axes.map(a => a.name + ': ' + e(A.dimensionLabel(p.profile, a.key))).join(' · ') + '</p>').join('');
+    const overlap = radarOverlap(chosen.map(p => p.profile.radar));
+    $('#radar-overlap-value').textContent = overlap === null ? '—' : overlap + '%';
+    $('#radar-overlap-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 공통 면적을 볼 수 있어요.' : overlap === null ? '미확인 축이 있거나 면적이 없어 계산할 수 없어요.' : '선택한 ' + chosen.length + '명의 레이더가 모두 겹치는 면적 ÷ 전체가 차지하는 면적';
   }
   function renderParticipants() {
     $('#legend').innerHTML = people.map(p => '<div class="participant-control"><label><input type="checkbox" aria-label="레이더에 표시: ' + e(p.profile.displayName) + '" data-person="' + p.id + '"' + (selected.has(p.id) ? ' checked' : '') + '>' + marker(p) + '</label><input class="participant-name" aria-label="참가자 ' + p.id + ' 이름" data-name="' + p.id + '" maxlength="80" value="' + e(p.profile.displayName) + '"><button class="remove-person" type="button" data-remove="' + p.id + '" aria-label="' + e(p.profile.displayName) + ' 제거">×</button></div>').join('');

@@ -8,6 +8,15 @@ for (const file of ['questionnaire.js', 'narratives.js', 'app.js', 'comparison.j
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
 }
 const A = context.TRPGApp, D = context.TRPGData, C = context.TRPGCompare;
+test('선택한 레이더의 공통 면적은 합집합 대비 비율로 계산한다', () => {
+  const radar = value => Object.fromEntries(D.axes.map(axis => [axis.key, value]));
+  assert.equal(C.radarOverlap([radar(75), radar(75)]), 100);
+  assert.equal(C.radarOverlap([radar(50), radar(100)]), 25);
+  assert.equal(C.radarOverlap([radar(50), radar(75), radar(100)]), 25);
+  assert.equal(C.radarOverlap([radar(0), radar(0)]), null);
+  assert.equal(C.radarOverlap([radar(50), { ...radar(50), [D.axes[0].key]: null }]), null);
+  assert.equal(C.radarOverlap([radar(50)]), null);
+});
 function fixture(value = 75, boundary = 'ask') {
   const responses = {};
   for (const q of D.questions) {
