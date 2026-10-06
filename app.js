@@ -195,12 +195,13 @@
     else { c.moveTo(x, y - size - 1); c.lineTo(x + size + 1, y + size); c.lineTo(x - size - 1, y + size); c.closePath(); }
     c.fill();
   }
-  function drawRadar(canvas, sets, animate = true, showAxisNames = true, axes = D.axes, drawAxisNames = true) {
+  function drawRadar(canvas, sets, animate = true, showAxisNames = true, axes = D.axes, drawAxisNames = true, { revealFromCenter = false } = {}) {
     const c = canvas.getContext('2d');
     if (!c) return;
     const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, radius = w * (showAxisNames ? .31 : .27);
     const n = axes.length;
     if (canvas._frame) cancelAnimationFrame(canvas._frame);
+    canvas._revealObserver?.disconnect();
     const previous = canvas._sets || [];
     canvas._sets = sets;
     const positions = axes.map((a, i) => { const angle = -Math.PI / 2 + i * Math.PI * 2 / n; return [Math.cos(angle), Math.sin(angle)]; });
@@ -225,7 +226,7 @@
           const oldSet = previous.find(s => s.id === set.id);
           const old = oldSet?.data[a.key];
           const v = known(old) ? old + (val - old) * progress : val;
-          const distance = (set.minRadius || 0) + (1 - (set.minRadius || 0)) * v / 100;
+          const distance = ((set.minRadius || 0) + (1 - (set.minRadius || 0)) * v / 100) * (revealFromCenter && !known(old) ? progress : 1);
           return [cx + positions[ai][0] * radius * distance, cy + positions[ai][1] * radius * distance];
         });
         c.strokeStyle = color; c.lineWidth = 2.5; c.setLineDash(shape % 2 ? [7, 4] : []);
@@ -238,10 +239,27 @@
       });
     };
     const reduced = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (!animate || reduced || !previous.length) { paint(1); return; }
-    const start = performance.now();
-    const frame = time => { const t = Math.min(1, (time - start) / 220); paint(1 - Math.pow(1 - t, 3)); if (t < 1) canvas._frame = requestAnimationFrame(frame); };
-    canvas._frame = requestAnimationFrame(frame);
+    if (!animate || reduced || (!previous.length && !revealFromCenter)) { paint(1); return; }
+    const initialReveal = revealFromCenter && !previous.length;
+    const startAnimation = () => {
+      const start = performance.now();
+      const frame = time => {
+        const t = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 1 : Math.min(1, (time - start) / (initialReveal ? 1100 : 220));
+        paint(1 - Math.pow(1 - t, 3));
+        if (t < 1) canvas._frame = requestAnimationFrame(frame);
+        else canvas._frame = null;
+      };
+      canvas._frame = requestAnimationFrame(frame);
+    };
+    paint(0);
+    if (initialReveal && globalThis.IntersectionObserver) {
+      canvas._revealObserver = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          canvas._revealObserver.disconnect(); startAnimation();
+        }
+      }, { threshold: .25 });
+      canvas._revealObserver.observe(canvas);
+    } else startAnimation();
   }
   function responseHTML(p, q) {
     const a = response(p, q.id);
@@ -281,17 +299,31 @@
     $('#profile-title').textContent = p.displayName + '의 플레이 성향';
     $('#profile-copy').textContent = '함께 나타나는 취향을 세션 카드로 모았어요.\n성향 지도에서 RP와 세션 운영의 방향을 살펴보세요.';
     const ranked = globalThis.TRPGCards?.featuredCards(p.responses) || [];
+    if ($('#profile-focus')) {
+      $('#profile-focus').hidden = ranked.length === 0;
+      $('#profile-focus').innerHTML = '<span>나를 소개하는 취향</span><strong>' + ranked.slice(0, 2).map(card => escape(card.title)).join('<br>') + '</strong>';
+    }
+    const handouts = !!root.closest('.result-page');
+    const handoutArt = {
+      'RP': '<path d="M45 94V43l35-13 35 13v51L80 81Z"/><path d="M80 30v51M56 52l14-5m-14 18 14-5m20-13 14 5m-14 8 14 5"/>',
+      '대화': '<path d="M31 36h72v43H61L43 94V79H31Z"/><path d="M103 52h26v44h-12l-14 12V96H76V79M46 51h42M46 63h29"/>',
+      '휴식과 참여': '<path d="M45 49h58v28a29 29 0 0 1-58 0Zm58 4h10a14 14 0 0 1 0 28h-10M39 110h75M63 37V24m22 13V20"/>',
+      '연출': '<path d="m80 24 12 32 34 10-34 11-12 33-12-33-34-11 34-10Z"/><path d="m119 23 4 11 12 4-12 4-4 11-4-11-12-4 12-4ZM37 98v16m-8-8h16"/>',
+      '운영': '<rect x="37" y="35" width="86" height="73" rx="3"/><path d="M37 55h86M58 24v23m44-23v23M54 73h12m15 0h12m15 0h0M54 91h12m15 0h12"/>'
+    };
     $('#taste-empty').hidden = ranked.length > 0;
     $('#taste-cards').innerHTML = ranked.map((card, index) =>
-      '<article class="taste-card' + (index === 0 ? ' taste-card-first' : '') + '">' +
-      '<span class="taste-rank">' + (index + 1) + '위 카드</span>' +
+      (handouts ? '<div class="handout-slot" style="--card-delay:' + (index % 3 * 100) + 'ms">' : '') +
+      '<article' + (handouts ? ' tabindex="0" aria-label="' + escape(card.title) + ' 취향 카드"' : '') + ' class="taste-card' + (index === 0 ? ' taste-card-first' : '') + '">' +
+      (handouts ? '' : '<span class="taste-rank">취향 카드 ' + (index + 1) + '</span>') +
       '<span class="taste-category">' + escape(card.category) + '</span>' +
+      (handouts ? '<div class="handout-art" aria-hidden="true"><svg viewBox="0 0 160 136" fill="none"><circle class="handout-orbit" cx="80" cy="68" r="56"/>' + (handoutArt[card.category] || handoutArt.RP) + '</svg></div>' : '') +
       '<h3>' + escape(card.title) + '</h3>' +
-      '<p>' + escape(card.description) + '</p>' +
-      '<small>응답 근거 · ' + escape(card.evidence) + '</small></article>'
+      (handouts ? '<ul class="handout-description">' + card.description.split(/(?<=[.!?])\s+/).map(sentence => '<li>' + escape(sentence) + '</li>').join('') + '</ul>' : '<p>' + escape(card.description) + '</p>') +
+      (handouts ? '<span class="handout-shine" aria-hidden="true"><svg viewBox="0 0 310 590" preserveAspectRatio="none" focusable="false"><path d="M235-160h58L-101 750h-58Z" fill="#fff" fill-opacity=".1"/><path d="M310-160h9L-75 750h-9Z" fill="#fff" fill-opacity=".1"/></svg></span>' : '<small>응답 근거 · ' + escape(card.evidence) + '</small>') + '</article>' + (handouts ? '</div>' : '')
     ).join('');
     const { comparisonAxes: axes, comparisonRadar, comparisonAnswer } = globalThis.TRPGCompare;
-    drawRadar($('#radar'), [{ id: 'self', data: comparisonRadar(p), color: COLORS[0], minRadius: .25 }], true, true, axes, false);
+    drawRadar($('#radar'), [{ id: 'self', data: comparisonRadar(p), color: COLORS[0], minRadius: .25 }], true, true, axes, false, { revealFromCenter: handouts });
     $('#radar-summary').textContent = axes.map(a => a.name + ': ' + comparisonAnswer(p, a)).join(' · ');
     $('#radar-axis-labels').innerHTML = axes.map((a, i) => {
       const angle = -Math.PI / 2 + i * Math.PI * 2 / axes.length;

@@ -31,6 +31,10 @@ async function noPageOverflow(page) {
 }
 async function accessibility(page, name) {
   if (!AxeBuilder) return;
+  // 등장 중의 투명도가 아니라 읽을 수 있는 최종 상태의 대비를 검사합니다.
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+    .map(animation => animation.finished.catch(() => {}))));
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   assert.deepEqual(violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })), [], name + ' 접근성');
 }
