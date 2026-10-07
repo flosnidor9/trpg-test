@@ -55,6 +55,8 @@ const server = http.createServer((req, res) => {
       } finally { proto.drawImage = drawImage; proto.fillText = fillText; }
     }, profile);
     assert.equal(cardRendering.images.length, 1);
+    assert.ok(cardRendering.texts.some(item => item.text === '사담 비중'), 'PNG 성향 항목 이름 유지');
+    assert.ok(cardRendering.texts.every(item => !item.text.includes('→')), 'PNG 그래프 방향 기준 표시 제외');
     assert.ok(Math.abs(cardRendering.images[0].sourceRatio - cardRendering.images[0].outputRatio) < 1e-10, '그림 원본 비율 유지');
     const paragraphs = ['첫 번째 선호입니다.', '두 번째 선호입니다.', '세 번째 선호입니다.'].map(value => cardRendering.texts.find(item => item.text === value));
     assert.ok(paragraphs.every(Boolean));

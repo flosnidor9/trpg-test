@@ -66,7 +66,7 @@
     });
     const measure = (value, width, size, weight = 400) => { ctx.font = `${weight} ${size}px ${font}`; return lines(ctx, value, width).length * size * 1.55; };
     for (const reading of readings) {
-      readingY += measure(reading.axis.name + ' · ' + reading.axis.left + ' → ' + reading.axis.right, 636, 20, 600) + 38;
+      readingY += measure(reading.axis.name, 636, 20, 600) + 38;
       for (const entry of reading.entries) readingY += measure(entry.value, 636, 20) + 20;
     }
     // 그림의 원래 좌표 비율을 유지합니다. 설명은 화면 카드처럼 문장별 항목으로 읽습니다.
@@ -112,7 +112,7 @@
     text(ctx, party ? '함께 적용할 조건 · 전체 ' + readingProfiles.length + '명 기준' : '성향 지도를 텍스트로 읽기', leftX + 40, y, 636, 26, ink, 700);
     y += 58;
     for (const { axis, entries } of readings) {
-      y = text(ctx, axis.name + ' · ' + axis.left + ' → ' + axis.right, leftX + 40, y, 636, 20, purple, 600) + 20;
+      y = text(ctx, axis.name, leftX + 40, y, 636, 20, purple, 600) + 20;
       for (const entry of entries) y = text(ctx, entry.value, leftX + 40, y, 636, 20, muted) + 20;
       y += 18;
     }

@@ -6,6 +6,8 @@
 .png-dialog { width: min(1100px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 24px; border: 0; border-radius: 24px; color: #342744; background: #faf8fc; }
 .png-dialog::backdrop { background: rgb(30 20 45 / .45); }
 .png-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.png-dialog-heading > div { min-width: 0; }
+.png-dialog-heading .png-close { flex-shrink: 0; white-space: nowrap; }
 .png-dialog-heading h2 { margin: 0 0 8px; font-size: 22px; }
 .png-dialog-heading p { margin: 0; color: #675973; font-size: 14px; }
 .png-preview { max-height: 65dvh; overflow: auto; border-radius: 12px; background: #f7f4fa; }
