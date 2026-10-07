@@ -359,6 +359,10 @@
       const direction = a.left + ' → ' + a.right;
       return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + escape(a.name + ': ' + direction) + '">' + escape(a.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + escape(direction) + '</span></button>';
     }).join('');
+    $('#profile-png').onclick = () => {
+      const name = $('#display-name')?.value.trim().slice(0, 80) || p.displayName;
+      globalThis.TRPGPng.preview({ title: name + '의 플레이 성향', members: [{ id: 'self', profile: { ...p, displayName: name }, color: COLORS[0], index: 0 }], cards: ranked }, $('#profile-png'));
+    };
     if (!allowExport) return;
     $('#display-name').value = p.displayName;
     const preview = () => {

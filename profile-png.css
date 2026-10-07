@@ -1,0 +1,29 @@
+.profile-export-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; padding-top: 24px; border-top: 1px solid #e1dae9; }
+.party-map-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+.party-map-heading h2 { margin: 0; }
+.party-map-heading .label { margin: 0 0 8px; }
+.party-map-heading .button { flex-shrink: 0; }
+.png-dialog { width: min(1100px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 24px; border: 0; border-radius: 24px; color: #342744; background: #faf8fc; }
+.png-dialog::backdrop { background: rgb(30 20 45 / .45); }
+.png-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.png-dialog-heading h2 { margin: 0 0 8px; font-size: 22px; }
+.png-dialog-heading p { margin: 0; color: #675973; font-size: 14px; }
+.png-preview { max-height: 65dvh; overflow: auto; border-radius: 12px; background: #f7f4fa; }
+.png-preview img { display: block; width: 100%; height: auto; }
+.png-dialog-actions { display: flex; align-items: center; gap: 16px; margin-top: 20px; }
+.png-dialog-actions p { margin: 0; }
+.party-map-reading { margin-top: 20px; }
+.party-map-reading .map-reading-content { overflow-x: auto; }
+.party-map-reading table { width: 100%; text-align: left; font-size: 13px; border-collapse: collapse; }
+.party-map-reading th:first-child { width: 110px; }
+.party-map-reading th, .party-map-reading td { padding: 12px; vertical-align: top; border-bottom: 1px solid #e1dae9; }
+.party-map-reading td { white-space: pre-line; overflow-wrap: anywhere; }
+.party-map-reading caption { padding: 12px; text-align: left; color: #675973; }
+.common-item.common-card { padding: 0; margin: 18px 0; border: 0; background: white; border-radius: 14px; overflow: hidden; }
+.common-card-art { height: 180px; position: relative; overflow: hidden; }
+.common-card-art .handout-art { position: absolute; inset: 0; width: 100%; height: auto; aspect-ratio: 310 / 620; }
+.common-card-art .handout-art-layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.common-card-copy { padding: 18px; }
+.common-card-copy .taste-category { display: block; margin-bottom: 8px; }
+.common-card-copy p, .taste-card > p { white-space: pre-line; }
+@media (max-width: 600px) { .png-dialog { padding: 16px; }.png-dialog-heading h2 { font-size: 18px; }.png-dialog-actions { flex-wrap: wrap; }.party-map-heading { align-items: flex-start; flex-direction: column; gap: 16px; }.profile-export-actions .button { width: 100%; } }

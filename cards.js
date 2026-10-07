@@ -72,7 +72,7 @@
         id: card.id, category: card.category, title: card.title, index,
         strength: matched.reduce((sum, signal) => sum + signal.strength, 0),
         matchCount: matched.length,
-        description: matched.map(signal => signal.description).join(' '),
+        description: matched.map(signal => signal.description).join('\n'),
         evidence: [...new Set(matched.map(signal => signal.evidence))].join(' · ')
       };
     }).filter(card => card.matchCount >= 2)

@@ -26,6 +26,26 @@ function fixture(value = 75, boundary = 'ask') {
   return A.makeProfile(responses, '테스트 참가자');
 }
 
+test('파티 지도 텍스트는 참가자별 목록 대신 함께 적용할 조건의 기준을 따른다', () => {
+  const first = fixture(25), second = fixture(75);
+  first.displayName = '첫 참가자'; second.displayName = '둘째 참가자';
+  first.responses.O01.value = '120'; second.responses.O01.value = '480';
+  first.responses.O05.value = '2'; second.responses.O05.value = '0';
+  first.context.role = 'GM'; second.context.role = 'GM';
+  first.responses.A01.fields = { offered: '1' }; second.responses.A01.fields = { offered: '3' };
+  const profiles = [first, second];
+  const reading = C.partyMapReading(profiles);
+  assert.equal(reading.length, 6);
+  for (const [key, id] of [['session', 'O01'], ['chat', 'O05']]) {
+    const q = D.questions.find(question => question.id === id);
+    assert.ok(reading.find(item => item.axis.key === key).text.includes(q.name + ': ' + C.governingAnswer(q, undefined, profiles).label));
+  }
+  const preparation = D.questions.find(question => question.id === 'A01');
+  assert.ok(reading.find(item => item.axis.key === 'preparation').text.includes(preparation.name + ': ' + C.preparationRepresentative(preparation, profiles).label));
+  assert.ok(reading.find(item => item.axis.key === 'session').text.includes('휴식 주기: 약 120분마다'));
+  assert.ok(reading.every(item => !item.text.includes('첫 참가자') && !item.text.includes('둘째 참가자')));
+});
+
 test('36개 문항 묶음: 시작 2, RP 5, 운영 27, 경계 2', () => {
   assert.equal(D.questions.length, 36);
   assert.equal(D.setup.length, 2);

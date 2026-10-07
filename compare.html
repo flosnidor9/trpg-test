@@ -4,6 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>파티 비교 — TRPG 성향 테스트</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="app.css"><link rel="stylesheet" href="compare.css"><link rel="stylesheet" href="result.css">
+<link rel="stylesheet" href="profile-png.css">
 </head>
 <body class="compare-page">
 <header class="compare-header"><a class="brand" href="index.html"><span class="compare-brand-mark" aria-hidden="true">↗</span> TRPG 성향 테스트</a><nav aria-label="주 메뉴"><a href="test.html">테스트</a><a href="result.html">내 결과</a></nav></header>
@@ -23,13 +24,13 @@
     <div id="legend" class="participant-list"></div><p id="selection-message" class="form-message" role="status"></p>
     <div id="comparison-tabs" class="comparison-tabs" role="tablist" aria-label="파티 결과 보기"></div>
     <div id="party-panel" role="tabpanel" aria-labelledby="party-tab">
-    <section class="details compare-radar-section"><p class="label">PARTY RADAR</p><h2>파티의 플레이 성향</h2><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><div class="comparison-radar-visual"><canvas id="comparison-radar" width="600" height="600" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels"></div></div><aside class="party-common" aria-labelledby="party-common-title"><div class="radar-overlap"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note"></p></div><p class="label">SHARED SESSION CARDS</p><h3 id="party-common-title">함께 가진 취향 카드</h3><p id="party-common-note"></p><div id="party-common-list" aria-live="polite"></div></aside></div><div id="radar-data-summary" class="sr-only"></div></div></section>
+    <section class="details compare-radar-section"><div class="party-map-heading"><div><p class="label">PARTY RADAR</p><h2>파티의 플레이 성향</h2></div><button type="button" id="party-png" class="button secondary">PNG로 저장하기</button></div><p id="radar-selection-copy" class="section-copy"></p><div class="radar-card comparison-radar-card"><div id="selected-legend" class="legend"></div><div class="comparison-radar-layout"><div class="comparison-radar-visual"><canvas id="comparison-radar" width="600" height="600" aria-hidden="true"></canvas><div id="radar-axis-labels" class="radar-axis-labels"></div></div><aside class="party-common" aria-labelledby="party-common-title"><div class="radar-overlap"><p class="label">공통 면적</p><strong id="radar-overlap-value">—</strong><p id="radar-overlap-note"></p></div><p class="label">SHARED SESSION CARDS</p><h3 id="party-common-title">함께 가진 취향 카드</h3><p id="party-common-note"></p><div id="party-common-list" aria-live="polite"></div></aside></div><details class="map-reading party-map-reading"><summary>성향 지도 텍스트로 읽기</summary><div id="radar-data-summary" class="map-reading-content"></div></details></div></section>
     <section class="details agreements-section"><div class="agreements-heading"><p class="label">TABLE AGREEMENTS</p><h2>함께 적용할 조건</h2><p class="section-copy">응답이 다를 때 적용할 기준을 굵게 보여줍니다. 선호 플랫폼·연락 채널·사담 위치·일정과 변경은 최다 득표를 따르고, 동률이면 함께 정해요. 불호 요소는 공유된 내용을 참가자별로 모두 표시합니다. 다른 응답 위에 마우스를 올리거나 키보드로 선택하면 참가자별 답을 볼 수 있어요.</p></div><div id="group-tables"></div></section>
     </div>
     <div id="personal-panel" class="personal-panel" role="tabpanel" hidden></div>
   </section>
 </main>
 <footer>TRPG 성향 테스트 · 비교 결과는 자동으로 공유되지 않습니다.</footer>
-<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="handout-art.js"></script><script src="profile-view.js"></script><script src="app.js"></script><script src="result-motion.js"></script><script src="compare-motion.js"></script><script src="comparison.js"></script>
+<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="handout-art.js"></script><script src="profile-view.js"></script><script src="profile-png.js"></script><script src="app.js"></script><script src="result-motion.js"></script><script src="compare-motion.js"></script><script src="comparison.js"></script>
 </body>
 </html>

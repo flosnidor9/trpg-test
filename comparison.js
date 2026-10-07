@@ -106,13 +106,14 @@
     const cards = new Map();
     profiles.forEach(profile => {
       for (const card of globalThis.TRPGCards.featuredCards(profile.responses)) {
-        if (!cards.has(card.id)) cards.set(card.id, { id: card.id, title: card.title, category: card.category, names: [] });
+        if (!cards.has(card.id)) cards.set(card.id, { id: card.id, title: card.title, category: card.category, descriptions: [], names: [] });
         cards.get(card.id).names.push(profile.displayName);
+        cards.get(card.id).descriptions.push(card.description.split(/(?<=[.!?])\s+/));
       }
     });
     return [...cards.values()].filter(card => card.names.length === profiles.length)
       .sort((a, b) => b.names.length - a.names.length)
-      .map(card => ({ ...card, text: card.names.join(', '), evidence: card.names.length + '/' + profiles.length + '명 · ' + card.category }));
+      .map(card => ({ ...card, description: card.descriptions[0].filter(sentence => card.descriptions.every(description => description.includes(sentence))).join('\n') || '모두가 가진 취향 카드예요. 각자가 편한 세부 방식은 성향 지도 텍스트에서 확인해 주세요.', text: card.names.join(', '), evidence: card.names.length + '/' + profiles.length + '명 · ' + card.category }));
   }
   const usesMajority = q => ['P01', 'P02', 'O06'].includes(q.id) || q.group === '일정과 변경';
   function criterionCopy(questions) {
@@ -282,7 +283,21 @@
     const selected = known.length ? String(Math.min(...known)) : null;
     return { label: q.options.find(([value]) => value === selected)?.[1] || (q.id === 'A04' ? '미확인' : 'GM 응답 없음'), source: q.id === 'A04' ? '참가자 선호 중 가장 낮은 수준' : 'GM 제공 가능 중 가장 낮은 수준' };
   }
-  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, radarOverlap, sharedPlaystyle, usesMajority, criterionCopy };
+  function partyMapReading(profiles) {
+    const analysis = groupAnalysis(profiles);
+    return comparisonAxes.map(axis => ({ axis, text: comparisonQuestionIds[axis.key].map(id => {
+      const q = D.questions.find(question => question.id === id);
+      if (q.type === 'trait') return q.name + ': ' + [...new Set(profiles.map(profile => A.answerLabel(q, A.response(profile, id))))].join(' / ');
+      if (q.preparation) {
+        const representative = preparationRepresentative(q, profiles);
+        return q.name + ': ' + representative.label + ' · ' + representative.source;
+      }
+      const answer = governingAnswer(q, undefined, profiles);
+      const notices = [answer.voteCount, answer.unknownCount ? '미확인 ' + answer.unknownCount + '명' : '', answer.incomparableCount ? '별도 조율 ' + answer.incomparableCount + '명' : ''].filter(Boolean);
+      return q.name + ': ' + answer.label + (notices.length ? ' · ' + notices.join(' · ') : '');
+    }).concat(axis.key === 'session' ? analysis.suggestions.filter(item => item.title === '휴식 주기').map(item => item.title + ': ' + item.text) : []).join('\n') }));
+  }
+  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, partyMapReading, radarOverlap, sharedPlaystyle, usesMajority, criterionCopy };
   if (typeof document === 'undefined' || !document.querySelector('#comparison-output')) return;
   const { $ } = A;
   let people = [], nextId = 1, selected = new Set(), selectionTouched = false, activePerson = null;
@@ -399,15 +414,21 @@
       const direction = axis.left + ' → ' + axis.right;
       return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + e(axis.name + ': ' + direction) + '">' + e(axis.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + e(direction) + '</span></button>';
     }).join('') : '';
-    $('#radar-data-summary').innerHTML = '<table><caption>선택한 참가자의 RP·운영 레이더 응답</caption><thead><tr><th>참가자</th>' + comparisonAxes.map(axis => '<th>' + e(axis.name) + '</th>').join('') + '</tr></thead><tbody>' + chosen.map(person => '<tr><th>' + e(person.profile.displayName) + '</th>' + comparisonAxes.map(axis => '<td>' + e(comparisonAnswer(person.profile, axis)) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+    $('#radar-data-summary').innerHTML = '<table><caption>전체 ' + people.length + '명의 함께 적용할 조건 · RP는 선호 분포를 함께 표시합니다.</caption><thead><tr><th scope="col">성향</th><th scope="col">함께 적용할 응답</th></tr></thead><tbody>' + partyMapReading(people.map(person => person.profile)).map(item => '<tr><th scope="row">' + e(item.axis.name) + '</th><td>' + e(item.text) + '</td></tr>').join('') + '</tbody></table>';
     const overlap = radarOverlap(radars);
     $('#radar-overlap-value').textContent = overlap === null ? '—' : overlap + '%';
     $('#radar-overlap-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 공통 면적을 볼 수 있어요.' : overlap === null ? '미확인 축이 있어 면적을 계산할 수 없어요.' : '모두 겹치는 면적 ÷ 전체가 차지하는 면적. 취향의 우열이나 궁합 점수는 아니에요.';
     const common = sharedPlaystyle(chosen.map(person => person.profile));
     $('#party-common-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 함께 선호하는 방식을 살펴볼 수 있어요.' : '선택한 참가자 모두가 가진 세션 취향 카드만 표시해요. 응답이 완전히 같을 필요는 없어요.';
-    const commonItem = item => '<article class="common-item"><h4>' + e(item.title) + '</h4><p>' + e(item.text) + '</p><small>' + e(item.evidence) + '</small></article>';
+    $('#party-png').disabled = chosen.length === 0;
+    const commonItem = item => '<article class="common-item common-card"><div class="common-card-art">' + globalThis.TRPGHandoutArt.render(item.id) + '</div><div class="common-card-copy"><span class="taste-category">' + e(item.category) + '</span><h4>' + e(item.title) + '</h4><p>' + e(item.description) + '</p><small>' + e(item.evidence) + '</small></div></article>';
     $('#party-common-list').innerHTML = common.length ? common.slice(0, 3).map(commonItem).join('') + (common.length > 3 ? '<details class="common-more"><summary>공통점 더 보기 (' + (common.length - 3) + ')</summary>' + common.slice(3).map(commonItem).join('') + '</details>' : '') : chosen.length >= 2 ? '<p class="common-empty">아직 함께 가진 세션 취향 카드가 없어요. 아래 분포에서 각자의 선호를 살펴보세요.</p>' : '';
   }
+  $('#party-png').onclick = () => {
+    const chosen = people.filter(person => selected.has(person.id));
+    if (!chosen.length) return;
+    globalThis.TRPGPng.preview({ party: true, title: '우리 파티의 플레이 성향', readingProfiles: people.map(person => person.profile), members: chosen.map(person => ({ id: person.id, profile: person.profile, color: style(person).color, index: person.id - 1 })), cards: sharedPlaystyle(chosen.map(person => person.profile)) }, $('#party-png'));
+  };
   let disposePersonalMotion;
   function renderTabs() {
     disposePersonalMotion?.();
