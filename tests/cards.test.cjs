@@ -60,5 +60,5 @@ test('관측된 선호만 카드 설명에 포함하고 최대 다섯 장을 선
   assert.equal(result.length, 5);
   assert.ok(result.every(card => card.matchCount >= 2));
   assert.ok(result.every((card, index) => !index || result[index - 1].strength >= card.strength));
-  assert.doesNotMatch(result.find(card => card.id === 'cinematic-table').description, /스탠딩/);
+  assert.doesNotMatch(result.find(card => card.id === 'cinematic-table').description, /포트레이트/);
 });

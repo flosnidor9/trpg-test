@@ -198,7 +198,7 @@
     D.operation.filter(q => q.preparation).forEach(q => {
       const wanted = profiles.map(p => Number(A.valueOf(p, q.id))).filter(v => Number.isInteger(v) && v >= 0);
       if (q.id === 'A04') {
-        if (wanted.length > 1 && new Set(wanted).size > 1) suggestions.push({ title: q.name, text: '가장 낮은 선호 수준을 기준으로 스탠딩 사용 범위를 함께 정해 주세요.', label: '스탠딩 선호 차이', details: answerGroups(profiles, q) });
+        if (wanted.length > 1 && new Set(wanted).size > 1) suggestions.push({ title: q.name, text: '가장 낮은 선호 수준을 기준으로 포트레이트 사용 범위를 함께 정해 주세요.', label: '포트레이트 선호 차이', details: answerGroups(profiles, q) });
         return;
       }
       const providers = profiles.filter(p => ['GM', 'both'].includes(p.context.role));
@@ -360,7 +360,7 @@
   function preparationTable(questions, analysis) {
     const answer = (q, value) => q.options.find(([option]) => option === value)?.[1] || '미확인';
     return '<div class="table-scroll compact-table preparation-table"><table><caption class="sr-only">각 행에 마우스를 올리거나 키보드로 선택하면 참가자별 선호와 최소 필요 수준을 볼 수 있습니다.</caption><thead><tr><th scope="col">항목</th><th scope="col">기준 응답</th></tr></thead><tbody>' + questions.map(q => {
-      const notice = analysis.pending.find(item => item.title === q.name && item.label === '준비 범위 확인') || analysis.suggestions.find(item => item.title === q.name && ['준비 선호 차이', '스탠딩 선호 차이'].includes(item.label));
+      const notice = analysis.pending.find(item => item.title === q.name && item.label === '준비 범위 확인') || analysis.suggestions.find(item => item.title === q.name && ['준비 선호 차이', '포트레이트 선호 차이'].includes(item.label));
       const representative = preparationRepresentative(q, people.map(p => p.profile), modeFor(q));
       const selectedNames = representative.value === null ? [] : people.filter(person => {
         if (q.id !== 'A04' && !['GM', 'both'].includes(person.profile.context.role)) return false;

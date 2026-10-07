@@ -302,7 +302,7 @@ test('준비 수준 차이는 최소 필요와 GM 제공 가능 수준을 카드
   assert.ok(card.details.some(item => item.label === 'GM 제공 가능 · GM' && item.names === '없어도 됨'));
 });
 
-test('여러 GM은 가장 낮은 제공 가능 수준, 스탠딩은 가장 낮은 참가자 선호를 표시', () => {
+test('여러 GM은 가장 낮은 제공 가능 수준, 포트레이트은 가장 낮은 참가자 선호를 표시', () => {
   const first = fixture(), second = fixture(), player = fixture();
   first.context.role = 'GM'; second.context.role = 'GM';
   first.responses.A01.fields.offered = '1';

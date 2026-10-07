@@ -39,7 +39,7 @@
     ['scene-music', '연출', '장면의 음악', '장면에 맞춰 BGM을 쓰는 편이 좋아요.', 'BGM', choice('A02', { '2': 2, '3': 3, '4': 3 })],
     ['quiet-scene', '연출', '고요한 장면', 'BGM을 사용하지 않는 편이 좋아요.', 'BGM', choice('A02', { '0': 3 })],
     ['scene-map', '연출', '공간의 지도', '주요 공간을 보여주는 맵시트가 있으면 좋아요.', '맵시트', choice('A03', { '2': 2, '3': 3 })],
-    ['character-standing', '연출', '인물의 얼굴', '캐릭터 스탠딩을 사용하는 편이 좋아요.', '스탠딩', choice('A04', { '1': 2, '2': 3, '3': 3 })],
+    ['character-standing', '연출', '인물의 얼굴', '캐릭터 포트레이트을 사용하는 편이 좋아요.', '포트레이트', choice('A04', { '1': 2, '2': 3, '3': 3 })],
     ['early-calendar', '운영', '미리 적는 달력', '날짜를 넉넉히 앞서 공유하고 확정하는 편이 편해요.', '일정 후보·확정', r => {
       const early = ['14', '30'];
       return early.includes(value(r, 'O13')) && early.includes(value(r, 'O14')) ? 3 : early.includes(value(r, 'O13')) || early.includes(value(r, 'O14')) ? 2 : 0;
