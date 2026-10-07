@@ -95,7 +95,7 @@
     const clean = {};
     for (const q of D.questions) {
       const a = response(p, q.id);
-      if (!a || (q.boundary && !boundaries) || (q.type === 'text' && (!notes || !a.value?.trim()))) continue;
+      if (!a || (q.boundary && !boundaries) || (q.type === 'text' && !notes)) continue;
       const item = { value: a.value };
       if (q.type === 'matrix' && isObject(a.value)) {
         item.value = Object.fromEntries(Object.entries(a.value).filter(([, v]) => v !== 'private'));

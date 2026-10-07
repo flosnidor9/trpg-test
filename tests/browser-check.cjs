@@ -224,7 +224,7 @@ async function accessibility(page, name) {
     assert.equal(await page.locator('#radar-axis-guide').count(), 0);
     assert.equal(await page.locator('.rp-distribution').count(), 6);
     assert.equal(await page.locator('.rp-group table').count(), 0);
-    assert.equal(await page.locator('#radar-overlap-value').textContent(), '—');
+    assert.equal(await page.locator('#playstyle-similarity-value').textContent(), '—');
     await page.locator('.distribution-person').first().focus();
     assert.ok(await page.locator('.distribution-tooltip').first().isVisible());
     assert.match(await page.locator('#radar-axis-labels button').first().getAttribute('aria-label'), /천천히 정리 → 바로 이어가기/);
@@ -234,7 +234,12 @@ async function accessibility(page, name) {
       await page.locator('#json-input').fill(JSON.stringify(generated)); await page.locator('#add-json').click();
       if (i === 1) {
         assert.equal(await page.locator('#participant-count').textContent(), '2');
-        assert.match(await page.locator('#radar-overlap-value').textContent(), /^\d+%$/);
+        assert.match(await page.locator('#playstyle-similarity-value').textContent(), /^\d+(?:–\d+)?%$/);
+        await page.locator('.similarity-details summary').focus();
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#similarity-breakdown table').first().locator('tbody tr').count(), 8);
+        assert.equal(await page.locator('#similarity-breakdown table').first().isVisible(), true);
+        await page.keyboard.press('Enter');
         assert.equal(await page.locator('#alignment-section').count(), 0);
         assert.equal(await page.locator('.boundary-subgroup').count(), 5);
         assert.equal(await page.locator('.boundary-subgroup').nth(3).locator('h4').textContent(), '캐릭터 권한과 경계');
@@ -310,6 +315,14 @@ async function accessibility(page, name) {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.preparation-table tbody tr').first().getAttribute('class'), 'preparation-row');
     assert.equal(await page.locator('[data-person]:checked').count(), 6);
+    const partySimilarity = await page.locator('#playstyle-similarity-value').textContent();
+    assert.match(await page.locator('#playstyle-similarity-note').textContent(), /전체 8명/);
+    for (let index = 0; index < 6; index++) await page.locator('[data-person]').nth(index).uncheck();
+    assert.equal(await page.locator('#playstyle-similarity-value').textContent(), partySimilarity, '레이더 선택을 모두 해제해도 전체 유사도 유지');
+    await page.locator('.playstyle-similarity').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('.playstyle-similarity').isVisible(), true);
+    for (let index = 0; index < 6; index++) await page.locator('[data-person]').nth(index).check();
+    assert.equal(await page.locator('#playstyle-similarity-value').textContent(), partySimilarity);
     assert.equal(await page.locator('#axis-distributions').count(), 0);
     assert.equal(await page.locator('.count-chip').count(), 0);
     assert.ok(await page.locator('.group-answer').count() > 0);
@@ -330,6 +343,7 @@ async function accessibility(page, name) {
     await page.getByText('1명의 결과를 추가했어요.', { exact: false }).waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.locator('.similarity-details').evaluate(el => { el.open = true; });
     await noPageOverflow(page);
     await page.screenshot({ path: path.join(artifacts, 'comparison-mobile.png') });
     await page.getByRole('tab').nth(1).click();

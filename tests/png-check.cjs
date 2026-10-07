@@ -62,6 +62,19 @@ const server = http.createServer((req, res) => {
     assert.ok(paragraphs.every(Boolean));
     assert.ok(paragraphs[1].y - paragraphs[0].y > 31 && paragraphs[2].y - paragraphs[1].y > 31, '설명 개행과 문단 간격 유지');
     assert.ok(cardRendering.descriptions.every(value => value.includes('\n')), '카드 데이터 문장별 개행 유지');
+    const partyTexts = await page.evaluate(async () => {
+      const profiles = [0, 1].map(() => TRPGApp.makeProfile(Object.fromEntries(TRPGData.questions.map(q => [q.id, { value: q.type === 'matrix' ? Object.fromEntries(q.rows.map(([row]) => [row, q.options[0][0]])) : q.type === 'text' ? '' : q.options[0][0] }]))));
+      profiles[1].responses.P01.value = 'roll20';
+      const proto = CanvasRenderingContext2D.prototype, original = proto.fillText, texts = [];
+      proto.fillText = function(...args) { texts.push(args[0]); return original.apply(this, args); };
+      try {
+        await TRPGPng.create({ title: '전체 파티 유사도', party: true, cards: [], readingProfiles: profiles, members: [{ id: 1, profile: profiles[0], color: TRPGApp.COLORS[0], index: 0 }] });
+        return texts.join('\n');
+      } finally { proto.fillText = original; }
+    });
+    assert.match(partyTexts, /플레이 스타일 유사도\s+97%/, 'PNG 유사도는 레이더 표시 인원이 아닌 전체 파티 기준');
+    assert.match(partyTexts, /전체 2명/);
+    assert.match(partyTexts, /플랫폼과 연락\s+75%/);
     assert.equal(await page.locator('#profile-png').evaluate(el => !!el.closest('#export-section')), true);
     await page.locator('#export-section').screenshot({ path: path.join(artifacts, 'export-controls.png') });
     async function save(button, filename, original = false) {
@@ -115,7 +128,7 @@ const server = http.createServer((req, res) => {
         assert.equal(await page.locator('#radar-data-summary').textContent().then(text => /참가자 1|참가자 2/.test(text)), false);
         await page.locator('.party-map-heading').screenshot({ path: path.join(artifacts, 'party-controls.png') });
         assert.ok(await page.locator('.common-card-art svg').count() > 0);
-        assert.equal(await page.locator('#radar-overlap-value').textContent(), '100%');
+        assert.equal(await page.locator('#playstyle-similarity-value').textContent(), '99–100%', '비공개 경계는 동일한 답으로 취급하지 않고 구간으로 표시');
         await save('#party-original-png', 'party-original.png', true);
         await save('#party-png', 'party.png');
       }

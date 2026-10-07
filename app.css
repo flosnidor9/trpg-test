@@ -148,9 +148,16 @@ input.participant-name { border: 0 !important; padding: 5px !important; width: 1
 .party-common { padding: 24px; background: #f7f5fd; border-radius: 12px; min-width: 0; }
 .party-common .label { margin: 0 0 12px; }
 .party-common > h3 { font-size: 22px; margin: 0; }
-.radar-overlap { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #e1dae9; }
-.radar-overlap strong { display: block; font-size: 48px; line-height: 1; color: var(--violet); font-variant-numeric: tabular-nums; }
-.radar-overlap p:last-child { font-size: 12px; color: #534960; line-height: 1.7; margin: 12px 0 0; }
+.playstyle-similarity { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #e1dae9; }
+.playstyle-similarity strong { display: block; font-size: clamp(32px, 3.5vw, 48px); line-height: 1.15; color: var(--violet); font-variant-numeric: tabular-nums; }
+#playstyle-similarity-note { font-size: 12px; color: #534960; line-height: 1.7; margin: 12px 0 0; }
+.similarity-details { margin-top: 14px; font-size: 12px; }
+.similarity-details summary { cursor: pointer; color: var(--violet); }
+.similarity-details table { width: 100%; margin-top: 16px; border-collapse: collapse; table-layout: fixed; }
+.similarity-details caption { text-align: left; color: #534960; line-height: 1.6; margin-bottom: 8px; }
+.similarity-details th, .similarity-details td { min-width: 0; max-width: none; padding: 7px 4px; text-align: left; border-bottom: 1px solid #e1dae9; overflow-wrap: anywhere; }
+.similarity-details th:first-child { width: 50%; }
+.similarity-details th { font-weight: 600; }
 .party-common > p:not(.label), .common-empty { color: #534960; font-size: 13px; line-height: 1.7; }
 .common-item { padding: 16px 0; border-top: 1px solid #e1dae9; }
 .common-item:last-child { padding-bottom: 0; }

@@ -8,14 +8,156 @@ for (const file of ['questionnaire.js', 'narratives.js', 'cards.js', 'app.js', '
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
 }
 const A = context.TRPGApp, D = context.TRPGData, C = context.TRPGCompare;
-test('선택한 레이더의 공통 면적은 합집합 대비 비율로 계산한다', () => {
-  const radar = value => Object.fromEntries(C.comparisonAxes.map(axis => [axis.key, value]));
-  assert.equal(C.radarOverlap([radar(75), radar(75)]), 100);
-  assert.equal(C.radarOverlap([radar(50), radar(100)]), 39);
-  assert.equal(C.radarOverlap([radar(50), radar(75), radar(100)]), 39);
-  assert.equal(C.radarOverlap([radar(0), radar(0)]), 100);
-  assert.equal(C.radarOverlap([radar(50), { ...radar(50), [C.comparisonAxes[0].key]: null }]), null);
-  assert.equal(C.radarOverlap([radar(50)]), null);
+const questionSimilarity = (profiles, id) => C.playstyleSimilarity(profiles).questions.find(q => q.id === id).score;
+const areaSimilarity = (profiles, id) => C.playstyleSimilarity(profiles).areas.find(area => area.id === id);
+test('완료한 전체 응답을 8개 고정 영역으로 비교한다', () => {
+  const profiles = [fixture(), fixture()];
+  const result = C.playstyleSimilarity(profiles);
+  assert.equal(result.score, 100);
+  assert.equal(result.scoreRange, null);
+  assert.equal(result.areas.length, 8);
+  assert.ok(result.areas.every(area => area.weight === 1 / 8 && area.coverage === 1));
+  assert.equal(result.questions.length, 35, '역할은 배정 정보로 유지하고 불호 태그를 포함');
+  assert.equal(result.totalCount, 66);
+  assert.equal(result.comparedCount, 66);
+  assert.equal(C.similarityValue(result), '100%');
+});
+test('범주형 점수는 응답 비율이 같으면 인원수와 순서에 영향을 받지 않는다', () => {
+  const profiles = [fixture(), fixture(), fixture()];
+  profiles[2].responses.P01.value = 'roll20';
+  const first = C.playstyleSimilarity(profiles), repeated = C.playstyleSimilarity([...profiles, ...profiles]);
+  assert.equal(first.score, repeated.score);
+  assert.equal(questionSimilarity(profiles, 'P01'), questionSimilarity([...profiles, ...profiles], 'P01'));
+  assert.equal(first.score, C.playstyleSimilarity([...profiles].reverse()).score);
+});
+test('범주형 집중도는 가장 큰 집단 이외의 응답 분포도 반영한다', () => {
+  const two = Array.from({ length: 6 }, () => fixture()), three = Array.from({ length: 6 }, () => fixture());
+  ['0', '0', '0', '1', '1', '1'].forEach((value, i) => two[i].responses.O08.value = value);
+  ['0', '0', '0', '1', '1', '2'].forEach((value, i) => three[i].responses.O08.value = value);
+  assert.ok(questionSimilarity(three, 'O08') < questionSimilarity(two, 'O08'));
+  assert.ok(C.playstyleSimilarity(three).score <= C.playstyleSimilarity(two).score);
+});
+test('고정 범주는 균등 분포가 0이고 같은 응답이 100이다', () => {
+  const profiles = Array.from({ length: 4 }, () => fixture());
+  profiles.forEach((profile, i) => profile.responses.O08.value = String(i));
+  assert.equal(questionSimilarity(profiles, 'O08'), 0);
+  profiles.forEach(profile => profile.responses.O08.value = '2');
+  assert.equal(questionSimilarity(profiles, 'O08'), 100);
+});
+test('명시한 수치·순서 척도는 평균 절대편차로 양 끝을 대칭적으로 비교한다', () => {
+  const low = fixture(), mid = fixture(), high = fixture();
+  low.responses.T1.value = 0; mid.responses.T1.value = 50; high.responses.T1.value = 100;
+  assert.equal(questionSimilarity([low, high], 'T1'), 0);
+  assert.equal(questionSimilarity([low, mid], 'T1'), 50);
+  assert.equal(questionSimilarity([high, mid], 'T1'), 50);
+  assert.equal(Math.round(questionSimilarity([low, low, high], 'T1')), 11);
+  assert.equal(questionSimilarity([low, low, high, high], 'T1'), 0);
+  assert.equal(questionSimilarity([low, low, low, high], 'T1'), 25);
+  assert.equal(questionSimilarity([low, high], 'T1'), questionSimilarity([low, high, low, high], 'T1'));
+});
+test('선택지 저장 번호를 임의의 수치 척도로 해석하지 않는다', () => {
+  const first = fixture(), second = fixture();
+  first.responses.A04.value = '0'; second.responses.A04.value = '1';
+  assert.equal(questionSimilarity([first, second], 'A04'), questionSimilarity([first, { ...second, responses: { ...second.responses, A04: { value: '3' } } }], 'A04'));
+  first.responses.maxHours.value = second.responses.maxHours.value = 'flexible';
+  assert.equal(questionSimilarity([first, second], 'maxHours'), 100);
+});
+test('시간·플랫폼·경계 차이가 전체 점수와 각 영역에 반영된다', () => {
+  const first = fixture(), second = fixture();
+  second.responses.O02.value = '20'; second.responses.P01.value = 'roll20'; second.responses.B01.value.pvp = 'no';
+  const result = C.playstyleSimilarity([first, second]);
+  assert.ok(result.score < 100);
+  assert.ok(areaSimilarity([first, second], 'participation').score < 100);
+  assert.ok(areaSimilarity([first, second], 'platform').score < 100);
+  assert.ok(areaSimilarity([first, second], 'boundary').score < 100);
+  assert.equal(C.groupAnalysis([first, second]).restrictions.some(item => item.title === 'PC 간 공격'), true);
+});
+test('자유 메모 추가와 문장 표현 차이는 정형 점수를 희석하지 않는다', () => {
+  const first = fixture(), second = fixture(); second.responses.O02.value = '20';
+  const before = C.playstyleSimilarity([first, second]).score;
+  first.responses.O02.note = second.responses.O02.note = '동일한 메모';
+  first.responses.maxHours.fields.availability = '화요일'; second.responses.maxHours.fields.availability = '금요일';
+  assert.equal(C.playstyleSimilarity([first, second]).score, before);
+  assert.equal(questionSimilarity([first, second], 'O02'), 0);
+});
+test('불호는 구조화된 예시 태그만 비교하고 자유 문장의 의미를 추정하지 않는다', () => {
+  const first = fixture(), second = fixture();
+  first.responses.P04.value = '긴 대기 시간\n큰 음량의 BGM'; second.responses.P04.value = ' 큰  음량의 BGM \n긴 대기 시간\n긴 대기 시간';
+  assert.equal(questionSimilarity([first, second], 'P04'), 100);
+  first.responses.P04.value = '큰 음량의 BGM'; second.responses.P04.value = '시끄러운 음악';
+  const result = C.playstyleSimilarity([first, second]);
+  assert.equal(questionSimilarity([first, second], 'P04'), null);
+  assert.equal(result.score, null);
+  assert.ok(result.scoreRange);
+  assert.match(C.similarityNote(result), /가능한 점수 범위/);
+  assert.equal(C.dislikeEntries([first, second])[1].text, '시끄러운 음악');
+});
+test('최소 필요·GM 제공·진지한 장면 조건은 별도 비교하고 주 점수를 바꾸지 않는다', () => {
+  const profiles = [fixture(), fixture(), fixture()];
+  profiles[0].responses.role.value = profiles[1].responses.role.value = 'GM';
+  profiles[0].responses.A02.fields.offered = '0'; profiles[1].responses.A02.fields.offered = '4';
+  profiles[0].responses.A01.fields.minimum = '0'; profiles[1].responses.A01.fields.minimum = '3';
+  profiles[1].responses.C02.fields.serious = 'outside';
+  const result = C.playstyleSimilarity(profiles);
+  assert.equal(result.score, 100);
+  const offered = result.conditions.find(condition => condition.id === 'A02.offered');
+  assert.equal(offered.participantCount, 2, 'PL이 함께 있어도 GM끼리 제공 가능 수준 비교');
+  assert.equal(offered.comparedCount, 2);
+  assert.ok(offered.score < 100);
+  assert.ok(result.conditions.find(condition => condition.id === 'A01.minimum').score < 100);
+  assert.ok(result.conditions.find(condition => condition.id === 'C02.serious').score < 100);
+});
+test('별도 플랫폼 이름은 한 번만 비교하고 이름 미공유는 동일 응답으로 추정하지 않는다', () => {
+  const first = fixture(), second = fixture();
+  first.responses.P01 = { value: 'other', fields: { platform: 'Foundry' } }; second.responses.P01 = { value: 'other', fields: { platform: 'Tabletop' } };
+  const before = C.playstyleSimilarity([first, second]).score;
+  first.responses.P01.note = second.responses.P01.note = '동일 메모';
+  assert.equal(C.playstyleSimilarity([first, second]).score, before);
+  assert.equal(questionSimilarity([first, second], 'P01'), 50);
+  assert.ok(!C.playstyleSimilarity([first, second]).conditions.some(condition => condition.id === 'P01.platform'));
+  delete second.responses.P01.fields.platform;
+  assert.equal(C.playstyleSimilarity([first, second]).score, null);
+  assert.equal(C.playstyleSimilarity([first, second]).scoreRange, null, '플랫폼 영역 비교 범위 50%라 전체 점수 보류');
+});
+test('영역의 고정 비중은 문항 수에 좌우되지 않는다', () => {
+  const first = fixture(), second = fixture();
+  const result = C.playstyleSimilarity([first, second]);
+  assert.ok(result.areas.every(area => area.weight === .125));
+  assert.notEqual(result.areas.find(area => area.id === 'schedule').totalCount, result.areas.find(area => area.id === 'platform').totalCount);
+});
+test('일부 RP만 답하거나 영역 비교 범위가 부족하면 전체 점수를 보류한다', () => {
+  assert.equal(C.playstyleSimilarity([]).score, null);
+  assert.equal(C.playstyleSimilarity([fixture()]).score, null);
+  const partial = A.makeProfile({ T1: { value: 0 }, D1: { value: 0 }, S1: { value: 0 } });
+  assert.equal(C.playstyleSimilarity([partial, partial]).score, null);
+  assert.equal(C.playstyleSimilarity([partial, partial]).scoreRange, null);
+  assert.equal(C.playstyleSimilarity([partial, partial]).comparedCount, 3);
+  assert.match(C.similarityNote(C.playstyleSimilarity([partial, partial])), /보류/);
+});
+test('미공유 항목을 없애 100으로 올리는 대신 가능한 점수 구간을 표시한다', () => {
+  const first = fixture(), second = fixture(); second.responses.O02.value = '20';
+  const before = C.playstyleSimilarity([first, second]); delete second.responses.O02;
+  const after = C.playstyleSimilarity([first, second]);
+  assert.equal(after.score, null);
+  assert.ok(after.scoreRange[0] <= before.score && after.scoreRange[1] >= before.score);
+  assert.ok(after.scoreRange[0] < after.scoreRange[1]);
+  assert.match(C.similarityValue(after), /^\d+–\d+%$/);
+});
+test('경계 비공개를 일치 응답으로 취급하지 않는다', () => {
+  const first = fixture(), second = fixture(); first.responses.B02.value.gore = second.responses.B02.value.gore = 'private';
+  const result = C.playstyleSimilarity([first, second]);
+  assert.ok(result.partial);
+  assert.ok(result.comparedCount < result.totalCount);
+  assert.equal(result.score, null);
+  assert.ok(!C.similarityNote(result).includes('레이더 표시 선택'));
+  assert.ok(!C.similarityNote(result).includes('운영 조건과 경계'));
+});
+test('명시적으로 불호가 없다는 응답은 공유 후에도 비교 정보로 보존한다', () => {
+  const profile = fixture(); profile.responses.P04.value = '';
+  const shared = A.exportProfile(profile);
+  assert.equal(shared.responses.P04.value, '');
+  assert.equal(C.playstyleSimilarity([profile, shared]).score, 100);
+  assert.equal(A.exportProfile(profile, { notes: false }).responses.P04, undefined);
 });
 function fixture(value = 75, boundary = 'ask') {
   const responses = {};

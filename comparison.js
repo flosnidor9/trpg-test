@@ -43,57 +43,131 @@
     return null;
   }
   const comparisonRadar = profile => Object.fromEntries(comparisonAxes.map(axis => [axis.key, comparisonValue(profile, axis.key)]));
-  function polygonArea(points) {
-    return Math.abs(points.reduce((sum, [x, y], i) => {
-      const [nextX, nextY] = points[(i + 1) % points.length];
-      return sum + x * nextY - nextX * y;
-    }, 0)) / 2;
+  const similarityAreas = [
+    { id: 'rp', name: 'RP', ids: ['T1', 'D1', 'S1', 'I1', 'M1', 'P03'] },
+    { id: 'participation', name: '참여와 휴식', ids: ['maxHours', 'O01', 'O02', 'O03', 'O04'] },
+    { id: 'communication', name: '교류와 소통', ids: ['O05', 'O06', 'C01', 'C02', 'C03', 'P04'] },
+    { id: 'recruitment', name: '구인과 합류', ids: ['O07', 'O08', 'O09'] },
+    { id: 'schedule', name: '일정', ids: ['O10', 'O11', 'O16', 'O15', 'O12', 'O13', 'O14'] },
+    { id: 'preparation', name: '롤방 준비', ids: ['A01', 'A02', 'A03', 'A04'] },
+    { id: 'platform', name: '플랫폼과 연락', ids: ['P01', 'P02'] },
+    { id: 'boundary', name: '경계', ids: ['B01', 'B02'] }
+  ];
+  // 저장용 선택지 번호를 측정값으로 추정하지 않고, 비교할 척도를 명시합니다.
+  const similarityCoordinates = {
+    T1: new Map([[0, 0], [25, 25], [50, 50], [75, 75], [100, 100]]),
+    D1: new Map([[0, 0], [50, 50], [100, 100]]),
+    S1: new Map([[0, 0], [25, 25], [50, 50], [75, 75], [100, 100]]),
+    I1: new Map([[0, 0], [25, 25], [50, 50], [75, 75], [100, 100]]),
+    M1: new Map([[0, 0], [25, 25], [50, 50], [75, 75], [100, 100]]),
+    O02: new Map([['5', 0], ['10', 100 / 3], ['15', 200 / 3], ['20', 100]]),
+    O05: new Map([['0', 0], ['1', 50], ['2', 100]]),
+    O14: new Map([['3', 0], ['7', 400 / 27], ['14', 1100 / 27], ['30', 100]])
+  };
+  const minimumSimilarityCoverage = .8;
+  function normalizedText(value) {
+    return value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ko');
   }
-  function clipPolygon(subject, clip) {
-    let result = subject;
-    for (let i = 0; i < clip.length && result.length; i++) {
-      const a = clip[i], b = clip[(i + 1) % clip.length], input = result;
-      result = [];
-      const side = p => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
-      for (let j = 0; j < input.length; j++) {
-        const current = input[j], previous = input[(j + input.length - 1) % input.length];
-        const currentSide = side(current), previousSide = side(previous);
-        if ((currentSide >= 0) !== (previousSide >= 0)) {
-          const ratio = previousSide / (previousSide - currentSide);
-          result.push([previous[0] + (current[0] - previous[0]) * ratio, previous[1] + (current[1] - previous[1]) * ratio]);
-        }
-        if (currentSide >= 0) result.push(current);
-      }
+  function responseSimilarity(values, coordinates, categoryCount) {
+    if (coordinates) {
+      const points = values.map(value => coordinates.get(value));
+      const mean = points.reduce((sum, value) => sum + value, 0) / points.length;
+      const deviation = points.reduce((sum, value) => sum + Math.abs(value - mean), 0) / points.length;
+      return Math.max(0, Math.min(100, 100 - 2 * deviation));
     }
-    return result;
+    // 응답 비율 전체를 사용해 같은 분포의 점수가 인원수나 복제에 따라 바뀌지 않게 합니다.
+    const counts = new Map();
+    values.forEach(value => counts.set(value, (counts.get(value) || 0) + 1));
+    const concentration = [...counts.values()].reduce((sum, count) => sum + (count / values.length) ** 2, 0);
+    // 고정 선택지는 균등 분포를 0, 동일 응답을 100으로 정규화합니다.
+    // 이름으로 식별하는 플랫폼·연락 채널은 범주 수가 제한되지 않아 기준값 0을 사용합니다.
+    const baseline = categoryCount ? 1 / categoryCount : 0;
+    return Math.max(0, Math.min(100, 100 * (concentration - baseline) / (1 - baseline)));
   }
-  function radarOverlap(radars) {
-    if (radars.length < 2 || radars.some(radar => comparisonAxes.some(axis => !A.known(radar[axis.key])))) return null;
-    const directions = comparisonAxes.map((_, i) => {
-      const angle = -Math.PI / 2 + i * Math.PI * 2 / comparisonAxes.length;
-      return [Math.cos(angle), Math.sin(angle)];
+  function dislikeTags(profile, q) {
+    const value = A.valueOf(profile, q.id);
+    if (typeof value !== 'string') return null;
+    const lines = [...new Set(value.split(/\r?\n/).map(normalizedText).filter(Boolean))];
+    const tags = q.suggestions.map(normalizedText);
+    const hasFreeText = lines.some(line => !tags.includes(line));
+    // 자유 문장으로 태그 미선택을 추측하지 않고 명시한 태그만 비교합니다.
+    return tags.map(tag => lines.includes(tag) ? true : hasFreeText ? undefined : false);
+  }
+  function playstyleSimilarity(profiles) {
+    const questions = [];
+    for (const area of similarityAreas) for (const id of area.ids) {
+      const q = D.questions.find(question => question.id === id), items = [];
+      const compare = (key, values, valid, coordinates, categoryCount) => {
+        const score = profiles.length >= 2 && values.every(valid)
+          ? responseSimilarity(values, coordinates, categoryCount) : null;
+        items.push({ key, score });
+      };
+      const valid = value => q.options.some(([option]) => option === value);
+      const values = profiles.map(profile => A.valueOf(profile, id));
+      if (q.type === 'matrix') {
+        q.rows.forEach(([row]) => compare(row, values.map(value => value?.[row]), valid, null, q.options.length));
+      } else if (id === 'P04') {
+        const tags = profiles.map(profile => dislikeTags(profile, q));
+        q.suggestions.forEach((tag, index) => compare(tag, tags.map(value => value?.[index]), value => typeof value === 'boolean', null, 2));
+      } else if (id === 'P01' || id === 'P02') {
+        const field = id === 'P01' ? 'platform' : 'channel';
+        const identities = profiles.map((profile, index) => {
+          if (!valid(values[index])) return undefined;
+          if (values[index] !== 'other') return 'option:' + values[index];
+          const name = A.response(profile, id)?.fields?.[field];
+          return typeof name === 'string' && name.trim() ? 'name:' + normalizedText(name) : undefined;
+        });
+        compare(id, identities, value => typeof value === 'string', null, null);
+      } else compare(id, values, valid, similarityCoordinates[id] || null, q.options.length);
+      const known = items.filter(item => item.score !== null);
+      questions.push({ id, area: area.id, score: known.length ? known.reduce((sum, item) => sum + item.score, 0) / known.length : null,
+        comparedCount: known.length, totalCount: items.length, coverage: known.length / items.length,
+        lower: known.reduce((sum, item) => sum + item.score, 0) / items.length,
+        upper: (known.reduce((sum, item) => sum + item.score, 0) + 100 * (items.length - known.length)) / items.length });
+    }
+    const areas = similarityAreas.map(area => {
+      const items = questions.filter(q => q.area === area.id), known = items.filter(q => q.score !== null);
+      return { id: area.id, name: area.name, weight: 1 / similarityAreas.length,
+        score: known.length ? known.reduce((sum, q) => sum + q.score, 0) / known.length : null,
+        lower: items.reduce((sum, q) => sum + q.lower, 0) / items.length,
+        upper: items.reduce((sum, q) => sum + q.upper, 0) / items.length,
+        coverage: items.reduce((sum, q) => sum + q.coverage, 0) / items.length,
+        comparedCount: items.reduce((sum, q) => sum + q.comparedCount, 0), totalCount: items.reduce((sum, q) => sum + q.totalCount, 0) };
     });
-    let intersection = 0, union = 0;
-    for (let axis = 0; axis < comparisonAxes.length; axis++) {
-      const next = (axis + 1) % comparisonAxes.length;
-      const triangles = radars.map(radar => {
-        const distance = key => .25 + .75 * radar[key] / 100;
-        const first = distance(comparisonAxes[axis].key), second = distance(comparisonAxes[next].key);
-        return [[0, 0], [directions[axis][0] * first, directions[axis][1] * first], [directions[next][0] * second, directions[next][1] * second]];
-      });
-      for (let mask = 1; mask < 1 << triangles.length; mask++) {
-        let clipped = null, count = 0;
-        for (let i = 0; i < triangles.length; i++) if (mask & (1 << i)) {
-          clipped = clipped ? clipPolygon(clipped, triangles[i]) : triangles[i];
-          count++;
-          if (!clipped.length) break;
-        }
-        const area = clipped?.length >= 3 ? polygonArea(clipped) : 0;
-        if (count === triangles.length) intersection += area;
-        union += count % 2 ? area : -area;
-      }
+    // 최소 조건·제공 가능 범위는 적용 대상 참가자끼리 별도로 비교합니다.
+    const conditions = [];
+    for (const q of D.questions) for (const field of q.fields || []) {
+      if (!['select', 'number'].includes(field.type)) continue;
+      const eligible = profiles.filter(profile => (!field.gmOnly || ['GM', 'both'].includes(A.valueOf(profile, 'role'))) &&
+        (!field.when || A.valueOf(profile, q.id) === field.when));
+      if (!eligible.length) continue;
+      const values = eligible.map(profile => A.response(profile, q.id)?.fields?.[field.key]);
+      if (!values.some(value => value !== undefined && value !== '')) continue;
+      const valid = field.type === 'select' ? value => field.options.some(([option]) => option === value)
+        : value => value !== undefined && value !== '' && Number.isInteger(Number(value)) && Number(value) >= field.min && Number(value) <= field.max;
+      const known = values.filter(valid), numeric = field.type === 'number';
+      const coordinates = numeric ? new Map(known.map(value => [Number(value), 100 * (Number(value) - field.min) / (field.max - field.min)])) : null;
+      conditions.push({ id: q.id + '.' + field.key, name: q.name + ' · ' + field.label,
+        participantCount: eligible.length, comparedCount: known.length,
+        score: eligible.length >= 2 && known.length === eligible.length ? responseSimilarity(numeric ? values.map(Number) : values, coordinates, numeric ? null : field.options.length) : null });
     }
-    return union > 1e-12 ? Math.round(Math.max(0, Math.min(100, intersection / union * 100))) : null;
+    const completeEnough = profiles.length >= 2 && areas.every(area => area.coverage >= minimumSimilarityCoverage && area.score !== null);
+    const partial = questions.some(q => q.coverage < 1);
+    return { score: completeEnough && !partial ? Math.round(areas.reduce((sum, area) => sum + area.score * area.weight, 0)) : null,
+      scoreRange: completeEnough && partial ? [Math.floor(areas.reduce((sum, area) => sum + area.lower * area.weight, 0)), Math.ceil(areas.reduce((sum, area) => sum + area.upper * area.weight, 0))] : null,
+      participantCount: profiles.length, comparedCount: questions.reduce((sum, q) => sum + q.comparedCount, 0),
+      totalCount: questions.reduce((sum, q) => sum + q.totalCount, 0), partial,
+      minimumCoverage: minimumSimilarityCoverage, questions, areas, conditions };
+  }
+  function similarityNote(similarity) {
+    if (similarity.participantCount < 2) return '참가자가 두 명 이상이면 파티 전체의 응답 유사도를 볼 수 있어요.';
+    const coverage = '전체 ' + similarity.participantCount + '명 · ' + similarity.comparedCount + '/' + similarity.totalCount + '개 정형 항목 비교';
+    if (similarity.scoreRange) return coverage + ' · 미확인 항목이 있어 가능한 점수 범위로 표시했어요.';
+    if (similarity.score === null) return coverage + ' · 비교 범위가 부족해 전체 점수를 보류했어요.';
+    return coverage + ' · 8개 영역에 같은 비중을 적용했어요.';
+  }
+  function similarityValue(similarity) {
+    return similarity.scoreRange ? similarity.scoreRange.join('–') + '%' : similarity.score === null ? '—' : similarity.score + '%';
   }
   function comparisonAnswer(profile, axis, separator = ' · ') {
     return (comparisonQuestionIds[axis.key] || []).map(id => {
@@ -312,7 +386,7 @@
       return q.name + ': ' + answer.label + (notices.length ? ' · ' + notices.join(' · ') : '');
     }).concat(axis.key === 'session' ? analysis.suggestions.filter(item => item.title === '휴식 주기').map(item => item.title + ': ' + item.text) : []).join('\n') }));
   }
-  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, partyMapReading, radarOverlap, sharedPlaystyle, usesMajority, criterionCopy };
+  globalThis.TRPGCompare = { groupAnalysis, cellLabel, dislikeEntries, constraintRank, governingAnswer, preparationRepresentative, comparisonAxes, comparisonRadar, comparisonAnswer, partyMapReading, playstyleSimilarity, similarityNote, similarityValue, sharedPlaystyle, usesMajority, criterionCopy };
   if (typeof document === 'undefined' || !document.querySelector('#comparison-output')) return;
   const { $ } = A;
   let people = [], nextId = 1, selected = new Set(), selectionTouched = false, activePerson = null;
@@ -499,7 +573,8 @@
   function renderRadar() {
     const chosen = people.filter(p => selected.has(p.id));
     const radars = chosen.map(p => comparisonRadar(p.profile));
-    $('#comparison-radar').closest('.comparison-radar-card').hidden = chosen.length === 0;
+    $('#comparison-radar').closest('.comparison-radar-card').hidden = false;
+    $('#comparison-radar').closest('.comparison-radar-visual').hidden = chosen.length === 0;
     $('#radar-selection-copy').textContent = chosen.length ? '선택한 ' + chosen.length + '명의 여러 응답을 여섯 가지 성향으로 대략 묶었습니다. 위치는 취향의 방향이며 우열이 아닙니다. 가장 안쪽 눈금부터 표시해 낮은 값도 면적으로 보입니다. 축 이름에서 방향을 확인하고, 실제 응답과 경계·플랫폼은 아래 표에서 확인해 주세요.' : '위에서 참가자를 선택하면 레이더를 볼 수 있어요.';
     const radarVisible = globalThis.TRPGCompareMotion?.radarVisible() ?? true;
     A.drawRadar($('#comparison-radar'), chosen.map((p, i) => ({ id: p.id, data: radars[i], index: p.id - 1, color: style(p).color, minRadius: .25 })), radarVisible, true, comparisonAxes, false, { revealFromCenter: radarVisible });
@@ -514,9 +589,12 @@
       return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + e(axis.name + ': ' + direction) + '">' + e(axis.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + e(direction) + '</span></button>';
     }).join('') : '';
     $('#radar-data-summary').innerHTML = '<table><caption>전체 ' + people.length + '명의 함께 적용할 조건 · RP는 선호 분포를 함께 표시합니다.</caption><thead><tr><th scope="col">성향</th><th scope="col">함께 적용할 응답</th></tr></thead><tbody>' + partyMapReading(people.map(person => person.profile), comparisonMode).map(item => '<tr><th scope="row">' + e(item.axis.name) + '</th><td>' + e(item.text) + '</td></tr>').join('') + '</tbody></table>';
-    const overlap = radarOverlap(radars);
-    $('#radar-overlap-value').textContent = overlap === null ? '—' : overlap + '%';
-    $('#radar-overlap-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 공통 면적을 볼 수 있어요.' : overlap === null ? '미확인 축이 있어 면적을 계산할 수 없어요.' : '모두 겹치는 면적 ÷ 전체가 차지하는 면적. 취향의 우열이나 궁합 점수는 아니에요.';
+    const similarity = playstyleSimilarity(people.map(person => person.profile));
+    $('#playstyle-similarity-value').textContent = similarityValue(similarity);
+    $('#playstyle-similarity-note').textContent = similarityNote(similarity);
+    const similarityScore = score => score === null ? '미확인' : Math.round(score) + '%';
+    $('#similarity-breakdown').innerHTML = '<table><caption>영역별 유사도 · 각 영역의 비중은 12.5%입니다.</caption><thead><tr><th scope="col">영역</th><th scope="col">유사도</th></tr></thead><tbody>' + similarity.areas.map(area =>
+      '<tr><th scope="row">' + e(area.name) + '</th><td>' + similarityScore(area.score) + (area.coverage < 1 && area.score !== null ? ' · 일부' : '') + '</td></tr>').join('') + '</tbody></table>';
     const common = sharedPlaystyle(chosen.map(person => person.profile));
     $('#party-common-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 함께 선호하는 방식을 살펴볼 수 있어요.' : '선택한 참가자 모두가 가진 세션 취향 카드만 표시해요. 응답이 완전히 같을 필요는 없어요.';
     $('#party-png').disabled = chosen.length === 0;

@@ -76,7 +76,7 @@
     const cardHeights = cards.map((card, i) => Math.max(cardWidth * 1.35,
       copyStart + 17 * 1.55 + 12 + measure(card.title, copyWidth, 26, 700) + 18 +
       cardParagraphs[i].reduce((height, paragraph) => height + measure(paragraph, paragraphWidth, 20) + 12, 0) + 24));
-    const cardStart = top + (party ? 230 : 58);
+    const cardStart = top + (party ? 410 : 58);
     let cardEnd = cardStart;
     for (let i = 0; i < cards.length; i += cardColumns) cardEnd += Math.max(...cardHeights.slice(i, i + cardColumns)) + cardGap;
     const height = Math.ceil(Math.max(readingY, cardEnd, top + 900) + 126);
@@ -118,10 +118,15 @@
       y += 18;
     }
     if (party) {
-      const overlap = C.radarOverlap(sets.map(set => set.data));
-      box(ctx, rightX, top, rightWidth, 154, '#ede7f5');
-      text(ctx, '공통 면적  ' + (overlap === null ? '—' : overlap + '%'), rightX + 30, top + 24, rightWidth - 60, 32, purple, 700);
-      text(ctx, members.length < 2 ? '두 명 이상일 때 계산합니다.' : overlap === null ? '미확인 축이 있어 계산할 수 없습니다.' : '모두 겹치는 면적 ÷ 전체 면적\n취향의 방향을 읽는 참고이며 궁합 점수가 아닙니다.', rightX + 30, top + 78, rightWidth - 60, 19, muted);
+      const similarity = C.playstyleSimilarity(readingProfiles);
+      box(ctx, rightX, top, rightWidth, 340, '#ede7f5');
+      text(ctx, '플레이 스타일 유사도  ' + C.similarityValue(similarity), rightX + 30, top + 24, rightWidth - 60, 32, purple, 700);
+      text(ctx, C.similarityNote(similarity), rightX + 30, top + 78, rightWidth - 60, 19, muted);
+      const columnWidth = (rightWidth - 60) / 2;
+      similarity.areas.forEach((area, index) => {
+        const label = area.score === null ? '미확인' : Math.round(area.score) + '%' + (area.coverage < 1 ? ' (일부)' : '');
+        text(ctx, area.name + '  ' + label, rightX + 30 + index % 2 * columnWidth, top + 180 + Math.floor(index / 2) * 34, columnWidth - 12, 17, muted);
+      });
     }
     text(ctx, party ? '함께 가진 세션 취향 카드' : '세션 취향 카드', rightX, cardStart - 52, rightWidth, 30, ink, 700);
     if (!cards.length) {
