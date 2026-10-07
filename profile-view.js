@@ -10,9 +10,9 @@ globalThis.TRPGProfileView = `
       <p id="taste-empty" class="empty-card" hidden>아직 카드를 고를 응답이 충분하지 않아요. <a href="test.html?edit=1">답변을 확인해 주세요.</a></p>
     </section>
     <section id="export-section" class="details export-section">
-      <div class="export-heading"><div><p class="label">TAKE YOUR PROFILE</p><h2>다음 모험에 가져가세요.</h2></div><p class="section-copy">결과는 이 브라우저에 저장됩니다.<br>PNG로 간직하거나 JSON으로 파티 비교에 불러오세요.</p></div>
+      <div class="export-heading"><div><p class="label">TAKE YOUR PROFILE</p><h2>다음 모험에 가져가세요.</h2></div><p class="section-copy">결과는 이 브라우저에 저장됩니다.<br>PNG 또는 JSON으로 간직하고 파티 비교에 불러오세요.</p></div>
       <label class="question-field" for="display-name">공유할 이름<input id="display-name" maxlength="80"></label>
-      <p class="small-copy">캐릭터 전개·소재별 허용 범위와 직접 적은 조건·일정·불호 요소·메모가 JSON에 포함됩니다.</p>
+      <p class="small-copy">캐릭터 전개·소재별 허용 범위와 직접 적은 조건·일정·불호 요소·메모가 JSON과 PNG의 비교 데이터에 포함됩니다. 비공개 항목은 제외됩니다.</p>
       <details><summary>내보낼 JSON 미리보기</summary><label class="sr-only" for="export-preview">내보낼 결과 JSON</label><textarea id="export-preview" readonly rows="14" spellcheck="false"></textarea></details>
       <div class="profile-export-actions"><button type="button" id="profile-png" class="button primary">PNG로 저장하기</button><button type="button" id="download" class="button secondary">결과 JSON 저장 ↓</button></div><p id="export-message" class="form-message" role="status"></p>
     </section>

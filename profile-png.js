@@ -155,10 +155,14 @@
     let dialog;
     try {
       const canvas = await create(options);
-      const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('PNG 생성 실패')), 'image/png'));
+      const image = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('PNG 생성 실패')), 'image/png'));
+      const profiles = (options.readingProfiles || options.members.map(member => member.profile)).map(profile => TRPGApp.exportProfile(profile));
+      const blob = await TRPGPngMetadata.embed(image, profiles);
       const url = URL.createObjectURL(blob);
       dialog = document.createElement('dialog'); dialog.className = 'png-dialog'; dialog.setAttribute('aria-label', 'PNG 저장 미리보기');
       dialog.innerHTML = '<div class="png-dialog-heading"><div><h2>PNG 저장 미리보기</h2><p>지도와 세션 카드를 한 장에 담았어요.</p></div><button type="button" class="button secondary png-close" aria-label="미리보기 닫기">닫기</button></div><div class="png-preview"><img alt="성향 지도와 텍스트 설명, 세션 취향 카드 저장 이미지"></div><div class="png-dialog-actions"><button type="button" class="button primary png-save">PNG 저장</button><p class="form-message" role="status"></p></div>';
+      dialog.querySelector('.png-dialog-heading p').textContent = '비교용 결과 데이터 ' + profiles.length + '명분을 포함해요. JSON과 같은 공개 기준으로 경계·메모를 담고 비공개 항목은 제외해요. 파티 비교에는 원본 PNG를 불러와 주세요.';
+      if (options.party) dialog.querySelector('.png-dialog-heading p').textContent += ' 텍스트 요약에 참여한 전체 참가자의 데이터를 포함해요.';
       dialog.querySelector('img').src = url;
       dialog.querySelector('.png-close').onclick = () => dialog.close();
       dialog.querySelector('.png-save').onclick = () => {
@@ -171,7 +175,7 @@
       dialog?.remove();
       let message = button.parentElement.querySelector('.png-error');
       if (!message) { message = document.createElement('p'); message.className = 'png-error form-message'; message.setAttribute('role', 'status'); button.after(message); }
-      message.textContent = '이미지를 만들지 못했어요. 다시 시도해 주세요.';
+      message.textContent = error.message || '이미지를 만들지 못했어요. 다시 시도해 주세요.';
       console.error(error);
     } finally { button.disabled = false; button.textContent = original; }
   }

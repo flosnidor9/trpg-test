@@ -457,7 +457,7 @@
       container.querySelector('.profile-cta').setAttribute('href', '#comparison-tabs');
       container.querySelector('.profile-cta').addEventListener('click', event => { event.preventDefault(); $('#party-tab').click(); $('#comparison-tabs').scrollIntoView({ block: 'start' }); });
       container.querySelector('#personal-taste-empty').textContent = '아직 카드를 고를 응답이 충분하지 않아요. 공유한 응답을 확인해 주세요.';
-      container.querySelector('.export-heading .section-copy').textContent = '이 참가자의 결과 JSON을 저장해 파티 비교에 다시 불러올 수 있어요.';
+      container.querySelector('.export-heading .section-copy').textContent = '이 참가자의 결과 JSON 또는 PNG를 저장해 파티 비교에 다시 불러올 수 있어요.';
       disposePersonalMotion = globalThis.TRPGResultMotion.init(container);
     }
   }
@@ -520,8 +520,16 @@
     const errors = [];
     for (const file of files) {
       try {
-        if (file.size > 2_000_000) throw new Error('파일은 2MB 이하로 불러와 주세요.');
-        add(JSON.parse(await file.text())); added++;
+        const png = /\.png$/i.test(file.name) || file.type === 'image/png';
+        let profiles;
+        if (png) profiles = await TRPGPngMetadata.read(file);
+        else {
+          if (file.size > 2_000_000) throw new Error('JSON 파일은 2MB 이하로 불러와 주세요.');
+          profiles = [JSON.parse(await file.text())];
+        }
+        // 파티 파일 전체를 검증한 뒤 추가해 잘못된 파일이 일부만 반영되지 않게 합니다.
+        const validated = profiles.map(profile => A.validateProfile(profile));
+        validated.forEach(add); added += validated.length;
       } catch (err) { errors.push(file.name + ': ' + (err instanceof SyntaxError ? 'JSON 형식이 올바르지 않아요.' : err.message)); }
     }
     render(); setMessage((added ? added + '명의 결과를 추가했어요. ' : '') + errors.join(' '), errors.length > 0);

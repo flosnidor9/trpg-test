@@ -4,6 +4,7 @@ const path = require('node:path');
 const http = require('node:http');
 const os = require('node:os');
 const { chromium } = require(process.env.TRPG_PLAYWRIGHT_MODULE || 'playwright');
+require('../png-metadata.js');
 const root = path.resolve(__dirname, '..');
 const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), 'trpg-png-'));
 const server = http.createServer((req, res) => {
@@ -16,7 +17,7 @@ const server = http.createServer((req, res) => {
 });
 (async () => {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.TRPG_BROWSER || undefined });
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
@@ -29,6 +30,8 @@ const server = http.createServer((req, res) => {
       TRPGData.questions.forEach(q => {
         responses[q.id] = { value: q.type === 'trait' ? q.options.at(-1)[0] : q.type === 'matrix' ? Object.fromEntries(q.rows.map(([id]) => [id, q.options[0][0]])) : q.type === 'text' ? '' : q.options[0][0] };
       });
+      responses.B01.value.pvp = 'private';
+      responses.B01.note = '공유하면 안 되는 경계 메모';
       const profile = TRPGApp.makeProfile(responses, '모험가 유나');
       localStorage.setItem(TRPGApp.STORAGE, JSON.stringify(profile)); return profile;
     });
@@ -68,6 +71,12 @@ const server = http.createServer((req, res) => {
       const buffer = fs.readFileSync(path.join(artifacts, filename));
       assert.equal(buffer.subarray(1, 4).toString(), 'PNG');
       assert.ok(buffer.readUInt32BE(20) > 1000);
+      const restored = await TRPGPngMetadata.read(new Blob([buffer]));
+      const expectedCount = ({ 'personal.png': 1, 'one-person.png': 1, 'party.png': 2, 'six-person.png': 6, 'participant.png': 1 })[filename];
+      assert.equal(restored.length, expectedCount);
+      assert.equal(restored.some(person => JSON.stringify(person).includes('private')), false, '비공개 항목 제외');
+      assert.equal(restored.some(person => JSON.stringify(person).includes('공유하면 안 되는')), false, '비공개 경계 메모 제외');
+      assert.match(await page.locator('.png-dialog-heading p').textContent(), /비교용 결과 데이터/);
       await page.keyboard.press('Escape');
       assert.equal(await page.locator(button).evaluate(el => el === document.activeElement), true);
     }
@@ -106,6 +115,34 @@ const server = http.createServer((req, res) => {
       return canvas.toDataURL();
     });
     fs.writeFileSync(path.join(artifacts, 'empty.png'), Buffer.from(empty.split(',')[1], 'base64'));
+    await page.goto(base + '/compare.html');
+    await page.locator('#file-input').setInputFiles(path.join(artifacts, 'personal.png'));
+    await page.getByText('1명의 결과를 추가했어요.', { exact: false }).waitFor();
+    assert.equal(await page.locator('[data-person]').count(), 1);
+    assert.equal(await page.locator('[data-name]').inputValue(), '모험가 유나');
+    await page.locator('#file-input').setInputFiles(path.join(artifacts, 'party.png'));
+    await page.getByText('2명의 결과를 추가했어요.', { exact: false }).waitFor();
+    assert.equal(await page.locator('[data-person]').count(), 3);
+    await page.locator('#file-input').setInputFiles(path.join(artifacts, 'six-person.png'));
+    await page.getByText('6명의 결과를 추가했어요.', { exact: false }).waitFor();
+    assert.equal(await page.locator('[data-person]').count(), 9);
+    assert.equal(await page.locator('[data-person]:checked').count(), 6);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+    await page.locator('#file-input').setInputFiles(path.join(artifacts, 'empty.png'));
+    await page.getByText('비교 데이터가 없어요.', { exact: false }).waitFor();
+    assert.equal(await page.locator('[data-person]').count(), 9);
+    const invalidParty = await TRPGPngMetadata.embed(new Blob([fs.readFileSync(path.join(artifacts, 'empty.png'))]), [profile, { schemaVersion: 'wrong' }]);
+    await page.locator('#file-input').setInputFiles({ name: 'invalid-party.png', mimeType: 'image/png', buffer: Buffer.from(await invalidParty.arrayBuffer()) });
+    await page.locator('#import-message.error-message').waitFor();
+    assert.equal(await page.locator('[data-person]').count(), 9, '파티 전체 검증 실패 시 부분 추가 없음');
+    const corrupted = fs.readFileSync(path.join(artifacts, 'personal.png')); corrupted[corrupted.length - 20] ^= 1;
+    await page.locator('#file-input').setInputFiles([
+      { name: 'broken.png', mimeType: 'image/png', buffer: corrupted },
+      { name: 'profile.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(profile)) }
+    ]);
+    await page.getByText('PNG 파일이 손상', { exact: false }).waitFor();
+    assert.equal(await page.locator('[data-person]').count(), 10, '혼합 파일에서 정상 JSON은 추가');
+    await page.screenshot({ path: path.join(artifacts, 'png-import-mobile.png') });
     assert.deepEqual(errors, []);
     console.log('PNG export checks passed. Artifacts: ' + artifacts);
   } finally { await browser.close(); server.close(); }
