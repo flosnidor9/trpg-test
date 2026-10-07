@@ -304,6 +304,10 @@
       $('#profile-focus').innerHTML = '<span>나를 소개하는 취향</span><strong>' + ranked.slice(0, 2).map(card => escape(card.title)).join('<br>') + '</strong>';
     }
     const handouts = !!root.closest('.result-page');
+    const handoutShine = card => {
+      const maskId = 'handout-reflection-' + idPrefix + card.id;
+      return '<span class="handout-shine" aria-hidden="true"><svg viewBox="0 0 310 620" preserveAspectRatio="none" focusable="false"><defs><mask id="' + maskId + '" maskUnits="userSpaceOnUse" x="0" y="0" width="310" height="620"><rect width="310" height="620" fill="white"/><rect class="handout-shine-cutout" x="14" y="14" width="282" height="310" fill="black"/></mask></defs><g mask="url(#' + maskId + ')"><g class="handout-shine-bands" fill="white" fill-opacity=".09"><path d="M420-120h45L85 740H40Z"/><path d="M490-120h7L117 740h-7Z"/></g></g></svg></span>';
+    };
     $('#taste-empty').hidden = ranked.length > 0;
     $('#taste-cards').innerHTML = ranked.map((card, index) =>
       (handouts ? '<div class="handout-slot" style="--card-delay:' + (index % 3 * 100) + 'ms">' : '') +
@@ -315,7 +319,7 @@
       '<h3>' + escape(card.title) + '</h3>' +
       (handouts ? '<ul class="handout-description">' + card.description.split(/(?<=[.!?])\s+/).map(sentence => '<li>' + escape(sentence) + '</li>').join('') + '</ul>' : '<p>' + escape(card.description) + '</p>') +
       (handouts ? '</div>' : '') +
-      (handouts ? '<span class="handout-shine" aria-hidden="true"></span>' : '<small>응답 근거 · ' + escape(card.evidence) + '</small>') + '</article>' + (handouts ? '</div>' : '')
+      (handouts ? handoutShine(card) : '<small>응답 근거 · ' + escape(card.evidence) + '</small>') + '</article>' + (handouts ? '</div>' : '')
     ).join('');
     const { comparisonAxes: axes, comparisonRadar, comparisonAnswer } = globalThis.TRPGCompare;
     drawRadar($('#radar'), [{ id: 'self', data: comparisonRadar(p), color: COLORS[0], minRadius: .25 }], true, true, axes, false, { revealFromCenter: handouts });

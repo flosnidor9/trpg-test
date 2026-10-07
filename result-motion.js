@@ -7,6 +7,19 @@ function init(root = document) {
   const resets = [];
   const listeners = new AbortController();
   const listen = (target, type, handler) => target.addEventListener(type, handler, { signal: listeners.signal });
+  const sizeReflection = slot => {
+    const card = slot.querySelector('.taste-card');
+    const copy = card.querySelector('.handout-copy');
+    const cutout = card.querySelector('.handout-shine-cutout');
+    if (!cutout || !card.offsetWidth || !card.offsetHeight) return;
+    const sx = 310 / card.offsetWidth, sy = 620 / card.offsetHeight;
+    cutout.setAttribute('x', String(14 * sx));
+    cutout.setAttribute('y', String(14 * sy));
+    cutout.setAttribute('width', String((card.offsetWidth - 28) * sx));
+    cutout.setAttribute('height', String(Math.max(0, copy.offsetTop - 14) * sy));
+  };
+  const resizeObserver = globalThis.ResizeObserver && new ResizeObserver(entries => entries.forEach(entry => sizeReflection(entry.target)));
+  slots.forEach(slot => { sizeReflection(slot); resizeObserver?.observe(slot); });
   let observer;
   if (!motion.matches && globalThis.IntersectionObserver) {
     observer = new IntersectionObserver(entries => {
@@ -48,7 +61,7 @@ function init(root = document) {
       depth += (depthGoal - depth) * (1 - Math.exp(-20 * dt));
       card.style.transform = `translateY(${-(scale - 1) * 85}px) rotateY(${angle + tiltY}deg) rotateX(${tiltX}deg) scale(${scale})`;
       const strength = Math.min(1, Math.max(0, (scale - 1) / .14));
-      shine.style.opacity = String(strength * .8);
+      shine.style.opacity = String(.45 + strength * .35);
       card.style.setProperty('--shine-offset-x', `${tiltY * 5}px`);
       card.style.setProperty('--shine-offset-y', `${-tiltX * 5}px`);
       card.style.setProperty('--parallax-x', String(tiltY / 12));
@@ -61,7 +74,7 @@ function init(root = document) {
       if (!settled) frame = requestAnimationFrame(tick);
       else {
         frame = 0;
-        if (!active) { slot.classList.remove('is-active'); card.style.transform = ''; shine.style.opacity = '0'; clearLayers(); }
+        if (!active) { slot.classList.remove('is-active'); card.style.transform = ''; shine.style.opacity = ''; clearLayers(); }
       }
     };
     const wake = () => { if (!frame) { last = performance.now(); frame = requestAnimationFrame(tick); } };
@@ -101,7 +114,7 @@ function init(root = document) {
       cancelAnimationFrame(frame); frame = 0;
       hovered = focused = active = false;
       angle = angularVelocity = spinGoal = scaleVelocity = tiltX = tiltY = velocityX = velocityY = x = y = 0;
-      scale = 1; depth = 0; card.style.transform = ''; shine.style.opacity = '0';
+      scale = 1; depth = 0; card.style.transform = ''; shine.style.opacity = '';
       clearLayers();
       spinFinished = true;
       slot.classList.remove('is-active', 'motion-ready');
@@ -114,7 +127,7 @@ function init(root = document) {
   motion.addEventListener('change', onMotionChange);
   const onPointerChange = () => { if (!pointer.matches) resets.forEach(reset => reset()); };
   pointer.addEventListener('change', onPointerChange);
-  return () => { observer?.disconnect(); resets.forEach(reset => reset()); listeners.abort(); motion.removeEventListener('change', onMotionChange); pointer.removeEventListener('change', onPointerChange); };
+  return () => { observer?.disconnect(); resizeObserver?.disconnect(); resets.forEach(reset => reset()); listeners.abort(); motion.removeEventListener('change', onMotionChange); pointer.removeEventListener('change', onPointerChange); };
 }
 globalThis.TRPGResultMotion = { init };
 document.addEventListener('DOMContentLoaded', () => { if (document.body.classList.contains('result-page')) init(); }, { once: true });
