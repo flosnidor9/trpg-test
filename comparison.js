@@ -26,8 +26,9 @@
     if (key === 'rpFlow') return meanKnown([profile.radar.tempo, profile.radar.initiative, profile.radar.meta, { '1-3': 100, '5+': 50, '10+': 0 }[value('P03')]], 2);
     if (key === 'expression') return meanKnown([profile.radar.detail, profile.radar.scene], 2);
     if (key === 'session') return meanKnown([
-      { '2': 0, '3': 25, '4': 50, '6': 100 }[value('maxHours')],
-      { '120': 0, '240': 33, '360': 67, '480': 100 }[value('O01')],
+      // 유동적인 응답도 중간값으로 반영해 완료한 응답의 축이 비지 않게 한다.
+      { '2': 0, '3': 25, '4': 50, '6': 100, flexible: 50 }[value('maxHours')],
+      { '120': 0, '240': 33, '360': 67, '480': 100, asNeeded: 50 }[value('O01')],
       { '5': 100, '10': 67, '15': 33, '20': 0 }[value('O02')]
     ], 2);
     if (key === 'chat') return { '0': 0, '1': 50, '2': 100 }[value('O05')] ?? null;

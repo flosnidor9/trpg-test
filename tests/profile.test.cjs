@@ -179,13 +179,40 @@ test('파티 레이더는 응답을 여섯 가지 성향으로 묶고 원래 응
   const values = C.comparisonRadar(p);
   assert.equal(values.rpFlow, 56);
   assert.equal(values.expression, 63);
-  assert.equal(values.session, 0);
+  assert.equal(values.session, 17);
   assert.equal(values.schedule, 100);
   assert.match(C.comparisonAnswer(p, C.comparisonAxes.find(axis => axis.key === 'rpFlow')), /타이핑 시간: 10분 이상/);
   assert.match(C.comparisonAnswer(p, C.comparisonAxes.find(axis => axis.key === 'session')), /휴식 길이: 약 20분 이상/);
   const context = Object.fromEntries(['setTransform', 'clearRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'stroke', 'fill', 'arc', 'rect', 'setLineDash', 'fillText'].map(name => [name, () => {}]));
   const canvas = { width: 600, height: 600, getContext: () => context };
   assert.doesNotThrow(() => A.drawRadar(canvas, [{ id: 'test', data: values }], false, true, C.comparisonAxes));
+});
+
+test('세션 호흡은 모든 완료 응답 조합에서 표시하고 유동적인 선택도 반영한다', () => {
+  const p = fixture();
+  for (const hours of D.questions.find(q => q.id === 'maxHours').options) {
+    for (const interval of D.questions.find(q => q.id === 'O01').options) {
+      for (const rest of D.questions.find(q => q.id === 'O02').options) {
+        p.responses.maxHours.value = hours[0];
+        p.responses.O01.value = interval[0];
+        p.responses.O02.value = rest[0];
+        const session = C.comparisonRadar(p).session;
+        assert.ok(Number.isFinite(session) && session >= 0 && session <= 100);
+      }
+    }
+  }
+  p.responses.maxHours.value = 'flexible';
+  p.responses.O01.value = 'asNeeded';
+  p.responses.O02.value = '5';
+  assert.equal(C.comparisonRadar(p).session, 67);
+  p.responses.O02.value = '20';
+  assert.equal(C.comparisonRadar(p).session, 33);
+  const text = C.comparisonAnswer(p, C.comparisonAxes.find(axis => axis.key === 'session'));
+  assert.match(text, /회차마다 조율/);
+  assert.match(text, /필요할 때 쉬기/);
+  delete p.responses.maxHours;
+  delete p.responses.O01;
+  assert.equal(C.comparisonRadar(p).session, null);
 });
 
 test('파티 레이더의 최저값은 중심이 아닌 첫 눈금에 그린다', () => {
