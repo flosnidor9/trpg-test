@@ -49,7 +49,7 @@ RP 응답은 0–100 좌표로 표시합니다. 지문 분량은 단문·중문�
 
 ## 데이터와 버전
 
-PNG 비교 데이터는 DCT 픽셀 워터마크로 저장합니다. iTXt 등 metadata를 사용하지 않습니다. 공개 API, 데이터 포맷, 용량, 강도·반복 수 설정과 제한은 [WATERMARK.md](WATERMARK.md)를 참고하세요. [watermark-demo.html](watermark-demo.html)에서 이미지와 임의 JSON을 직접 삽입·복구할 수 있습니다. 기존 iTXt 전용 PNG는 JSON을 가져와 새 PNG로 다시 저장해야 합니다.
+PNG 비교 데이터는 v2 DCT 픽셀 워터마크로 저장합니다. canonical 해상도, sync 패턴, 7회 반복과 confidence voting으로 축소·재인코딩 내성을 높이고 기존 v1 원본 PNG 읽기를 유지합니다. iTXt 등 metadata를 사용하지 않습니다. 공개 API, 데이터 포맷, 용량, 강도·반복 수 설정과 제한은 [WATERMARK.md](WATERMARK.md)를 참고하세요. [watermark-demo.html](watermark-demo.html)에서 이미지와 임의 JSON을 직접 삽입·복구할 수 있습니다. 기존 iTXt 전용 PNG는 JSON을 가져와 새 PNG로 다시 저장해야 합니다.
 
 저장 형식은 `schemaVersion: "3.0"`, 문항 버전은 `rp-2026-10-v7`입니다. 문항별 `responses`를 보존하고, 가져올 때 선택지·범위·문자열·추가 조건을 검증한 뒤 레이더와 맥락을 다시 계산합니다. v6의 응답은 그대로 유지하며 타이핑 시간 문항 위치만 RP 문항 뒤로 옮깁니다.
 

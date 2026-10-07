@@ -64,8 +64,10 @@
       if (compressed.length < payload.length) { payload = compressed; flags = 1; }
     }
     const header = new Uint8Array(HEADER_BYTES), view = new DataView(header.buffer);
-    header.set([87, 74, 48, 49]); // WJ01, big-endian multibyte fields
-    header[4] = 1; header[5] = flags; header[6] = options.redundancy; header[7] = options.blockSize;
+    const version = options.wireVersion || 1;
+    if (![1, 2].includes(version)) throw new Error('Unsupported watermark version');
+    header.set([87, 74, 48, 48 + version]); // WJ01 / WJ02, big-endian fields
+    header[4] = version; header[5] = flags; header[6] = options.redundancy; header[7] = options.blockSize;
     view.setUint32(8, payload.length); header.set(options.coefficients.flat(), 12);
     view.setFloat32(16, options.strength); view.setUint32(20, crc32(header.subarray(0, 20)));
     const body = new Uint8Array(payload.length + 4); body.set(payload);
@@ -73,13 +75,13 @@
     return { header, body };
   }
   function decodeHeader(header) {
-    if (header.length !== HEADER_BYTES || ![87, 74, 48, 49].every((b, i) => header[i] === b)) throw new Error('Watermark not found');
+    if (header.length !== HEADER_BYTES || ![87, 74, 48].every((b, i) => header[i] === b) || ![49, 50].includes(header[3])) throw new Error('Watermark not found');
     const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
     if (view.getUint32(20) !== crc32(header.subarray(0, 20))) throw new Error('Watermark header checksum mismatch');
-    if (header[4] !== 1 || header[5] > 1) throw new Error('Unsupported watermark version or flags');
+    if (header[4] !== header[3] - 48 || header[5] > 1) throw new Error('Unsupported watermark version or flags');
     const length = view.getUint32(8);
     if (length > MAX_JSON_BYTES) throw new Error('Invalid watermark payload length');
-    return { length, flags: header[5], redundancy: header[6], blockSize: header[7],
+    return { wireVersion: header[4], length, flags: header[5], redundancy: header[6], blockSize: header[7],
       coefficients: [[header[12], header[13]], [header[14], header[15]]], strength: view.getFloat32(16) };
   }
   async function decodeBody(body, header) {

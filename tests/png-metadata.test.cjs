@@ -39,8 +39,8 @@ test('framing, UTF-8, compression, length and checksums', async () => {
   await assert.rejects(C.encode('가'.repeat(700_000), options), /2000000/);
 });
 test('capacity subtracts framing/repetition and validates settings', () => {
-  assert.equal(W.getWatermarkCapacity(1920, 1080), 762);
-  assert.equal(W.getWatermarkCapacity(8, 8), 0);
+  assert.equal(W.getWatermarkCapacity(1920, 1080), 180);
+  assert.equal(W.getWatermarkCapacity(8, 8, { maxDimension: 64 }), 0);
   assert.throws(() => W.getWatermarkCapacity(100, 100, { redundancy: 2 }), /odd/);
   assert.throws(() => W.getWatermarkCapacity(100, 100, { strength: NaN }), /strength/);
   assert.throws(() => W.getWatermarkCapacity(100, 100, { blockSize: 12 }), /blockSize/);
@@ -52,4 +52,15 @@ test('deterministic dispersed permutation contains each block exactly once', () 
   assert.deepEqual(positions, W.generateBlockPositions(512, 512));
   assert.equal(new Set(positions).size, 4096);
   assert.ok(positions.slice(0, 100).some(n => n > 3500));
+});
+
+test('v2 framing validates magic, version and header CRC independently', async () => {
+  const packet = await C.encode({ message: 'v2 한글' }, { ...options, wireVersion: 2 });
+  assert.equal(C.decodeHeader(packet.header).wireVersion, 2);
+  assert.deepEqual(await C.decodeBody(packet.body, C.decodeHeader(packet.header)), { message: 'v2 한글' });
+  for (const index of [0, 4, 8, 20]) {
+    const corrupt = packet.header.slice(); corrupt[index] ^= 1;
+    assert.throws(() => C.decodeHeader(corrupt));
+  }
+  assert.throws(() => W.getWatermarkCapacity(100, 100, { maxDimension: 0 }), /maxDimension/);
 });

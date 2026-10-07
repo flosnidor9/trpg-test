@@ -67,7 +67,7 @@ const server = http.createServer((req, res) => {
     async function save(button, filename) {
       await page.locator(button).click();
       await page.locator('.png-dialog[open] img').waitFor();
-      assert.equal(await page.locator('.png-dialog img').evaluate(img => img.complete && img.naturalWidth === 1920), true);
+      assert.equal(await page.locator('.png-dialog img').evaluate(img => img.complete && [1200, 1600, 2048, 2400, 3200, 4096].includes(Math.max(img.naturalWidth, img.naturalHeight))), true);
       const downloadPromise = page.waitForEvent('download');
       await page.locator('.png-save').click();
       const download = await downloadPromise;

@@ -1,0 +1,455 @@
+{
+  "scope": "Local Canvas simulations; not actual X mobile downloads",
+  "environment": "macOS arm64 / Chrome for Testing 149.0.7827.55, Playwright cache revision 1228",
+  "passed": [
+    "PNG/re-encode/JPEG/resize/resize+JPEG: four synthetic styles; no metadata chunks",
+    "real profile, compressed ~900 bytes, automatic capacity selection",
+    "no watermark rejected with diagnostics",
+    "strength/redundancy/blockSize/custom coefficients/custom normalization/original-sized output",
+    "v1 compatibility/raw fallback/JSON scalars/exact capacity/oversize rejection",
+    "damaged replicas recover; unrecoverable payload fails CRC",
+    "HTMLImageElement/HTMLCanvasElement fallback"
+  ],
+  "robustness": [
+    {
+      "style": "texture",
+      "label": "round-trip",
+      "recovered": true,
+      "ms": 73,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "canvas PNG",
+      "recovered": true,
+      "ms": 92,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "JPEG .9",
+      "recovered": true,
+      "ms": 63,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "resize .75",
+      "recovered": true,
+      "ms": 328,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "resize .75 + JPEG .9",
+      "recovered": true,
+      "ms": 320,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "resize .75 + JPEG .75",
+      "recovered": true,
+      "ms": 318,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "resize .75 + WebP .8",
+      "recovered": true,
+      "ms": 373,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "color +8 + JPEG .9",
+      "recovered": true,
+      "ms": 57,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "resize .5 + JPEG .9",
+      "recovered": true,
+      "ms": 115,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "texture",
+      "label": "resize .25 + JPEG .75",
+      "recovered": false,
+      "ms": 4208,
+      "error": "Watermark not found"
+    },
+    {
+      "style": "white",
+      "label": "round-trip",
+      "recovered": true,
+      "ms": 52,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "canvas PNG",
+      "recovered": true,
+      "ms": 57,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "JPEG .9",
+      "recovered": true,
+      "ms": 56,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "resize .75",
+      "recovered": true,
+      "ms": 345,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "resize .75 + JPEG .9",
+      "recovered": true,
+      "ms": 331,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "resize .75 + JPEG .75",
+      "recovered": true,
+      "ms": 312,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "resize .75 + WebP .8",
+      "recovered": true,
+      "ms": 324,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "color +8 + JPEG .9",
+      "recovered": true,
+      "ms": 55,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "resize .5 + JPEG .9",
+      "recovered": true,
+      "ms": 119,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "white",
+      "label": "resize .25 + JPEG .75",
+      "recovered": false,
+      "ms": 4313,
+      "error": "Watermark not found"
+    },
+    {
+      "style": "black",
+      "label": "round-trip",
+      "recovered": true,
+      "ms": 51,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "canvas PNG",
+      "recovered": true,
+      "ms": 51,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "JPEG .9",
+      "recovered": true,
+      "ms": 51,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "resize .75",
+      "recovered": true,
+      "ms": 306,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "resize .75 + JPEG .9",
+      "recovered": true,
+      "ms": 326,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "resize .75 + JPEG .75",
+      "recovered": true,
+      "ms": 328,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "resize .75 + WebP .8",
+      "recovered": true,
+      "ms": 315,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "color +8 + JPEG .9",
+      "recovered": true,
+      "ms": 50,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "resize .5 + JPEG .9",
+      "recovered": true,
+      "ms": 110,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "black",
+      "label": "resize .25 + JPEG .75",
+      "recovered": false,
+      "ms": 4122,
+      "error": "Watermark not found"
+    },
+    {
+      "style": "transparent",
+      "label": "round-trip",
+      "recovered": true,
+      "ms": 51,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "canvas PNG",
+      "recovered": true,
+      "ms": 51,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "JPEG .9",
+      "recovered": true,
+      "ms": 49,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "resize .75",
+      "recovered": true,
+      "ms": 310,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "resize .75 + JPEG .9",
+      "recovered": true,
+      "ms": 310,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "resize .75 + JPEG .75",
+      "recovered": true,
+      "ms": 307,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "resize .75 + WebP .8",
+      "recovered": true,
+      "ms": 316,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "color +8 + JPEG .9",
+      "recovered": true,
+      "ms": 51,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "resize .5 + JPEG .9",
+      "recovered": true,
+      "ms": 106,
+      "normalization": "1200x1200",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "transparent",
+      "label": "resize .25 + JPEG .75",
+      "recovered": false,
+      "ms": 4130,
+      "error": "Watermark not found"
+    },
+    {
+      "style": "real profile",
+      "label": "round-trip",
+      "recovered": true,
+      "ms": 228,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "canvas PNG",
+      "recovered": true,
+      "ms": 200,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "JPEG .9",
+      "recovered": true,
+      "ms": 190,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "resize .75",
+      "recovered": true,
+      "ms": 1891,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "resize .75 + JPEG .9",
+      "recovered": true,
+      "ms": 1931,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "resize .75 + JPEG .75",
+      "recovered": true,
+      "ms": 1896,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "resize .75 + WebP .8",
+      "recovered": true,
+      "ms": 1844,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "color +8 + JPEG .9",
+      "recovered": true,
+      "ms": 204,
+      "normalization": "1553x2400",
+      "score": 1,
+      "voting": "soft"
+    },
+    {
+      "style": "real profile",
+      "label": "resize .5 + JPEG .9",
+      "recovered": true,
+      "ms": 1526,
+      "normalization": "1554x2400",
+      "score": 0.999,
+      "voting": "hard"
+    },
+    {
+      "style": "real profile",
+      "label": "resize .25 + JPEG .75",
+      "recovered": false,
+      "ms": 3136,
+      "error": "Watermark not found"
+    }
+  ]
+}
