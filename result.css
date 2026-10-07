@@ -38,22 +38,25 @@
 .result-page .taste-heading h2, .result-page .export-section h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -.045em; }
 .result-page .taste-heading .small-copy { max-width: 390px; font-size: 12px; line-height: 1.85; }
 .result-page .taste-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px 36px; align-items: stretch; padding: 18px 14px; }
-.result-page .taste-card { position: relative; display: flex; flex-direction: column; align-items: stretch; min-width: 0; min-height: 480px; padding: 27px 27px 30px; border: 1px solid #68537f; border-radius: 14px; color: #f7f2ff; background: linear-gradient(155deg, #352844, #211a2e 55%, #2b203b); box-shadow: 0 3px 0 #160f24, 0 5px 0 #68537f, 0 16px 30px #20132b26; }
-.result-page .taste-card::before { content: ''; position: absolute; inset: 9px; border: 1px solid #76608e80; border-radius: 8px; pointer-events: none; }
-.result-page .taste-card-first { grid-column: auto; grid-row: auto; background: linear-gradient(155deg, #403055, #281d3b 55%, #35264c); border-color: #9374b7; }
+.result-page .taste-card { position: relative; display: flex; flex-direction: column; align-items: stretch; min-width: 0; min-height: 480px; padding: 27px 27px 30px; border: 1px solid transparent; border-radius: 14px; color: #f7f2ff; background: linear-gradient(155deg, #352844, #211a2e 55%, #2b203b); box-shadow: 0 3px 0 #160f24, 0 5px 0 #68537f, 0 16px 30px #20132b26; }
+.handout-frame { position: absolute; z-index: 3; inset: -1px; border: 14px solid var(--art-0); border-radius: inherit; pointer-events: none; box-shadow: inset 0 3px 8px #0003; transform: translateZ(0); }
+.result-page .taste-card-first { grid-column: auto; grid-row: auto; background: linear-gradient(155deg, #403055, #281d3b 55%, #35264c); }
 .result-page .taste-category { align-self: flex-start; margin-top: 0; padding: 3px 9px; border: 1px solid #927aa780; border-radius: 3px; color: #dfceee; font-size: 11px; }
-.handout-art { display: grid; place-items: center; height: 148px; margin: 12px 0 18px; }
-.handout-art svg { width: 145px; height: 124px; color: #d2b9f4; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.handout-art .handout-orbit { fill: #68508540; stroke: #a084bf60; stroke-width: .6; }
-.result-page .handout-slot:nth-child(3n + 2) .handout-art svg { color: #b4e0d1; }
-.result-page .handout-slot:nth-child(3n + 2) .handout-orbit { fill: #4b817740; stroke: #8ebdae60; }
-.result-page .handout-slot:nth-child(3n) .handout-art svg { color: #edcea1; }
-.result-page .handout-slot:nth-child(3n) .handout-orbit { fill: #97774b30; stroke: #c6a57860; }
+.handout-art { position: absolute; inset: 0; margin: 0; border-radius: inherit; transform-style: preserve-3d; pointer-events: none; }
+.handout-art-layer { position: absolute; inset: 0; margin: auto; backface-visibility: hidden; transform: translate3d(calc(var(--parallax-x, 0) * var(--layer-shift)), calc(var(--parallax-y, 0) * var(--layer-shift)), calc(var(--parallax-depth, 0) * var(--layer-depth))); }
+.handout-art-orbit { --layer-depth: -64px; transform: translate3d(calc(var(--parallax-x, 0) * 14px), calc(var(--parallax-y, 0) * 11px), calc(var(--parallax-depth, 0) * -64px)) scale(calc(1 + var(--parallax-depth, 0) * .065)); }
+.handout-art-0 { --layer-shift: -18px; --layer-depth: -48px; }
+.handout-art-1 { --layer-shift: -11px; --layer-depth: -30px; }
+.handout-art-2 { --layer-shift: -3px; --layer-depth: -12px; }
+.handout-art svg { width: 100%; height: 100%; border-radius: inherit; stroke-linecap: round; stroke-linejoin: round; }
+.handout-copy { position: relative; z-index: 4; flex: 1; margin: 0 -27px -30px; padding: 26px 27px 34px; border-radius: 0 0 13px 13px; background: var(--art-0); transform: translateZ(0); }
+.result-page .handout-slot .taste-card { min-height: 620px; padding: 27px 27px 30px; background: transparent; box-shadow: 0 16px 30px #20132b26; }
+.result-page .handout-slot .taste-category { position: relative; z-index: 3; margin-bottom: 280px; background: var(--art-0); border: 0; color: #f7f2ff; }
 .result-page .taste-card h3 { font-size: 24px; line-height: 1.4; letter-spacing: -.045em; margin: 0 0 18px; word-break: keep-all; overflow-wrap: anywhere; }
 .result-page .handout-description { margin: 0; padding-left: 17px; font-size: 13px; line-height: 1.9; color: #ddd2e8; word-break: keep-all; overflow-wrap: anywhere; }
 .handout-description li + li { margin-top: 7px; }
 .handout-description li::marker { color: #c5aedc; }
-.handout-shine { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; opacity: 0; transform: translateZ(2px); }
+.handout-shine { position: absolute; inset: 70px 24px auto; height: 255px; overflow: hidden; border-radius: 4px; pointer-events: none; opacity: 0; transform: translateZ(-28px); }
 .handout-shine svg { display: block; width: 100%; height: 100%; overflow: visible; transform: translate(var(--shine-offset-x, 0px), var(--shine-offset-y, 0px)); }
 .result-page .export-section { margin-top: 20px; padding: 36px 40px 28px; background: #f0ebf6; border: 0; border-radius: 14px; }
 .export-heading { display: flex; justify-content: space-between; align-items: end; gap: 32px; }
@@ -67,9 +70,10 @@
 .result-page .empty-card h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.3; }
 .result-page footer { max-width: 1224px; margin: auto; padding: 24px 0 28px; text-align: left; font-size: 10px; border-color: #e7e1ea; }
 .handout-slot { min-width: 0; position: relative; display: flex; perspective: 1100px; width: 100%; max-width: 310px; justify-self: center; }
-.handout-slot .taste-card { width: 100%; transform-origin: center; transform-style: preserve-3d; }
-.handout-slot .taste-card > *, .handout-slot .taste-card::before { backface-visibility: hidden; }
-.handout-slot .taste-card::after { content: 'TRPG\A SESSION HANDOUT'; position: absolute; inset: -1px; display: grid; place-content: center; text-align: center; white-space: pre; line-height: 2.4; font-size: 12px; font-weight: 600; letter-spacing: .18em; color: #d5b9f1; border: 1px solid #9275b2; border-radius: inherit; background: radial-gradient(circle at center, transparent 64px, #9874b980 65px, transparent 66px), repeating-linear-gradient(45deg, #c2a0ec08 0 1px, transparent 1px 14px), #261b38; transform: rotateY(180deg) translateZ(1px); backface-visibility: hidden; pointer-events: none; }
+.handout-slot .taste-card { width: 100%; overflow: clip; transform-origin: center; transform-style: preserve-3d; }
+.handout-slot .taste-card > * { backface-visibility: hidden; }
+.handout-slot .taste-category { transform: translateZ(0); }
+.handout-slot .taste-card::after { content: 'TRPG\A SESSION HANDOUT'; position: absolute; inset: -1px; display: grid; place-content: center; text-align: center; white-space: pre; line-height: 2.4; font-size: 12px; font-weight: 600; letter-spacing: .18em; color: #f7f2ff; border-radius: inherit; background: var(--art-0); transform: rotateY(180deg) translateZ(1px); backface-visibility: hidden; pointer-events: none; }
 .handout-slot:focus-within, .handout-slot.is-active { z-index: 3; }
 .handout-slot.is-active .taste-card { will-change: transform; }
 @media (prefers-reduced-motion: no-preference) {
@@ -97,6 +101,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .handout-slot.motion-ready { opacity: 1; transform: none; }
+  .handout-slot .taste-card, .handout-slot .handout-frame, .handout-slot .handout-art-layer, .handout-slot .taste-category, .handout-slot .handout-copy { transform: none !important; }
 }
 @media (max-width: 1100px) {
   .result-header { padding-inline: 28px; }

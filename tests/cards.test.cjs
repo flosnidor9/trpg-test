@@ -7,6 +7,18 @@ const vm = require('node:vm');
 const context = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'cards.js'), 'utf8'), context);
 const { cards, rankCards, featuredCards } = context.TRPGCards;
+vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'handout-art.js'), 'utf8'), context);
+
+test('모든 취향 카드가 서로 다른 전면 벡터 장면을 가진다', () => {
+  const { scenes, render } = context.TRPGHandoutArt;
+  assert.deepEqual(Object.keys(scenes).sort(), Array.from(cards, card => card.id).sort());
+  assert.equal(new Set(Object.values(scenes).map(scene => scene.back + scene.middle + scene.front)).size, cards.length);
+  cards.forEach(card => {
+    const art = render(card.id);
+    assert.equal((art.match(/viewBox="0 0 310 620"/g) || []).length, 4);
+    assert.ok(art.includes('data-art="' + card.id + '"'));
+  });
+});
 
 test('응답이 없거나 하나의 문항만 맞으면 카드를 배정하지 않는다', () => {
   assert.equal(rankCards({}).length, 0);

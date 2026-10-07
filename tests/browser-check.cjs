@@ -29,6 +29,49 @@ function fixtureInBrowser({ value = 75, name = '참가자', boundary = 'ask', ro
 async function noPageOverflow(page) {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, '화면 바깥 가로 넘침');
 }
+async function cardParallax(page, selector, name) {
+  const slot = page.locator(selector + ' .handout-slot').first();
+  const card = slot.locator('.taste-card');
+  assert.equal(await card.locator('.handout-frame').count(), 1, name + ' 독립 테두리');
+  assert.equal(await card.locator('.handout-frame svg').count(), 0, name + ' 불필요한 테두리 선 장식 제거');
+  const surface = await card.evaluate(el => {
+    const frame = el.querySelector('.handout-frame'), copy = el.querySelector('.handout-copy');
+    const face = el.getBoundingClientRect(), text = copy.getBoundingClientRect();
+    return { frameColor: getComputedStyle(frame).borderTopColor, copyColor: getComputedStyle(copy).backgroundColor, left: text.left - face.left, right: face.right - text.right, bottom: face.bottom - text.bottom };
+  });
+  assert.equal(surface.frameColor, surface.copyColor, name + ' 테두리와 설명판 동일 색');
+  assert.ok(Math.abs(surface.left) < 2 && Math.abs(surface.right) < 2 && Math.abs(surface.bottom) < 2, name + ' 설명판이 카드 가장자리에 붙음');
+  assert.equal(await card.locator('.handout-art-layer').count(), 4, name + ' 카드 전체 바탕·배경·주제 장면·전경');
+  const artwork = await card.locator('.handout-art').boundingBox();
+  const face = await card.boundingBox();
+  assert.ok(Math.abs(artwork.height - face.height) < 2, name + ' 카드 전체를 채우는 벡터 그림');
+  await slot.scrollIntoViewIfNeeded();
+  // 등장 애니메이션이 끝난 뒤 고정된 슬롯을 기준으로 포인터 좌표를 잡습니다.
+  await slot.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished.catch(() => {}))));
+  const bounds = await slot.boundingBox();
+  await page.mouse.move(bounds.x + bounds.width * .8, bounds.y + bounds.height * .3);
+  await page.waitForFunction(selector => {
+    const style = document.querySelector(selector + ' .taste-card').style;
+    return Number(style.getPropertyValue('--parallax-depth')) > .99 && Number(style.getPropertyValue('--parallax-x')) > .4;
+  }, selector);
+  const layers = await card.evaluate(el => ['.handout-frame', '.handout-art-orbit', '.handout-art-0', '.handout-art-1', '.handout-art-2'].map(selector => {
+    const matrix = new DOMMatrix(getComputedStyle(el.querySelector(selector)).transform);
+    return { x: matrix.m41, z: matrix.m43 };
+  }));
+  assert.ok(layers[2].x < layers[3].x && layers[3].x < layers[4].x, name + ' 안쪽 풍경의 큰 패럴랙스 이동');
+  assert.ok(layers[1].z < layers[2].z && layers[2].z < layers[3].z && layers[3].z < layers[4].z && layers[4].z < layers[0].z, name + ' 테두리가 가장 앞, 중앙 풍경은 안쪽');
+  await page.mouse.move(bounds.x + bounds.width * .2, bounds.y + bounds.height * .7);
+  await page.waitForFunction(selector => Number(document.querySelector(selector + ' .taste-card').style.getPropertyValue('--parallax-x')) < -.4, selector);
+  await page.mouse.move(0, 0);
+  await page.waitForFunction(selector => !document.querySelector(selector + ' .taste-card').style.transform, selector);
+  await card.focus();
+  await page.waitForFunction(selector => Number(document.querySelector(selector + ' .taste-card').style.getPropertyValue('--parallax-depth')) > .99, selector);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  assert.equal(await card.evaluate(el => getComputedStyle(el).transform), 'none', name + ' 모션 감소');
+  assert.equal(await card.locator('.handout-art-2').evaluate(el => getComputedStyle(el).transform), 'none', name + ' 레이어 모션 감소');
+  await card.evaluate(el => el.blur());
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+}
 async function accessibility(page, name) {
   if (!AxeBuilder) return;
   // 스크롤로 등장하는 비교 내용은 각 영역을 실제로 열고 최종 상태를 검사합니다.
@@ -142,6 +185,7 @@ async function accessibility(page, name) {
     await noPageOverflow(page);
     await accessibility(page, '결과');
     await page.screenshot({ path: path.join(artifacts, 'result-desktop.png') });
+    await cardParallax(page, '#taste-cards', '내 결과');
     assert.equal(await page.locator('#share-boundaries, #share-notes').count(), 0);
     const preview = JSON.parse(await page.locator('#export-preview').inputValue());
     assert.equal(preview.schemaVersion, '3.0');
@@ -228,6 +272,7 @@ async function accessibility(page, name) {
     assert.ok(await page.locator('#personal-taste-cards .taste-card').count() > 0);
     assert.equal(await page.locator('#personal-panel .profile-overview > .result-intro + .radar-card').count(), 1, '내 결과와 같은 소개·레이더 배치');
     assert.equal(await page.locator('#personal-taste-cards .handout-slot .handout-art').count(), await page.locator('#personal-taste-cards .taste-card').count(), '내 결과와 같은 핸드아웃 카드');
+    await cardParallax(page, '#personal-taste-cards', '개인 탭');
     await page.locator('#personal-display-name').fill('개인 탭 내보내기');
     assert.equal(JSON.parse(await page.locator('#personal-export-preview').inputValue()).displayName, '개인 탭 내보내기');
     const personalDownloadEvent = page.waitForEvent('download');

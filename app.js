@@ -304,23 +304,18 @@
       $('#profile-focus').innerHTML = '<span>나를 소개하는 취향</span><strong>' + ranked.slice(0, 2).map(card => escape(card.title)).join('<br>') + '</strong>';
     }
     const handouts = !!root.closest('.result-page');
-    const handoutArt = {
-      'RP': '<path d="M45 94V43l35-13 35 13v51L80 81Z"/><path d="M80 30v51M56 52l14-5m-14 18 14-5m20-13 14 5m-14 8 14 5"/>',
-      '대화': '<path d="M31 36h72v43H61L43 94V79H31Z"/><path d="M103 52h26v44h-12l-14 12V96H76V79M46 51h42M46 63h29"/>',
-      '휴식과 참여': '<path d="M45 49h58v28a29 29 0 0 1-58 0Zm58 4h10a14 14 0 0 1 0 28h-10M39 110h75M63 37V24m22 13V20"/>',
-      '연출': '<path d="m80 24 12 32 34 10-34 11-12 33-12-33-34-11 34-10Z"/><path d="m119 23 4 11 12 4-12 4-4 11-4-11-12-4 12-4ZM37 98v16m-8-8h16"/>',
-      '운영': '<rect x="37" y="35" width="86" height="73" rx="3"/><path d="M37 55h86M58 24v23m44-23v23M54 73h12m15 0h12m15 0h0M54 91h12m15 0h12"/>'
-    };
     $('#taste-empty').hidden = ranked.length > 0;
     $('#taste-cards').innerHTML = ranked.map((card, index) =>
       (handouts ? '<div class="handout-slot" style="--card-delay:' + (index % 3 * 100) + 'ms">' : '') +
-      '<article' + (handouts ? ' tabindex="0" aria-label="' + escape(card.title) + ' 취향 카드"' : '') + ' class="taste-card' + (index === 0 ? ' taste-card-first' : '') + '">' +
+      '<article' + (handouts ? ' tabindex="0" style="' + globalThis.TRPGHandoutArt.palette(card.id) + '" aria-label="' + escape(card.title) + ' 취향 카드"' : '') + ' class="taste-card' + (index === 0 ? ' taste-card-first' : '') + '">' +
+      (handouts ? '<span class="handout-frame" aria-hidden="true"></span>' : '') +
       (handouts ? '' : '<span class="taste-rank">취향 카드 ' + (index + 1) + '</span>') +
       '<span class="taste-category">' + escape(card.category) + '</span>' +
-      (handouts ? '<div class="handout-art" aria-hidden="true"><svg viewBox="0 0 160 136" fill="none"><circle class="handout-orbit" cx="80" cy="68" r="56"/>' + (handoutArt[card.category] || handoutArt.RP) + '</svg></div>' : '') +
+      (handouts ? globalThis.TRPGHandoutArt.render(card.id) + '<div class="handout-copy">' : '') +
       '<h3>' + escape(card.title) + '</h3>' +
       (handouts ? '<ul class="handout-description">' + card.description.split(/(?<=[.!?])\s+/).map(sentence => '<li>' + escape(sentence) + '</li>').join('') + '</ul>' : '<p>' + escape(card.description) + '</p>') +
-      (handouts ? '<span class="handout-shine" aria-hidden="true"><svg viewBox="0 0 310 590" preserveAspectRatio="none" focusable="false"><path d="M235-160h58L-101 750h-58Z" fill="#fff" fill-opacity=".1"/><path d="M310-160h9L-75 750h-9Z" fill="#fff" fill-opacity=".1"/></svg></span>' : '<small>응답 근거 · ' + escape(card.evidence) + '</small>') + '</article>' + (handouts ? '</div>' : '')
+      (handouts ? '</div>' : '') +
+      (handouts ? '<span class="handout-shine" aria-hidden="true"></span>' : '<small>응답 근거 · ' + escape(card.evidence) + '</small>') + '</article>' + (handouts ? '</div>' : '')
     ).join('');
     const { comparisonAxes: axes, comparisonRadar, comparisonAnswer } = globalThis.TRPGCompare;
     drawRadar($('#radar'), [{ id: 'self', data: comparisonRadar(p), color: COLORS[0], minRadius: .25 }], true, true, axes, false, { revealFromCenter: handouts });
