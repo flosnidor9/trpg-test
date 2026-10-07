@@ -260,7 +260,16 @@ async function accessibility(page, name) {
       }
       if (i === 2) {
         assert.equal(await page.locator('.preparation-table tbody tr').first().locator('.preparation-primary').textContent(), '없어도 됨');
-        assert.match(await page.locator('.preparation-table tbody tr').last().locator('.preparation-source').textContent(), /참가자 선호/);
+        const preparationRow = page.locator('.preparation-table tbody tr').last();
+        await preparationRow.hover();
+        assert.equal(await preparationRow.locator('.preparation-popover').isVisible(), true);
+        assert.equal(await page.locator('.popover-criterion, .preparation-criterion').count(), 0);
+        for (const mode of ['majority', 'narrow']) {
+          await page.locator('#comparison-toolbar [data-criterion-mode="' + mode + '"]').click();
+          assert.equal(await page.locator('#comparison-toolbar [data-criterion-mode="' + mode + '"]').getAttribute('aria-pressed'), 'true');
+          assert.equal(await page.locator('.popover-criterion, .preparation-criterion').count(), 0);
+        }
+
       }
     }
     assert.equal(await page.locator('#participant-count').textContent(), '8');

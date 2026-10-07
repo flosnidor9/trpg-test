@@ -40,7 +40,7 @@
       const img = new Image(); img.src = url; await img.decode(); return img;
     } finally { URL.revokeObjectURL(url); }
   }
-  async function create({ title, members, cards, party = false, scale = 1, readingProfiles = members.map(member => member.profile) }) {
+  async function create({ title, members, cards, party = false, scale = 1, criteria = {}, readingProfiles = members.map(member => member.profile) }) {
     await document.fonts.ready;
     const A = TRPGApp, C = TRPGCompare;
     const canvas = document.createElement('canvas'); const width = 1920; canvas.width = width * scale; canvas.height = 100;
@@ -55,7 +55,7 @@
     const top = headingEnd + 66;
     const readingStart = top + 754 + legendHeight;
     let readingY = readingStart + 58;
-    const readings = party ? C.partyMapReading(readingProfiles).map(item => ({ axis: item.axis, entries: [{ value: item.text }] })) : C.comparisonAxes.map(axis => {
+    const readings = party ? C.partyMapReading(readingProfiles, criteria).map(item => ({ axis: item.axis, entries: [{ value: item.text }] })) : C.comparisonAxes.map(axis => {
       const groups = new Map();
       members.forEach(member => {
         const value = C.comparisonAnswer(member.profile, axis, '\n');

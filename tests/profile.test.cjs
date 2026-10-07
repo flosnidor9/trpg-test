@@ -488,8 +488,128 @@ test('일정과 변경은 최다 득표를 따르고 미확인과 동률을 구�
     assert.equal(result.voteCount, '2/3명 선택');
     assert.equal(result.unknownCount, 1);
     assert.equal(C.governingAnswer(q, undefined, [first, third]).label, '최다 득표 동률 · 조율 필요');
-    assert.match(C.criterionCopy([q]), /최다 득표 기준/);
   }
-  assert.match(C.criterionCopy(D.boundaries), /경계 존중 기준/);
-  assert.match(C.criterionCopy(D.traits), /분포로 보기/);
+});
+
+
+test('응답 기준 전환은 대표 응답을 바꾸되 경계와 순서 없는 항목을 유지', () => {
+  const profiles = [fixture(), fixture(), fixture()];
+  profiles.forEach((profile, i) => { profile.responses.O05.value = i === 2 ? '0' : '2'; });
+  const q = D.questions.find(q => q.id === 'O05');
+  assert.equal(C.governingAnswer(q, undefined, profiles, 'majority').label, q.options[2][1]);
+  assert.equal(C.governingAnswer(q, undefined, profiles, 'majority').voteCount, '2/3명 선택');
+  assert.equal(C.governingAnswer(q, undefined, profiles, 'narrow').label, q.options[0][1]);
+  const boundary = D.boundaries[0], row = boundary.rows[0][0];
+  profiles.forEach((profile, i) => { profile.responses[boundary.id].value[row] = i === 2 ? 'no' : 'ok'; });
+  assert.equal(C.governingAnswer(boundary, row, profiles, 'majority').label, '포함하지 마세요');
+  const platform = D.questions.find(q => q.id === 'P01');
+  assert.equal(C.governingAnswer(platform, undefined, profiles, 'narrow').label, platform.options[0][1]);
+});
+
+test('롤방 준비 기준 전환은 GM 제공 범위로만 집계', () => {
+  const profiles = [fixture(), fixture(), fixture(), fixture()];
+  profiles.forEach((profile, i) => {
+    profile.context.role = i === 3 ? 'PL' : 'GM';
+    profile.responses.A01.fields = { offered: i === 2 ? '0' : '3' };
+  });
+  const q = D.questions.find(q => q.id === 'A01');
+  assert.equal(C.preparationRepresentative(q, profiles, 'narrow').value, '0');
+  const majority = C.preparationRepresentative(q, profiles, 'majority');
+  assert.equal(majority.value, '3');
+  assert.equal(majority.voteCount, '2/3명 선택');
+  profiles[1].responses.A01.fields.offered = '0';
+  assert.equal(C.preparationRepresentative(q, profiles, 'majority').value, '0');
+  assert.match(C.preparationRepresentative(q, profiles.slice(0, 2), 'majority').label, /동률/);
+});
+
+
+test('전체 기준은 지도 텍스트와 휴식 주기 요약에도 동일하게 적용', () => {
+  const profiles = [fixture(), fixture(), fixture()];
+  profiles.forEach((profile, i) => {
+    profile.responses.O01.value = i === 2 ? '120' : '480';
+    profile.responses.O02.value = i === 2 ? '20' : '5';
+    profile.responses.O05.value = i === 2 ? '0' : '2';
+  });
+  const summary = mode => C.groupAnalysis(profiles, mode).suggestions.find(item => item.title === '휴식 주기').text;
+  assert.equal(summary('majority'), '약 480분마다 5분 휴식');
+  assert.equal(summary('narrow'), '약 120분마다 20분 휴식');
+  const reading = mode => C.partyMapReading(profiles, mode).map(item => item.text).join('\n');
+  assert.match(reading('majority'), /약 480분마다 5분 휴식/);
+  assert.match(reading('narrow'), /약 120분마다 20분 휴식/);
+  delete profiles[1].responses.O01;
+  assert.match(summary('majority'), /조율 필요/);
+});
+
+
+test('모든 항목의 기준 문구는 상단에서 선택한 기준과 일치', () => {
+  for (const q of D.questions) {
+    assert.equal(C.criterionCopy(q, 'majority'), '최다 득표 기준', q.id);
+    assert.equal(C.criterionCopy(q, 'narrow'), '좁은 범위 기준', q.id);
+    if (q.preparation) {
+      assert.equal(C.preparationRepresentative(q, [fixture()], 'majority').source, '최다 득표 기준');
+      assert.equal(C.preparationRepresentative(q, [fixture()], 'narrow').source, '좁은 범위 기준');
+    }
+  }
+});
+
+
+test('일정과 변경의 순서 없는 응답은 최다 득표를 유지하고 비교 가능한 응답만 기준 전환', () => {
+  const profiles = [fixture(), fixture(), fixture()];
+  for (const q of D.operation.filter(q => q.group === '일정과 변경')) {
+    profiles.forEach((profile, i) => { profile.responses[q.id] = { value: q.options[i === 2 ? 1 : 0][0] }; });
+    const majority = C.governingAnswer(q, undefined, profiles, 'majority');
+    assert.equal(majority.label, q.options[0][1], q.id);
+    assert.equal(majority.voteCount, '2/3명 선택', q.id);
+    const narrow = C.governingAnswer(q, undefined, profiles, 'narrow');
+    const ranks = profiles.map(profile => C.constraintRank(q, profile));
+    if (ranks.every(rank => rank === null)) {
+      assert.equal(narrow.label, majority.label, q.id);
+      assert.equal(narrow.voteCount, '2/3명 선택', q.id);
+    } else {
+      assert.equal(narrow.voteCount, undefined, q.id);
+      assert.equal(narrow.label, q.options[ranks[2] > ranks[0] ? 1 : 0][1], q.id);
+    }
+    assert.equal(C.criterionCopy(q, 'narrow'), '좁은 범위 기준');
+    profiles[2].responses[q.id] = { value: q.options[0][0] };
+    assert.equal(C.governingAnswer(q, undefined, profiles, 'narrow').label, q.options[0][1], q.id);
+  }
+});
+
+
+test('구인과 합류는 외부 구인 범위를 포함해 두 기준으로 재계산', () => {
+  const profiles = [fixture(), fixture(), fixture()];
+  for (const id of ['O07', 'O08', 'O09']) {
+    const q = D.questions.find(q => q.id === id);
+    const row = q.type === 'matrix' ? q.rows[0][0] : undefined;
+    const common = id === 'O07' ? 'ok' : '2';
+    const limiting = id === 'O07' ? 'no' : '3';
+    profiles.forEach((profile, i) => {
+      const value = i === 2 ? limiting : common;
+      profile.responses[id] = { value: row ? { [row]: value } : value };
+    });
+    const majority = C.governingAnswer(q, row, profiles, 'majority');
+    assert.equal(majority.label, q.options.find(([value]) => value === common)[1], id);
+    assert.equal(majority.voteCount, '2/3명 선택', id);
+    const narrow = C.governingAnswer(q, row, profiles, 'narrow');
+    assert.equal(narrow.label, q.options.find(([value]) => value === limiting)[1], id);
+    assert.equal(narrow.voteCount, undefined, id);
+  }
+});
+
+
+test('메타발언의 채널과 시점 제한은 좁은 범위에서 함께 반영', () => {
+  const q = D.questions.find(q => q.id === 'C01');
+  for (const [row] of q.rows) {
+    const profiles = [fixture(), fixture(), fixture()];
+    profiles[0].responses.C01.value[row] = 'channel';
+    profiles[1].responses.C01.value[row] = 'channel';
+    profiles[2].responses.C01.value[row] = 'between';
+    const narrow = C.governingAnswer(q, row, profiles, 'narrow');
+    assert.equal(narrow.label, '별도 채널에서 장면 전후에만', row);
+    assert.equal(narrow.constrained, true, row);
+    assert.equal(C.governingAnswer(q, row, profiles.reverse(), 'narrow').label, narrow.label, row);
+    assert.equal(C.governingAnswer(q, row, profiles, 'majority').label, '별도 채널에서 가능', row);
+    profiles[0].responses.C01.value[row] = 'ask';
+    assert.equal(C.governingAnswer(q, row, profiles, 'narrow').label, '사전협의', row);
+  }
 });
