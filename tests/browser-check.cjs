@@ -103,6 +103,10 @@ async function accessibility(page, name) {
     await page.goto(base + '/test.html');
     assert.equal(await page.locator('#prev, #next').count(), 0);
     assert.equal(await page.locator('.question-card').count(), 1);
+    await page.getByLabel('내 이름 또는 닉네임').fill('  유나  ');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-rp-draft-v3')).displayName), '  유나  ');
+    await page.reload();
+    assert.equal(await page.getByLabel('내 이름 또는 닉네임').inputValue(), '  유나  ', '답변 전에도 이름 자동 저장');
     await noPageOverflow(page);
     await page.locator('.question-card').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
     await page.screenshot({ path: path.join(artifacts, 'test-desktop.png') });
@@ -115,6 +119,7 @@ async function accessibility(page, name) {
     assert.equal(await page.locator('.question-card').count(), 2, '이전 답변 수정은 다음 문항을 추가하지 않음');
     await accessibility(page, '테스트');
     await page.reload();
+    assert.equal(await page.getByLabel('내 이름 또는 닉네임').inputValue(), '  유나  ', '이름과 답변 함께 복원');
     assert.equal(await page.locator('#question-role .choice input').first().isChecked(), true);
     assert.equal(await page.locator('.question-card').count(), 2);
     await page.locator('#question-maxHours .choice').first().click();
@@ -198,6 +203,8 @@ async function accessibility(page, name) {
     const exported = JSON.parse(fs.readFileSync(path.join(artifacts, 'export-check.json'), 'utf8'));
     assert.equal(exported.responses.B01.value.pvp, 'no');
     const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-playstyle-profile')));
+    assert.equal(profile.displayName, '유나', '입력한 이름으로 결과 자동 저장');
+    assert.equal(await page.locator('#profile-title').textContent(), '유나의 플레이 성향');
     await page.goto(base + '/compare.html');
     await accessibility(page, '비교 빈 화면');
     await page.locator('.paste-disclosure summary').focus();
@@ -206,10 +213,8 @@ async function accessibility(page, name) {
     await page.getByText('JSON 형식을 읽지 못했어요.', { exact: false }).waitFor();
     await page.locator('#json-input').fill(JSON.stringify(profile)); await page.locator('#add-json').click();
     assert.equal(await page.locator('.compare-radar-section').getAttribute('data-reveal-state'), 'waiting', '불러오기만으로 결과 연출을 시작하지 않음');
-    assert.equal(await page.locator('.party-conversation').getAttribute('data-reveal-state'), 'waiting');
     await page.locator('.compare-radar-section').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('.compare-radar-section').dataset.revealState === 'revealed');
-    assert.equal(await page.locator('.party-conversation').getAttribute('data-reveal-state'), 'waiting', '아직 내려가지 않은 다음 영역은 대기');
     assert.equal(await page.locator('#participant-count').textContent(), '1');
     assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'GM 역할' }).count());
     assert.ok(await page.locator('#group-tables').getByRole('rowheader', { name: 'PL 역할' }).count());
@@ -334,6 +339,7 @@ async function accessibility(page, name) {
     await accessibility(page, '모바일 결과');
     await page.screenshot({ path: path.join(artifacts, 'result-mobile.png') });
     await page.goto(base + '/test.html?edit=1');
+    assert.equal(await page.getByLabel('내 이름 또는 닉네임').inputValue(), await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-playstyle-profile')).displayName), '결과 수정 시 이름 복원');
     assert.equal(await page.locator('.question-card').count(), questionIds.length);
     await page.locator('#question-role .choice').nth(1).click();
     assert.equal(await page.locator('#field-A01-offered').count(), 1, '역할 수정 시 GM 추가 입력도 갱신');
@@ -352,7 +358,8 @@ async function accessibility(page, name) {
     assert.equal(await page.locator('input:checked').count(), 0);
     assert.equal(await page.locator('#test-progress').getAttribute('aria-valuenow'), '0');
     assert.equal(await page.locator('#finish-test').isVisible(), false);
-    assert.equal(await page.evaluate(() => localStorage.getItem('trpg-rp-draft-v3')), null);
+    assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-rp-draft-v3')).responses), {});
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('trpg-rp-draft-v3')).displayName), await page.getByLabel('내 이름 또는 닉네임').inputValue(), '답변 초기화 시 이름 유지');
     assert.equal(await page.evaluate(() => new URL(location.href).searchParams.has('edit')), false);
     assert.equal(await page.evaluate(() => localStorage.getItem('trpg-playstyle-profile')), savedResult);
     await page.reload();

@@ -9,6 +9,11 @@
   let current = 0;
   let responses = {};
   let resumed = false;
+  let displayName = '';
+  try {
+    const profile = A.validateProfile(JSON.parse(localStorage.getItem(A.STORAGE)));
+    displayName = profile.displayName;
+  } catch {}
   const chapters = [
     { label: '시작하기', start: 0, end: 2 },
     { label: '플레이 방식', start: 2, end: D.questions.findIndex(q => q.id === 'C01') },
@@ -20,15 +25,22 @@
       const saved = A.makeProfile(draft.responses);
       saved.questionnaireVersion = draft.version;
       responses = A.validateProfile(saved).responses;
+      if (typeof draft.displayName === 'string') displayName = draft.displayName.slice(0, 80);
       current = draft.version === D.version && Number.isInteger(draft.current) ? Math.max(0, Math.min(D.questions.length - 1, draft.current)) : 0;
       resumed = Object.keys(responses).length > 0;
     }
     if (new URLSearchParams(location.search).has('edit')) {
       const profile = A.validateProfile(JSON.parse(localStorage.getItem(A.STORAGE)));
       responses = profile.responses; current = 0; resumed = true;
+      displayName = profile.displayName;
     }
   } catch { responses = {}; current = 0; }
-  const save = () => localStorage.setItem(draftKey, JSON.stringify({ version: D.version, current, responses }));
+  const save = () => localStorage.setItem(draftKey, JSON.stringify({ version: D.version, current, responses, displayName }));
+  $('#player-name').value = displayName;
+  $('#player-name').addEventListener('input', event => {
+    displayName = event.target.value.slice(0, 80);
+    save();
+  });
   const activeFields = q => A.fieldsFor(q, responses.role?.value).filter(f => (!f.when || responses[q.id]?.value === f.when) && !(q.id === 'C02' && f.key === 'serious' && q.rows.every(([row]) => ['ask', 'unknown'].includes(responses.C02?.value?.[row]))));
   function complete(q) {
     const answer = responses[q.id];
@@ -176,7 +188,7 @@
   $('#reset-test').onclick = () => {
     responses = {};
     current = 0;
-    localStorage.removeItem(draftKey);
+    save();
     // 결과 수정 경로에서도 새로고침으로 이전 답변이 다시 들어오지 않게 합니다.
     const url = new URL(location.href);
     url.searchParams.delete('edit');
@@ -192,8 +204,7 @@
     if (!D.questions.every(complete)) return;
     const previous = localStorage.getItem(A.STORAGE);
     if (previous) localStorage.setItem('trpg-playstyle-profile-previous', previous);
-    let name = '나의 모험가';
-    try { name = JSON.parse(previous)?.displayName || name; } catch {}
+    const name = displayName.trim() || '나의 모험가';
     localStorage.setItem(A.STORAGE, JSON.stringify(A.makeProfile(responses, name)));
     localStorage.removeItem(draftKey);
     location.href = 'result.html';

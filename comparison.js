@@ -486,8 +486,6 @@
     renderParticipants(); renderTabs();
     const analysis = groupAnalysis(people.map(p => p.profile));
     renderRadar(); renderTables(analysis);
-    const topics = [...analysis.restrictions.map(item => ({ ...item, label: '존중할 경계' })), ...analysis.pending, ...analysis.suggestions.filter(item => item.label)];
-    $('#party-conversation-list').innerHTML = topics.length ? topics.slice(0, 3).map(item => '<article><p class="conversation-label">' + e(item.label || '함께 확인') + '</p><h3>' + e(item.title) + '</h3><p>' + e(item.text || '사전협의는 동의가 아니에요. 세션 전에 각자의 범위를 함께 확인해주세요.') + '</p></article>').join('') + (topics.length > 3 ? '<a class="conversation-more" href="#group-tables">전체 응답에서 나머지 항목 확인 ↗</a>' : '') : '<article class="conversation-empty"><h3>' + (people.length < 2 ? '동료의 결과를 더해보세요.' : '서로의 응답을 천천히 읽어보세요.') + '</h3><p>아래 전체 응답에서 편안한 세션의 조건을 함께 정할 수 있어요.</p></article>';
     globalThis.TRPGCompareMotion?.update(people.map(p => p.id));
   }
   $('#add-json').onclick = () => {

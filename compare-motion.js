@@ -28,7 +28,6 @@
       canvas._sets = [];
       globalThis.TRPGApp.drawRadar(canvas, sets, motion, true, globalThis.TRPGCompare.comparisonAxes, false, { revealFromCenter: motion });
     }
-    if (motion && key === 'conversation') element.querySelectorAll('article').forEach((card, i) => enter(card, 60 + i * 60, 16));
   }
   function revealVisible() {
     if (!armed || reduced.matches) return;
@@ -55,7 +54,6 @@
       if (!element.isConnected) { observer.unobserve(element); pending.delete(element); }
     });
     queue(document.querySelector('.compare-radar-section'), 'radar');
-    queue(document.querySelector('.party-conversation'), 'conversation');
     queue(document.querySelector('.agreements-heading'), 'agreements');
     document.querySelectorAll('.operation-group').forEach((element, i) => queue(element, 'group-' + i));
     revealVisible();
