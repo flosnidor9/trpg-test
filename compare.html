@@ -10,9 +10,9 @@
 <header class="compare-header"><a class="brand" href="index.html"><span class="compare-brand-mark" aria-hidden="true">↗</span> TRPG 성향 테스트</a><nav aria-label="주 메뉴"><a href="test.html">테스트</a><a href="result.html">내 결과</a></nav></header>
 <main class="compare-main">
   <section class="party-import" id="party-import" aria-labelledby="import-title">
-    <div class="import-heading"><div><p class="eyebrow">PARTY COMPARE</p><h1 id="import-title">파티 비교하기</h1></div><p>각자의 결과 JSON 또는 원본 PNG를 준비해주세요.<br>파일을 선택하거나 이곳에 놓으면 됩니다.</p></div>
+    <div class="import-heading"><div><p class="eyebrow">PARTY COMPARE</p><h1 id="import-title">파티 비교하기</h1></div><p>각자의 결과 JSON 또는 워터마크 이미지를 준비해주세요.<br>파일을 선택하거나 이곳에 놓으면 됩니다.</p></div>
     <div class="import-grid">
-      <div id="dropzone" class="dropzone"><div class="import-file-mark" aria-hidden="true">↥</div><label for="file-input"><strong>결과 JSON·PNG 불러오기</strong></label><input id="file-input" type="file" accept=".json,.png,application/json,image/png" multiple><small>여러 파일을 한 번에 추가할 수 있어요. 이미지 편집·변환 시 비교 데이터가 사라질 수 있어요.</small></div>
+      <div id="dropzone" class="dropzone"><div class="import-file-mark" aria-hidden="true">↥</div><label for="file-input"><strong>결과 JSON·이미지 불러오기</strong></label><input id="file-input" type="file" accept=".json,.png,.jpg,.jpeg,.webp,application/json,image/png,image/jpeg,image/webp" multiple><small>PNG·JPEG·WebP를 읽을 수 있어요. 이미지 크기 변경·편집 시 데이터 복구가 어려울 수 있어요.</small></div>
       <div class="import-alternatives"><button type="button" id="use-my-profile" class="local-profile"><span><small>ON THIS DEVICE</small><strong>내 결과로 시작하기</strong><span>이 기기에 저장한 결과를 추가해요.</span></span><b aria-hidden="true">↗</b></button><details class="paste-disclosure"><summary>JSON 직접 붙여넣기 <span aria-hidden="true">＋</span></summary><div class="paste-box"><label for="json-input">결과 JSON 전체 내용</label><textarea id="json-input" placeholder="{ … }" spellcheck="false"></textarea><button type="button" id="add-json">참가자 추가 ↗</button></div></details></div>
     </div>
   </section>
@@ -31,6 +31,6 @@
   </section>
 </main>
 <footer>TRPG 성향 테스트 · 비교 결과는 자동으로 공유되지 않습니다.</footer>
-<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="handout-art.js"></script><script src="profile-view.js"></script><script src="png-metadata.js"></script><script src="profile-png.js"></script><script src="app.js"></script><script src="result-motion.js"></script><script src="compare-motion.js"></script><script src="comparison.js"></script>
+<script src="questionnaire.js"></script><script src="narratives.js"></script><script src="cards.js"></script><script src="handout-art.js"></script><script src="profile-view.js"></script><script src="watermark-codec.js"></script><script src="watermark-dct.js"></script><script src="watermark.js"></script><script src="png-metadata.js"></script><script src="profile-png.js"></script><script src="app.js"></script><script src="result-motion.js"></script><script src="compare-motion.js"></script><script src="comparison.js"></script>
 </body>
 </html>

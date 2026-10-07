@@ -161,7 +161,7 @@
       const url = URL.createObjectURL(blob);
       dialog = document.createElement('dialog'); dialog.className = 'png-dialog'; dialog.setAttribute('aria-label', 'PNG 저장 미리보기');
       dialog.innerHTML = '<div class="png-dialog-heading"><div><h2>PNG 저장 미리보기</h2><p>지도와 세션 카드를 한 장에 담았어요.</p></div><button type="button" class="button secondary png-close" aria-label="미리보기 닫기">닫기</button></div><div class="png-preview"><img alt="성향 지도와 텍스트 설명, 세션 취향 카드 저장 이미지"></div><div class="png-dialog-actions"><button type="button" class="button primary png-save">PNG 저장</button><p class="form-message" role="status"></p></div>';
-      dialog.querySelector('.png-dialog-heading p').textContent = '비교용 결과 데이터 ' + profiles.length + '명분을 포함해요. JSON과 같은 공개 기준으로 경계·메모를 담고 비공개 항목은 제외해요. 파티 비교에는 원본 PNG를 불러와 주세요.';
+      dialog.querySelector('.png-dialog-heading p').textContent = '비교용 결과 데이터 ' + profiles.length + '명분을 이미지 픽셀에 저장해요. JSON과 같은 공개 기준으로 경계·메모를 담고 비공개 항목은 제외해요. 크기 변경·편집 시 복구가 어려울 수 있어요.';
       if (options.party) dialog.querySelector('.png-dialog-heading p').textContent += ' 텍스트 요약에 참여한 전체 참가자의 데이터를 포함해요.';
       dialog.querySelector('img').src = url;
       dialog.querySelector('.png-close').onclick = () => dialog.close();

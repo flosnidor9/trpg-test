@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>픽셀 JSON 워터마크</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:760px;margin:40px auto;padding:0 20px;background:#faf8fc;color:#342744}
+  section{background:white;padding:24px;margin:24px 0;border-radius:12px}label{display:block;margin:16px 0 6px}
+  input,textarea,button{font:inherit;max-width:100%;box-sizing:border-box}textarea{width:100%;min-height:180px}
+  button{margin-top:16px;padding:10px 20px;background:#7050b3;color:white;border:0;border-radius:6px}
+  input[type=number]{width:100px}a{color:#63419e}pre{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.6}
+</style>
+<h1>픽셀 JSON 워터마크</h1><p>DCT 계수에 데이터를 저장합니다. 브라우저에서만 처리하며, 다운로드는 링크를 눌러 실행합니다.</p>
+<section><h2>삽입</h2>
+<label for="source">원본 이미지</label><input id="source" type="file" accept="image/*">
+<label for="json">JSON</label><textarea id="json">{"version":1,"name":"테스트 캐릭터","id":12345,"tags":["캐릭터","테스트"],"description":"한글 데이터 복원 테스트"}</textarea>
+<label for="strength">강도 (4–200)</label><input id="strength" type="number" min="4" max="200" value="40">
+<label for="redundancy">반복 수 (홀수 1–31)</label><input id="redundancy" type="number" min="1" max="31" step="2" value="5">
+<p id="capacity" role="status"></p><button id="embed">PNG 만들기</button>
+<p><a id="download" hidden download="watermarked.png">워터마크 PNG 저장</a></p>
+</section>
+<section><h2>복구</h2><label for="encoded">저장한 이미지</label><input id="encoded" type="file" accept="image/*">
+<button id="extract">JSON 복구</button><pre id="output"></pre></section>
+<p id="status" role="status"></p>
+<script type="module" src="watermark-demo.js"></script>
+</html>

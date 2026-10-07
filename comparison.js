@@ -520,7 +520,7 @@
     const errors = [];
     for (const file of files) {
       try {
-        const png = /\.png$/i.test(file.name) || file.type === 'image/png';
+        const png = /\.(png|jpe?g|webp)$/i.test(file.name) || /^image\//.test(file.type);
         let profiles;
         if (png) profiles = await TRPGPngMetadata.read(file);
         else {

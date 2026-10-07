@@ -4,7 +4,6 @@ const path = require('node:path');
 const http = require('node:http');
 const os = require('node:os');
 const { chromium } = require(process.env.TRPG_PLAYWRIGHT_MODULE || 'playwright');
-require('../png-metadata.js');
 const root = path.resolve(__dirname, '..');
 const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), 'trpg-png-'));
 const server = http.createServer((req, res) => {
@@ -23,6 +22,9 @@ const server = http.createServer((req, res) => {
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.route('https://cdn.jsdelivr.net/**', route => route.abort());
     const base = 'http://127.0.0.1:' + server.address().port;
+    async function readPng(buffer) {
+      return page.evaluate(async base64 => TRPGPngMetadata.read(new Blob([Uint8Array.from(atob(base64), c => c.charCodeAt(0))], { type: 'image/png' })), buffer.toString('base64'));
+    }
     await page.goto(base + '/result.html');
     assert.equal(await page.locator('#profile-png').isVisible(), false);
     const profile = await page.evaluate(() => {
@@ -71,7 +73,7 @@ const server = http.createServer((req, res) => {
       const buffer = fs.readFileSync(path.join(artifacts, filename));
       assert.equal(buffer.subarray(1, 4).toString(), 'PNG');
       assert.ok(buffer.readUInt32BE(20) > 1000);
-      const restored = await TRPGPngMetadata.read(new Blob([buffer]));
+      const restored = await readPng(buffer);
       const expectedCount = ({ 'personal.png': 1, 'one-person.png': 1, 'party.png': 2, 'six-person.png': 6, 'participant.png': 1 })[filename];
       assert.equal(restored.length, expectedCount);
       assert.equal(restored.some(person => JSON.stringify(person).includes('private')), false, '비공개 항목 제외');
@@ -131,11 +133,19 @@ const server = http.createServer((req, res) => {
     await page.locator('#file-input').setInputFiles(path.join(artifacts, 'empty.png'));
     await page.getByText('비교 데이터가 없어요.', { exact: false }).waitFor();
     assert.equal(await page.locator('[data-person]').count(), 9);
-    const invalidParty = await TRPGPngMetadata.embed(new Blob([fs.readFileSync(path.join(artifacts, 'empty.png'))]), [profile, { schemaVersion: 'wrong' }]);
-    await page.locator('#file-input').setInputFiles({ name: 'invalid-party.png', mimeType: 'image/png', buffer: Buffer.from(await invalidParty.arrayBuffer()) });
+    const invalidParty = await page.evaluate(async ({ base64, profile }) => {
+      const image = new Blob([Uint8Array.from(atob(base64), c => c.charCodeAt(0))], { type: 'image/png' });
+      const blob = await TRPGPngMetadata.embed(image, [profile, { schemaVersion: 'wrong' }]);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(reader.error); reader.readAsDataURL(blob);
+      });
+    }, { base64: fs.readFileSync(path.join(artifacts, 'empty.png')).toString('base64'), profile });
+    await page.locator('#file-input').setInputFiles({ name: 'invalid-party.png', mimeType: 'image/png', buffer: Buffer.from(invalidParty, 'base64') });
     await page.locator('#import-message.error-message').waitFor();
     assert.equal(await page.locator('[data-person]').count(), 9, '파티 전체 검증 실패 시 부분 추가 없음');
-    const corrupted = fs.readFileSync(path.join(artifacts, 'personal.png')); corrupted[corrupted.length - 20] ^= 1;
+    const pngBytes = fs.readFileSync(path.join(artifacts, 'personal.png'));
+    const corrupted = pngBytes.subarray(0, 30);
     await page.locator('#file-input').setInputFiles([
       { name: 'broken.png', mimeType: 'image/png', buffer: corrupted },
       { name: 'profile.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(profile)) }

@@ -6,12 +6,12 @@
   let previous = [], armed = false;
   function animate(element, frames, options = {}) {
     if (!element || reduced.matches) return;
-    const animation = element.animate(frames, { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)', ...options });
+    const animation = element.animate(frames, { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards', ...options });
     running.add(animation);
     animation.finished.catch(() => {}).finally(() => running.delete(animation));
   }
-  function enter(element, delay = 0, distance = 20) {
-    animate(element, [{ opacity: 0, transform: `translateY(${distance}px)` }, { opacity: 1, transform: 'translateY(0)' }], { delay });
+  function enter(element, delay = 0, distance = 20, options = {}) {
+    animate(element, [{ opacity: 0, transform: `translateY(${distance}px)` }, { opacity: 1, transform: 'translateY(0)' }], { delay, ...options });
   }
   function reveal(element, motion = true) {
     const key = pending.get(element);
@@ -73,7 +73,12 @@
     running.forEach(animation => animation.finish());
     pending.forEach((key, element) => reveal(element, false));
   });
-  enter(document.querySelector('.compare-header'));
+  const entrance = { duration: 700, easing: 'cubic-bezier(.16,1,.3,1)' };
+  enter(document.querySelector('.compare-header'), 0, 12, entrance);
+  enter(document.querySelector('.import-heading'), 80, 12, entrance);
+  enter(document.querySelector('.import-grid .dropzone'), 180, 16, entrance);
+  enter(document.querySelector('.import-alternatives'), 280, 16, entrance);
+  enter(document.querySelector('#comparison-empty'), 400, 12, entrance);
   globalThis.TRPGCompareMotion = {
     radarVisible() { return reduced.matches || revealed.has('radar'); },
     update(ids) {
