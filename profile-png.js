@@ -40,13 +40,13 @@
       const img = new Image(); img.src = url; await img.decode(); return img;
     } finally { URL.revokeObjectURL(url); }
   }
-  async function create({ title, members, cards, party = false, readingProfiles = members.map(member => member.profile) }) {
+  async function create({ title, members, cards, party = false, scale = 1, readingProfiles = members.map(member => member.profile) }) {
     await document.fonts.ready;
     const A = TRPGApp, C = TRPGCompare;
-    const canvas = document.createElement('canvas'); canvas.width = 1920; canvas.height = 100;
+    const canvas = document.createElement('canvas'); const width = 1920; canvas.width = width * scale; canvas.height = 100;
     let ctx = canvas.getContext('2d');
     const leftX = 64, rightX = 820, leftWidth = 716;
-    const contentWidth = canvas.width - 128, rightWidth = canvas.width - rightX - 64;
+    const contentWidth = width - 128, rightWidth = width - rightX - 64;
     const cardColumns = 2, cardGap = 32, cardWidth = (rightWidth - cardGap * (cardColumns - 1)) / cardColumns;
     const copyWidth = cardWidth - 48, paragraphWidth = cardWidth - 68;
     const legend = members.map(member => ({ ...member, rows: (() => { ctx.font = `500 22px ${font}`; return lines(ctx, member.profile.displayName, 590); })() }));
@@ -79,18 +79,19 @@
     const cardStart = top + (party ? 230 : 58);
     let cardEnd = cardStart;
     for (let i = 0; i < cards.length; i += cardColumns) cardEnd += Math.max(...cardHeights.slice(i, i + cardColumns)) + cardGap;
-    canvas.height = Math.ceil(Math.max(readingY, cardEnd, top + 900) + 126);
-    ctx = canvas.getContext('2d'); ctx.textBaseline = 'top';
-    ctx.fillStyle = '#f7f4fa'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const height = Math.ceil(Math.max(readingY, cardEnd, top + 900) + 126);
+    canvas.height = height * scale;
+    ctx = canvas.getContext('2d'); ctx.scale(scale, scale); ctx.textBaseline = 'top';
+    ctx.fillStyle = '#f7f4fa'; ctx.fillRect(0, 0, width, height);
     text(ctx, party ? 'PARTY PLAY PROFILE' : 'YOUR PLAY PROFILE', 64, 48, contentWidth, 19, purple, 600);
     text(ctx, title, 64, 105, contentWidth, 46, ink, 700);
     text(ctx, party ? `선택한 ${members.length}명의 플레이 좌표 · 함께할 모험을 준비하는 지도` : '플레이 좌표와 세션 취향을 한 장에', 64, headingEnd + 8, contentWidth, 22, muted);
     box(ctx, leftX, top, leftWidth, readingY - top + 30);
     text(ctx, '성향 지도', leftX + 40, top + 32, 636, 30, ink, 700);
-    const radar = document.createElement('canvas'); radar.width = 680; radar.height = 680;
+    const radar = document.createElement('canvas'); radar.width = 680 * scale; radar.height = 680 * scale;
     const sets = members.map(member => ({ id: member.id, data: C.comparisonRadar(member.profile), color: member.color, index: member.index, minRadius: .25 }));
-    A.drawRadar(radar, sets, false, true, C.comparisonAxes, false);
-    ctx.drawImage(radar, leftX + 18, top + 52);
+    A.drawRadar(radar, sets, false, true, C.comparisonAxes, false, { pixelRatio: scale });
+    ctx.drawImage(radar, leftX + 18, top + 52, 680, 680);
     C.comparisonAxes.forEach((axis, i) => {
       const angle = -Math.PI / 2 + i * Math.PI * 2 / C.comparisonAxes.length;
       ctx.font = `600 20px ${font}`; ctx.fillStyle = ink; ctx.textAlign = 'center';
@@ -145,7 +146,7 @@
       }
       cardY += height + cardGap;
     }
-    text(ctx, 'TRPG 성향 테스트 · 취향은 우열이 아니라, 함께할 모험의 방향입니다.', 64, canvas.height - 65, contentWidth, 20, muted);
+    text(ctx, 'TRPG 성향 테스트 · 취향은 우열이 아니라, 함께할 모험의 방향입니다.', 64, height - 65, contentWidth, 20, muted);
     return canvas;
   }
   async function preview(options, button) {
@@ -154,19 +155,28 @@
     const original = button.textContent; button.textContent = '이미지 준비 중…';
     let dialog;
     try {
-      const canvas = await create(options);
+      const originalPng = options.format === 'original';
+      const canvas = await create({ ...options, scale: originalPng ? 2 : 1 });
       const image = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('PNG 생성 실패')), 'image/png'));
-      const profiles = (options.readingProfiles || options.members.map(member => member.profile)).map(profile => TRPGApp.exportProfile(profile));
-      const blob = await TRPGPngMetadata.embed(image, profiles);
+      const profiles = originalPng ? [] : (options.readingProfiles || options.members.map(member => member.profile)).map(profile => TRPGApp.exportProfile(profile));
+      const blob = originalPng ? image : await TRPGPngMetadata.embed(image, profiles);
+      const name = options.members.map(member => member.profile.displayName).join(' · ');
+      const filename = TRPGApp.exportFilename(name, originalPng ? (options.party ? '파티-원본.png' : '원본.png') : '파티비교용.png');
       const url = URL.createObjectURL(blob);
       dialog = document.createElement('dialog'); dialog.className = 'png-dialog'; dialog.setAttribute('aria-label', 'PNG 저장 미리보기');
       dialog.innerHTML = '<div class="png-dialog-heading"><div><h2>PNG 저장 미리보기</h2><p>지도와 세션 카드를 한 장에 담았어요.</p></div><button type="button" class="button secondary png-close" aria-label="미리보기 닫기">닫기</button></div><div class="png-preview"><img alt="성향 지도와 텍스트 설명, 세션 취향 카드 저장 이미지"></div><div class="png-dialog-actions"><button type="button" class="button primary png-save">PNG 저장</button><p class="form-message" role="status"></p></div>';
-      dialog.querySelector('.png-dialog-heading p').textContent = '비교용 결과 데이터 ' + profiles.length + '명분을 이미지 픽셀에 저장해요. JSON과 같은 공개 기준으로 경계·메모를 담고 비공개 항목은 제외해요. 크기 변경·편집 시 복구가 어려울 수 있어요.';
-      if (options.party) dialog.querySelector('.png-dialog-heading p').textContent += ' 텍스트 요약에 참여한 전체 참가자의 데이터를 포함해요.';
+      const label = originalPng ? '원본 PNG' : '파티 비교용 PNG';
+      dialog.setAttribute('aria-label', label + ' 저장 미리보기');
+      dialog.querySelector('h2').textContent = label + ' 저장 미리보기';
+      dialog.querySelector('.png-save').textContent = label + ' 저장';
+      dialog.querySelector('.png-dialog-heading p').textContent = originalPng
+        ? `공유하기 좋은 고해상도 원본 이미지예요 (${canvas.width} × ${canvas.height}px). 비교 데이터는 포함하지 않아요. 파티 비교에는 파티 비교용 PNG를 사용해 주세요.`
+        : '비교용 결과 데이터 ' + profiles.length + '명분을 이미지 픽셀에 저장해요. JSON과 같은 공개 기준으로 경계·메모를 담고 비공개 항목은 제외해요. 크기 변경·편집 시 복구가 어려울 수 있어요.';
+      if (options.party && !originalPng) dialog.querySelector('.png-dialog-heading p').textContent += ' 텍스트 요약에 참여한 전체 참가자의 데이터를 포함해요.';
       dialog.querySelector('img').src = url;
       dialog.querySelector('.png-close').onclick = () => dialog.close();
       dialog.querySelector('.png-save').onclick = () => {
-        const link = document.createElement('a'); link.href = url; link.download = options.party ? 'trpg-party-playstyle.png' : 'trpg-playstyle.png'; link.click();
+        const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
         dialog.querySelector('[role="status"]').textContent = 'PNG 저장을 요청했어요.';
       };
       dialog.addEventListener('close', () => { URL.revokeObjectURL(url); dialog.remove(); button.focus(); }, { once: true });

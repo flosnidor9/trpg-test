@@ -181,11 +181,15 @@
     if (q.type === 'matrix') return '세부 활동·위치별로 범위를 나누어 답했습니다. 아래 응답표에서 같은 항목의 허용 시점과 확인 조건을 각각 읽어주세요. ' + q.explanation;
     return '이 항목에서는 “' + answerLabel(q, a) + '”를 선택했습니다. ' + q.explanation;
   }
+  function exportFilename(name, suffix) {
+    const safeName = String(name || '').replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '_').trim().slice(0, 80).replace(/[. ]+$/, '') || '나의 모험가';
+    return safeName + '-' + suffix;
+  }
   function downloadJSON(p) {
     const blob = new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url; link.download = 'trpg-playstyle-profile.json'; link.click();
+    link.href = url; link.download = exportFilename(p.displayName, '결과.json'); link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function point(c, shape, x, y, color, size = 4) {
@@ -195,10 +199,11 @@
     else { c.moveTo(x, y - size - 1); c.lineTo(x + size + 1, y + size); c.lineTo(x - size - 1, y + size); c.closePath(); }
     c.fill();
   }
-  function drawRadar(canvas, sets, animate = true, showAxisNames = true, axes = D.axes, drawAxisNames = true, { revealFromCenter = false } = {}) {
+  function drawRadar(canvas, sets, animate = true, showAxisNames = true, axes = D.axes, drawAxisNames = true, { revealFromCenter = false, pixelRatio = 1 } = {}) {
     const c = canvas.getContext('2d');
     if (!c) return;
-    const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, radius = w * (showAxisNames ? .31 : .27);
+    c.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    const w = canvas.width / pixelRatio, h = canvas.height / pixelRatio, cx = w / 2, cy = h / 2, radius = w * (showAxisNames ? .31 : .27);
     const n = axes.length;
     if (canvas._frame) cancelAnimationFrame(canvas._frame);
     canvas._revealObserver?.disconnect();
@@ -359,10 +364,12 @@
       const direction = a.left + ' → ' + a.right;
       return '<button type="button" class="radar-axis-label' + side + vertical + '" style="left:' + x + '%;top:' + y + '%" aria-label="' + escape(a.name + ': ' + direction) + '">' + escape(a.name) + '<span class="radar-axis-tooltip" aria-hidden="true">' + escape(direction) + '</span></button>';
     }).join('');
-    $('#profile-png').onclick = () => {
-      const name = $('#display-name')?.value.trim().slice(0, 80) || p.displayName;
-      globalThis.TRPGPng.preview({ title: name + '의 플레이 성향', members: [{ id: 'self', profile: { ...p, displayName: name }, color: COLORS[0], index: 0 }], cards: ranked }, $('#profile-png'));
-    };
+    for (const [id, format] of [['profile-original-png', 'original'], ['profile-png', 'comparison']]) {
+      $('#' + id).onclick = () => {
+        const name = $('#display-name')?.value.trim().slice(0, 80) || p.displayName;
+        globalThis.TRPGPng.preview({ title: name + '의 플레이 성향', members: [{ id: 'self', profile: { ...p, displayName: name }, color: COLORS[0], index: 0 }], cards: ranked, format }, $('#' + id));
+      };
+    }
     if (!allowExport) return;
     $('#display-name').value = p.displayName;
     const preview = () => {
@@ -378,6 +385,6 @@
     };
     preview();
   }
-  globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, drawRadar, renderProfile };
+  globalThis.TRPGApp = { D, STORAGE, COLORS, SHAPES, $, escape, isObject, known, makeProfile, validateProfile, exportProfile, questionById, response, valueOf, answerLabel, dimensionLabel, axisStory, combinations, overview, operationStory, fieldsFor, fieldLabels, exportFilename, drawRadar, renderProfile };
   if (typeof document !== 'undefined' && document.querySelector('#result-content')) document.addEventListener('DOMContentLoaded', initResult, { once: true });
 })();

@@ -183,7 +183,7 @@ test('파티 레이더는 응답을 여섯 가지 성향으로 묶고 원래 응
   assert.equal(values.schedule, 100);
   assert.match(C.comparisonAnswer(p, C.comparisonAxes.find(axis => axis.key === 'rpFlow')), /타이핑 시간: 10분 이상/);
   assert.match(C.comparisonAnswer(p, C.comparisonAxes.find(axis => axis.key === 'session')), /휴식 길이: 약 20분 이상/);
-  const context = Object.fromEntries(['clearRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'stroke', 'fill', 'arc', 'rect', 'setLineDash', 'fillText'].map(name => [name, () => {}]));
+  const context = Object.fromEntries(['setTransform', 'clearRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'stroke', 'fill', 'arc', 'rect', 'setLineDash', 'fillText'].map(name => [name, () => {}]));
   const canvas = { width: 600, height: 600, getContext: () => context };
   assert.doesNotThrow(() => A.drawRadar(canvas, [{ id: 'test', data: values }], false, true, C.comparisonAxes));
 });
@@ -191,7 +191,7 @@ test('파티 레이더는 응답을 여섯 가지 성향으로 묶고 원래 응
 test('파티 레이더의 최저값은 중심이 아닌 첫 눈금에 그린다', () => {
   let path = [], polygon;
   const context = {
-    clearRect() {}, beginPath() { path = []; }, moveTo(x, y) { path.push([x, y]); },
+    setTransform() {}, clearRect() {}, beginPath() { path = []; }, moveTo(x, y) { path.push([x, y]); },
     lineTo(x, y) { path.push([x, y]); }, closePath() {}, stroke() {},
     fill() { if (path.length === 6) polygon = path; }, arc() {}, rect() {}, setLineDash() {}, fillText() {}
   };

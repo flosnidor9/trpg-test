@@ -421,14 +421,17 @@
     const common = sharedPlaystyle(chosen.map(person => person.profile));
     $('#party-common-note').textContent = chosen.length < 2 ? '두 명 이상을 선택하면 함께 선호하는 방식을 살펴볼 수 있어요.' : '선택한 참가자 모두가 가진 세션 취향 카드만 표시해요. 응답이 완전히 같을 필요는 없어요.';
     $('#party-png').disabled = chosen.length === 0;
+    $('#party-original-png').disabled = chosen.length === 0;
     const commonItem = item => '<article class="common-item common-card"><div class="common-card-art">' + globalThis.TRPGHandoutArt.render(item.id) + '</div><div class="common-card-copy"><span class="taste-category">' + e(item.category) + '</span><h4>' + e(item.title) + '</h4><p>' + e(item.description) + '</p><small>' + e(item.evidence) + '</small></div></article>';
     $('#party-common-list').innerHTML = common.length ? common.slice(0, 3).map(commonItem).join('') + (common.length > 3 ? '<details class="common-more"><summary>공통점 더 보기 (' + (common.length - 3) + ')</summary>' + common.slice(3).map(commonItem).join('') + '</details>' : '') : chosen.length >= 2 ? '<p class="common-empty">아직 함께 가진 세션 취향 카드가 없어요. 아래 분포에서 각자의 선호를 살펴보세요.</p>' : '';
   }
-  $('#party-png').onclick = () => {
-    const chosen = people.filter(person => selected.has(person.id));
-    if (!chosen.length) return;
-    globalThis.TRPGPng.preview({ party: true, title: '우리 파티의 플레이 성향', readingProfiles: people.map(person => person.profile), members: chosen.map(person => ({ id: person.id, profile: person.profile, color: style(person).color, index: person.id - 1 })), cards: sharedPlaystyle(chosen.map(person => person.profile)) }, $('#party-png'));
-  };
+  for (const [id, format] of [['party-original-png', 'original'], ['party-png', 'comparison']]) {
+    $('#' + id).onclick = () => {
+      const chosen = people.filter(person => selected.has(person.id));
+      if (!chosen.length) return;
+      globalThis.TRPGPng.preview({ party: true, title: '우리 파티의 플레이 성향', readingProfiles: people.map(person => person.profile), members: chosen.map(person => ({ id: person.id, profile: person.profile, color: style(person).color, index: person.id - 1 })), cards: sharedPlaystyle(chosen.map(person => person.profile)), format }, $('#' + id));
+    };
+  }
   let disposePersonalMotion;
   function renderTabs() {
     disposePersonalMotion?.();

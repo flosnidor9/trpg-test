@@ -64,10 +64,10 @@ const server = http.createServer((req, res) => {
     assert.ok(cardRendering.descriptions.every(value => value.includes('\n')), '카드 데이터 문장별 개행 유지');
     assert.equal(await page.locator('#profile-png').evaluate(el => !!el.closest('#export-section')), true);
     await page.locator('#export-section').screenshot({ path: path.join(artifacts, 'export-controls.png') });
-    async function save(button, filename) {
+    async function save(button, filename, original = false) {
       await page.locator(button).click();
       await page.locator('.png-dialog[open] img').waitFor();
-      assert.equal(await page.locator('.png-dialog img').evaluate(img => img.complete && [1200, 1600, 2048, 2400, 3200, 4096].includes(Math.max(img.naturalWidth, img.naturalHeight))), true);
+      assert.equal(await page.locator('.png-dialog img').evaluate((img, original) => img.complete && (original ? img.naturalWidth === 3840 : [1200, 1600, 2048, 2400, 3200, 4096].includes(Math.max(img.naturalWidth, img.naturalHeight))), original), true);
       const downloadPromise = page.waitForEvent('download');
       await page.locator('.png-save').click();
       const download = await downloadPromise;
@@ -75,6 +75,16 @@ const server = http.createServer((req, res) => {
       const buffer = fs.readFileSync(path.join(artifacts, filename));
       assert.equal(buffer.subarray(1, 4).toString(), 'PNG');
       assert.ok(buffer.readUInt32BE(20) > 1000);
+      assert.match(download.suggestedFilename(), original ? /-원본\.png$/ : /-파티비교용\.png$/);
+      assert.ok(download.suggestedFilename().startsWith(button.includes('party-') ? '참가자 1' : button.includes('personal-') ? '참가자 1' : '공유 이름_유나'), '공유할 이름을 파일명에 사용');
+      if (original) {
+        assert.equal(buffer.readUInt32BE(16), 3840);
+        await assert.rejects(() => readPng(buffer), /비교 데이터가 없어요/);
+        assert.match(await page.locator('.png-dialog-heading p').textContent(), /고해상도 원본/);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator(button).evaluate(el => el === document.activeElement), true);
+        return;
+      }
       const restored = await readPng(buffer);
       const expectedCount = ({ 'personal.png': 1, 'one-person.png': 1, 'party.png': 2, 'six-person.png': 6, 'participant.png': 1 })[filename];
       assert.equal(restored.length, expectedCount);
@@ -84,6 +94,12 @@ const server = http.createServer((req, res) => {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator(button).evaluate(el => el === document.activeElement), true);
     }
+    assert.equal(await page.locator('#profile-png').textContent(), '파티 비교용 PNG 저장');
+    await page.locator('#display-name').fill('공유 이름:유나');
+    const jsonDownloadPromise = page.waitForEvent('download');
+    await page.locator('#download').click();
+    assert.equal((await jsonDownloadPromise).suggestedFilename(), '공유 이름_유나-결과.json');
+    await save('#profile-original-png', 'personal-original.png', true);
     await save('#profile-png', 'personal.png');
     await page.goto(base + '/compare.html');
     assert.equal(await page.locator('#party-png').isVisible(), false);
@@ -100,6 +116,7 @@ const server = http.createServer((req, res) => {
         await page.locator('.party-map-heading').screenshot({ path: path.join(artifacts, 'party-controls.png') });
         assert.ok(await page.locator('.common-card-art svg').count() > 0);
         assert.equal(await page.locator('#radar-overlap-value').textContent(), '100%');
+        await save('#party-original-png', 'party-original.png', true);
         await save('#party-png', 'party.png');
       }
     }
@@ -107,10 +124,12 @@ const server = http.createServer((req, res) => {
     await save('#party-png', 'six-person.png');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
     await page.locator('#person-tab-1').click();
+    await save('#personal-profile-original-png', 'participant-original.png', true);
     await save('#personal-profile-png', 'participant.png');
     await page.locator('#party-tab').click();
     for (const checkbox of await page.locator('[data-person]').all()) await checkbox.uncheck();
     assert.equal(await page.locator('#party-png').isDisabled(), true);
+    assert.equal(await page.locator('#party-original-png').isDisabled(), true);
     await page.locator('#json-input').fill('{invalid'); await page.locator('#add-json').click();
     assert.match(await page.locator('#import-message').textContent(), /JSON/);
     const empty = await page.evaluate(async () => {
@@ -123,7 +142,7 @@ const server = http.createServer((req, res) => {
     await page.locator('#file-input').setInputFiles(path.join(artifacts, 'personal.png'));
     await page.getByText('1명의 결과를 추가했어요.', { exact: false }).waitFor();
     assert.equal(await page.locator('[data-person]').count(), 1);
-    assert.equal(await page.locator('[data-name]').inputValue(), '모험가 유나');
+    assert.equal(await page.locator('[data-name]').inputValue(), '공유 이름:유나');
     await page.locator('#file-input').setInputFiles(path.join(artifacts, 'party.png'));
     await page.getByText('2명의 결과를 추가했어요.', { exact: false }).waitFor();
     assert.equal(await page.locator('[data-person]').count(), 3);
@@ -144,7 +163,7 @@ const server = http.createServer((req, res) => {
       });
     }, { base64: fs.readFileSync(path.join(artifacts, 'empty.png')).toString('base64'), profile });
     await page.locator('#file-input').setInputFiles({ name: 'invalid-party.png', mimeType: 'image/png', buffer: Buffer.from(invalidParty, 'base64') });
-    await page.locator('#import-message.error-message').waitFor();
+    await page.locator('#import-message.error-message').filter({ hasText: 'invalid-party.png' }).waitFor();
     assert.equal(await page.locator('[data-person]').count(), 9, '파티 전체 검증 실패 시 부분 추가 없음');
     const pngBytes = fs.readFileSync(path.join(artifacts, 'personal.png'));
     const corrupted = pngBytes.subarray(0, 30);

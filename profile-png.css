@@ -29,3 +29,6 @@
 .common-card-copy .taste-category { display: block; margin-bottom: 8px; }
 .common-card-copy p, .taste-card > p { white-space: pre-line; }
 @media (max-width: 600px) { .png-dialog { padding: 16px; }.png-dialog-heading h2 { font-size: 18px; }.png-dialog-actions { flex-wrap: wrap; }.party-map-heading { align-items: flex-start; flex-direction: column; gap: 16px; }.profile-export-actions .button { width: 100%; } }
+
+.party-png-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 600px) { .party-png-actions { width: 100%; }.party-png-actions .button { width: 100%; } }
