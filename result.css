@@ -43,7 +43,7 @@
 .result-page .taste-card-first { grid-column: auto; grid-row: auto; background: linear-gradient(155deg, #403055, #281d3b 55%, #35264c); }
 .result-page .taste-category { align-self: flex-start; margin-top: 0; padding: 3px 9px; border: 1px solid #927aa780; border-radius: 3px; color: #dfceee; font-size: 11px; }
 .handout-art { position: absolute; inset: 0; margin: 0; border-radius: inherit; transform-style: preserve-3d; pointer-events: none; }
-.handout-art-layer { position: absolute; inset: 0; margin: auto; backface-visibility: hidden; transform: translate3d(calc(var(--parallax-x, 0) * var(--layer-shift)), calc(var(--parallax-y, 0) * var(--layer-shift)), calc(var(--parallax-depth, 0) * var(--layer-depth))); }
+.handout-art-layer { position: absolute; inset: 0; margin: auto; overflow: visible; backface-visibility: hidden; transform: translate3d(calc(var(--parallax-x, 0) * var(--layer-shift)), calc(var(--parallax-y, 0) * var(--layer-shift)), calc(var(--parallax-depth, 0) * var(--layer-depth))); }
 .handout-art-orbit { --layer-depth: -64px; transform: translate3d(calc(var(--parallax-x, 0) * 14px), calc(var(--parallax-y, 0) * 11px), calc(var(--parallax-depth, 0) * -64px)) scale(calc(1 + var(--parallax-depth, 0) * .065)); }
 .handout-art-0 { --layer-shift: -18px; --layer-depth: -48px; }
 .handout-art-1 { --layer-shift: -11px; --layer-depth: -30px; }

@@ -1,4 +1,4 @@
-/* Filled editorial SVG scenes, separated into four planes for recessed parallax. */
+/* 물체의 표면·장식·그림자는 하나의 그룹, 하나의 패럴랙스 평면에 둡니다. */
 (() => {
   'use strict';
   const D = 'var(--art-0)', M = 'var(--art-1)', L = 'var(--art-2)', A = 'var(--art-3)', W = 'var(--art-4)';
@@ -8,13 +8,12 @@
   const e = (x, y, rx, ry, fill, extra = '') => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" ${extra}/>`;
   const line = (d, color = W, width = 1.4) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`;
   const g = (x, y, scale, content, rotate = 0) => `<g transform="translate(${x} ${y}) scale(${scale}) rotate(${rotate})">${content}</g>`;
-  const plant = line('M0 122Q-4 54 7 0', M, 3) + p('M4 30Q-39-14-43 11T4 48M3 53Q43 3 50 29T3 70M1 78Q-48 33-51 65T1 94M0 98Q40 52 43 80T0 113', A) + p('M-27 113H28L20 158H-19Z', WOOD) + e(0, 113, 28, 7, W);
-  const books = r(0, 0, 68, 13, W, 2) + r(5, 13, 73, 10, L, 2) + r(-7, 23, 71, 16, A, 2) + r(-4, 27, 60, 8, PAPER, 1);
-  const cup = e(0, 27, 25, 6, D, 'opacity=".2"') + `<circle cx="21" cy="8" r="10" fill="none" stroke="${W}" stroke-width="6"/>` + p('M-21 0H21V14Q21 31 0 31T-21 14Z', PAPER) + e(0, 0, 21, 5, W) + e(0, 0, 17, 3, D);
+  const object = (name, ...parts) => `<g data-art-object="${name}">${parts.flat(Infinity).join('')}</g>`;
+  // 최대 패럴랙스 이동량보다 넉넉하게 칠해 카드 안쪽에 바탕의 틈이 생기지 않게 합니다.
+  const backdrop = fill => r(-32, -32, 374, 684, fill);
   const book = e(0, 58, 86, 12, D, 'opacity=".22"') + p('M-84 5Q-40-14 0 5Q40-14 84 5L78 60Q35 44 0 64Q-35 44-78 60Z', W) + p('M-80 0Q-40-20 0 0V58Q-39 37-75 51Z', PAPER) + p('M0 0Q40-20 80 0L75 51Q39 37 0 58Z', L) + line('M0 0V58', W, 2) + line('M-65 13Q-37 4-14 14M-63 24Q-37 15-14 25M-61 35Q-37 26-14 36M14 14Q37 4 65 13M14 25Q37 15 63 24M14 36Q37 26 61 35', W, 1.1);
-  const candle = e(0, 53, 19, 5, D, 'opacity=".2"') + r(-9, 2, 18, 48, PAPER, 3) + p('M-9 7Q-5 14-2 7T5 10L9 5V2H-9Z', L) + p('M0-26Q-14-8 0 0Q14-8 0-26Z', L) + p('M0-15Q-5-5 0-1Q5-5 0-15Z', W);
-  const window = (x, y, w, h) => r(x - 7, y - 7, w + 14, h + 14, D, w / 2) + r(x, y, w, h, SKY, w / 2) + line(`M${x + w / 2} ${y + 9}V${y + h}M${x} ${y + h * .6}H${x + w}`, W, 4);
-  const hills = p('M-15 278Q56 181 112 217T226 202 325 250V350H-15Z', M) + p('M-20 305Q43 242 109 277T248 253 330 287V350H-20Z', A);
+  const candle = e(0, 51, 19, 5, D, 'opacity=".2"') + r(-9, 2, 18, 48, PAPER, 3) + p('M-9 7Q-5 14-2 7T5 10L9 5V2H-9Z', L) + line('M0 3V-5', D, 1.5) + p('M0-26Q-14-8 0 0Q14-8 0-26Z', L) + p('M0-15Q-5-5 0-1Q5-5 0-15Z', W);
+  const window = (x, y, w, h) => r(x - 7, y - 7, w + 14, h + 14, D, w / 2) + r(x, y, w, h, SKY, w / 2) + e(x + w * .64, y + h * .28, 15, 15, L) + line(`M${x + w / 2} ${y + 2}V${y + h - 2}M${x} ${y + h * .6}H${x + w}`, W, 4);
   const desk = p('M-10 274 249 244 328 274 45 313Z', WOOD) + p('M-10 274 45 313 328 274V295L45 333-10 294Z', D);
   const shelf = r(0, 0, 97, 218, D, 3) + [0, 1, 2].map(row => {
     const y = row * 68 + 17;
@@ -24,81 +23,183 @@
   const scenes = {
     'live-exchange': {
       colors: ['#262038', '#796a9a', '#efddbe', '#b2a3c7', '#b28674'],
-      back: window(64, 35, 180, 209) + e(172, 99, 26, 26, L) + p('M66 188Q122 130 164 169T244 180V244H66Z', M),
-      middle: p('M28 273Q27 222 68 217L86 252 130 264 118 281 68 259Z', A) + p('M62 152Q31 163 46 194L59 207 74 202 81 173Z', W) + p('M43 180Q27 146 57 138T83 168L72 172 67 157Q46 156 43 180Z', D) + p('M69 202 71 224 53 230 51 202Z', W) + p('M282 267Q281 218 245 214L228 253 185 265 190 283 248 260Z', M) + p('M254 157Q279 166 268 194L254 207 238 199 235 173Z', L) + p('M241 144Q277 139 278 174L265 184 262 164 238 164Z', D) + p('M243 200 244 222 262 229 265 197Z', L),
-      front: desk + g(153, 272, .38, book, -7) + g(72, 269, .5, cup) + g(249, 251, .45, cup) + g(278, 245, .42, plant)
+      back: object('bench', r(22, 102, 266, 166, M, 30), r(40, 117, 230, 141, A, 24)),
+      middle: object('conversation-table',
+        object('left-player',
+          p('M28 278Q28 229 54 218L76 217Q91 223 99 248L127 259 120 274 79 259 65 242 69 278Z', M),
+          p('M53 196H69L72 223Q61 232 51 222Z', W),
+          p('M45 166Q47 148 65 153L79 171 83 183 75 185 71 201Q58 212 47 192Z', W),
+          p('M43 181Q28 148 56 139T83 168L72 174 67 157Q49 155 43 181Z', D)),
+        object('right-player',
+          p('M282 276Q280 226 258 216L239 214Q224 222 215 247L188 257 193 271 235 258 248 239 248 276Z', M),
+          p('M242 194H259L263 220Q253 229 241 220Z', L),
+          p('M239 162Q256 151 268 165L266 190Q257 210 242 201L237 185 230 182 237 173Z', L),
+          p('M238 147Q273 138 278 171L266 184 263 165 238 165Z', D)),
+        object('table', desk),
+        object('shared-notes', p('M118 269 170 263 196 281 139 291Z', PAPER), line('m134 275 29-4m-20 11 29-4', W, 1.2)),
+        object('left-pawn', e(71, 281, 15, 5, D), p('M62 278 66 254H76L80 278Z', W), e(71, 248, 8, 8, W)),
+        object('right-pawn', e(245, 268, 15, 5, D), p('M236 265 240 241H250L254 265Z', A), e(245, 235, 8, 8, A))),
+      front: ''
     },
     'thoughtful-roleplay': {
       colors: ['#1c2939', '#516c88', '#f3dfb7', '#94a6bc', '#b88e6b'],
-      back: window(27, 33, 133, 215) + e(111, 91, 27, 27, L) + e(122, 79, 25, 25, M) + p('M29 202Q65 155 112 187T159 198V248H29Z', M) + g(196, 32, .94, shelf),
-      middle: p('M146 280V186Q145 152 108 154T68 185V280Z', D) + p('M83 192Q104 179 132 192L126 245H89Z', A) + r(214, 140, 5, 128, W, 2) + p('M174 151 199 81H234L260 151Z', PAPER) + e(217, 151, 43, 8, W) + e(214, 269, 29, 5, D),
-      front: desk + g(147, 263, .72, book, -7) + g(250, 273, .55, cup) + g(21, 242, .66, plant) + g(64, 292, .5, books, -7)
+      back: object('folding-screen', p('M15 58 117 35 153 59V279H15Z', M), p('M117 35 185 55V270L153 279V59Z', A)),
+      middle: object('chair', p('M146 280V186Q145 152 108 154T68 185V280Z', D), p('M83 192Q104 179 132 192L126 245H89Z', A)),
+      front: object('writing-desk',
+        object('table', desk),
+        object('lamp', e(217, 262, 29, 6, D, 'opacity=".2"'), e(217, 259, 25, 5, W), r(214, 145, 6, 114, W, 2), p('M174 151 199 81H235L260 151Z', PAPER), e(217, 151, 43, 7, W)),
+        object('notebook', p('M69 269 124 299 240 279V285L124 305 69 275Z', W), p('M69 269 175 255 240 279 124 299Z', PAPER), line('m100 272 30-4m-15 12 53-8', W, 1.4)),
+        object('pencil', p('M163 273 208 263 210 268 165 278Z', D), p('M157 277 163 273 165 278Z', L)))
     },
     'rich-scenes': {
       colors: ['#342533', '#90707e', '#f6e3c0', '#c9a5b1', '#bb8765'],
-      back: window(43, 22, 224, 258) + e(151, 105, 40, 40, L) + p('M46 213 97 136 151 191 190 143 264 220V280H46Z', M) + p('M46 259Q109 187 172 237T264 230V280H46Z', A),
-      middle: e(156, 272, 120, 21, D, 'opacity=".2"') + p('M65 122Q88 109 102 127L104 166H220Q245 166 246 190L231 266H95Q71 260 75 237L84 157 66 148Z', PAPER) + e(81, 128, 18, 8, W) + p('M95 147 88 230Q85 252 109 255H231L228 266H98Q70 261 75 238L84 150Z', W) + line('M109 185H205M107 197H194M105 209H206M103 221H172', W, 2),
-      front: desk + g(254, 273, .55, candle) + g(55, 283, .72, books, -8) + p('M214 249 246 140Q270 90 286 105 280 143 246 169Z', A) + p('M217 249 263 118 224 249Z', W) + e(211, 258, 17, 10, D) + r(194, 258, 34, 19, D, 3)
+      back: object('scroll-rack', r(26, 52, 82, 214, M, 4), r(32, 58, 70, 195, D, 3),
+        [0, 1, 2, 3].map(i => object('stored-scroll-' + i, g(38 + i * 16, 72, 1, r(0, 0, 12, 146, PAPER, 6) + e(6, 2, 6, 4, W) + r(-1, 96, 14, 8, W, 2))))),
+      middle: '',
+      front: object('scribe-desk',
+        object('table', desk),
+        object('scroll', e(151, 277, 81, 10, D, 'opacity=".2"'),
+          p('M66 129Q82 119 101 129L105 165H220Q240 165 237 189L225 263Q224 274 211 274H97Q75 274 78 252L88 144 67 146Z', PAPER),
+          p('M88 144 78 252Q75 274 97 274H211L213 265H105Q87 265 89 250L100 144Z', W),
+          p('M65 129Q83 116 101 129V144Q82 152 65 143Z', L), e(83, 129, 18, 7, W), e(83, 129, 13, 3.5, D, 'opacity=".25"'),
+          line('M113 185H210M111 197H198M110 209H205M108 221H173', W, 2)),
+        object('ink-and-quill', e(244, 278, 23, 6, D, 'opacity=".2"'), r(226, 255, 34, 21, D, 4),
+          p('M239 256 253 147Q266 107 287 105 289 138 261 169Z', A),
+          line('M242 258 274 123', W, 2),
+          e(243, 255, 17, 6, W), e(243, 255, 12, 3.5, D)))
     },
     'light-scenes': {
       colors: ['#18343d', '#518891', '#f6e5b6', '#9cc6c6', '#b69b6b'],
-      back: e(239, 91, 35, 35, L) + hills + p('M22 280V112Q22 37 91 37T160 112V280Z', D) + p('M37 280V114Q37 54 91 54T145 114V280Z', SKY),
-      middle: p('M142 73 73 107V293L142 260Z', WOOD) + p('M129 96 87 119V263L129 241Z', M) + r(110, 167, 5, 29, L, 2) + p('M34 279H161L176 296H21Z', W) + p('M23 296H176V308H23Z', D) + p('M170 293 198 277 221 288 192 304Z', L) + p('M220 323 248 307 271 318 242 334Z', L),
-      front: p('M-10 332Q48 273 85 305T189 326 330 290V366H-10Z', M) + g(275, 280, .65, plant) + p('M17 337Q-10 268 22 247 39 278 17 337M19 338Q44 294 65 310 51 333 19 338', A)
+      back: object('wall', backdrop(M)),
+      middle: object('doorway',
+        r(54, 46, 167, 256, D, 3), r(67, 57, 140, 242, PAPER, 1), p('M67 223 138 184 207 203V299H67Z', A),
+        object('door-light', p('M67 299 111 329 29 359-14 339Z', L, 'opacity=".25"')),
+        object('threshold', p('M51 299H222L240 333H35Z', W), p('M35 333H240V343H35Z', D)),
+        object('door-leaf', p('M207 57 111 87V329L207 299Z', WOOD), p('M193 80 126 101V307L193 286Z', M), r(132, 184, 5, 27, L, 2))),
+      front: ''
     },
     'social-table': {
       colors: ['#302a2c', '#795d61', '#ffe0a4', '#b99b8a', '#bc7950'],
-      back: e(154, 193, 135, 135, GLOW) + e(218, 76, 26, 26, L) + p('M0 233Q60 166 125 209T310 189V340H0Z', M) + trees,
-      middle: p('M40 243 89 224 103 269 53 291Z', WOOD) + p('M214 224 265 243 253 291 200 269Z', WOOD) + p('M39 247 28 215 36 211 49 244Zm223 0 19-32-8-4-18 33Z', W) + e(154, 283, 52, 13, D) + p('M128 281Q105 256 129 229 140 217 134 191 155 206 156 229 170 221 174 202 207 261 178 282Z', W) + p('M139 280Q124 252 151 222 149 245 168 250 182 268 166 280Z', L),
-      front: p('m110 294 83 19 7-13-85-19Zm4 21 87-28-5-13-87 28Z', WOOD) + g(68, 299, .53, cup) + p('M0 324Q88 303 154 328T310 320V370H0Z', D) + p('M-3 301Q22 259 41 275 33 306-3 319M301 312Q281 261 266 278 270 304 301 326', A)
+      back: object('woodland', p('M-32 233Q60 166 125 209T342 189V390H-32Z', M), trees),
+      middle: object('left-camp-chair',
+        line('M44 256 83 297M85 246 49 298', D, 5), p('M40 243 89 224 98 263 51 281Z', WOOD),
+        line('M39 247 31 215M88 228 83 207', W, 6)),
+      front: object('right-camp-chair',
+        line('M264 256 225 297M223 246 260 298', D, 5), p('M214 224 265 243 253 281 205 263Z', WOOD),
+        line('M222 228 227 207M262 247 278 215', W, 6)) +
+        object('campfire', e(154, 236, 95, 102, GLOW), e(154, 300, 53, 12, D, 'opacity=".45"'),
+          p('m111 286 87 23 4-12-87-23Z', WOOD), p('m112 306 89-25-4-12-89 25Z', WOOD),
+          p('M129 287Q109 262 131 236 142 221 136 199 156 214 157 235 173 226 174 212 201 260 177 287Z', W),
+          p('M140 287Q127 263 151 239 150 254 165 262 179 278 165 289Z', L)) +
+        object('foreground-ground', p('M0 331Q88 310 154 335T310 327V390H0Z', D))
     },
     'scene-boundaries': {
       colors: ['#2c2035', '#865f86', '#f6dfc6', '#c49cad', '#b98d73'],
-      back: r(22, 32, 266, 287, D, 2) + e(157, 216, 111, 115, GLOW) + p('M26 282 155 253 288 282 155 320Z', WOOD),
-      middle: p('M25 27H118Q118 111 84 178L67 287H22Z', M) + p('M285 27H192Q192 111 226 178L243 287H288Z', M) + p('M38 31Q59 124 31 192L37 273H51L47 187Q84 113 69 31Z', A) + p('M272 31Q251 124 279 192L273 273H259L263 187Q226 113 241 31Z', A) + p('M45 192 83 174 87 185 48 203Zm220 0-38-18-4 11 39 18Z', W),
-      front: p('M0 17H310V46Q230 82 155 45 80 82 0 46Z', WOOD) + p('M-3 300H313V320H-3Z', M) + p('M-3 320H313V337H-3Z', D) + g(155, 238, .6, book) + g(155, 225, .46, candle)
+      back: object('theater-wall', backdrop(D)),
+      middle: object('stage',
+        r(22, 32, 266, 270, D, 2), e(155, 209, 110, 108, GLOW),
+        object('stage-floor', p('M22 278 155 250 288 278V305H22Z', WOOD), r(14, 302, 282, 17, M), r(7, 319, 296, 18, D)),
+        object('stool', e(155, 277, 33, 6, D, 'opacity=".2"'), r(133, 192, 8, 85, W, 2), r(169, 192, 8, 85, W, 2), r(138, 239, 35, 5, W, 2), r(125, 185, 60, 11, WOOD, 4)),
+        object('curtains',
+          p('M25 27H118Q118 111 84 178L67 287H22Z', M), p('M285 27H192Q192 111 226 178L243 287H288Z', M),
+          p('M38 31Q59 124 31 192L37 273H51L47 187Q84 113 69 31Z', A), p('M272 31Q251 124 279 192L273 273H259L263 187Q226 113 241 31Z', A),
+          p('M31 190 82 174 86 184 34 201Zm248 0-51-16-4 10 52 17Z', W),
+          p('M15 17H295V46Q230 80 155 45 80 80 15 46Z', WOOD))),
+      front: ''
     },
     'open-coordination': {
       colors: ['#1d3435', '#527e78', '#eee1b9', '#9abcb0', '#b48f68'],
-      back: r(0, 0, 310, 350, WOOD) + p('M0 65 310 20V40L0 85Zm0 132 310 87v19L0 152Zm0 150 310-45v18L0 315Z', D, 'opacity=".1"'),
-      middle: p('M37 65 102 50 187 74 271 55 257 273 179 292 96 266 28 286Z', PAPER) + p('M102 50 96 266 179 292 187 74Z', W, 'opacity=".2"') + p('M44 130Q95 81 122 136T208 102 250 152L243 224Q179 261 146 218T41 226Z', M) + p('M64 177Q98 144 120 179T175 207 229 163', 'none', `stroke="${W}" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"`) + e(64, 177, 5, 5, L) + e(174, 207, 5, 5, L) + e(229, 163, 5, 5, L),
-      front: e(234, 277, 45, 12, D, 'opacity=".2"') + e(233, 264, 36, 36, W) + e(233, 261, 30, 30, D) + e(233, 261, 26, 26, PAPER) + p('m233 237 8 24-8 24-8-24Z', M) + p('m233 237 8 24h-8Z', D) + g(44, 285, .64, books, -8) + g(284, 239, .39, cup)
+      back: object('map-table', backdrop(WOOD)),
+      middle: object('navigation-kit',
+        object('map', p('M37 65 102 50 187 74 271 55 257 273 179 292 96 266 28 286Z', PAPER),
+          p('M44 130Q95 81 122 136T208 102 250 152L243 224Q179 261 146 218T41 226Z', M),
+          p('M102 50 96 266 179 292 187 74Z', W, 'opacity=".12"'),
+          p('M64 177Q98 144 120 179T175 207Q201 213 229 163', 'none', `stroke="${L}" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"`),
+          e(64, 177, 5, 5, L), e(175, 207, 5, 5, L), e(229, 163, 5, 5, L)),
+        object('compass', e(233, 282, 40, 10, D, 'opacity=".2"'), e(233, 267, 36, 36, W), e(233, 261, 34, 34, D), e(233, 261, 28, 28, PAPER),
+          line('M233 235V239M233 283V287M207 261H211M255 261H259', W, 1.5),
+          p('M233 239 241 261 233 283 225 261Z', M), p('M233 239 241 261H233Z', D), e(233, 261, 2.5, 2.5, L))),
+      front: ''
     },
     'restful-session': {
       colors: ['#21352e', '#5f8f7b', '#f2e2b4', '#a8c4a2', '#bd9e77'],
-      back: e(219, 76, 39, 39, L) + hills + trees,
-      middle: p('M30 163Q151 225 281 153 220 307 147 280 77 254 30 163Z', PAPER) + p('M30 163Q146 239 281 153 191 273 106 235Z', W) + p('M54 181Q123 277 198 262L186 274Q118 273 54 181Z', A) + p('M105 215Q124 191 157 214L164 240Q132 231 105 215Z', M),
-      front: p('M190 282 288 267 309 282 209 299Z', WOOD) + p('M209 299 309 282V293L209 310Z', D) + g(248, 278, .63, cup) + g(26, 278, .69, plant) + p('M0 335Q88 296 179 330T310 314V372H0Z', M)
+      back: object('room', backdrop(M)),
+      middle: object('sofa-setting',
+        object('rug', p('M14 326 99 290 294 321 204 350Z', A)),
+        object('sofa', e(155, 303, 116, 12, D, 'opacity=".15"'),
+          r(44, 276, 10, 31, D, 2), r(253, 276, 10, 31, D, 2),
+          r(36, 140, 238, 126, D, 28), r(44, 148, 222, 101, A, 22), r(32, 229, 246, 53, PAPER, 18),
+          r(23, 187, 37, 103, W, 15), r(249, 187, 37, 103, W, 15),
+          p('M65 167Q82 157 101 164L109 213Q85 224 65 212Z', L), p('M169 167Q193 154 224 169L229 207Q195 225 175 212Z', M),
+          object('blanket', p('M111 226Q147 220 169 238V302Q136 316 104 300Z', M),
+            p('M111 226Q144 229 153 244V307L169 302V238Q147 220 111 226Z', A), line('M114 292Q133 300 146 297', A, 1.5)))),
+      front: ''
     },
     'focused-session': {
       colors: ['#292637', '#6b6384', '#f1dfbc', '#aaa0c3', '#c39d73'],
-      back: window(77, 20, 179, 261) + e(211, 83, 23, 23, L) + g(13, 81, .55, shelf),
-      middle: e(158, 280, 65, 14, D, 'opacity=".2"') + p('M119 101H196Q191 164 166 190 192 217 196 280H119Q122 217 149 190 123 164 119 101Z', A, 'opacity=".5"') + p('M129 128H186Q178 168 158 177 139 167 129 128Zm29 71Q142 228 131 262H185Q174 225 158 199Z', L) + r(109, 88, 97, 14, WOOD, 4) + r(109, 277, 97, 14, WOOD, 4) + r(113, 100, 5, 177, W, 2) + r(197, 100, 5, 177, W, 2) + line('M158 179V199', L, 2),
-      front: desk + g(65, 274, .58, books) + g(250, 273, .5, cup) + p('m235 283 44-12 2 5-44 12Z', W)
+      back: object('wall', backdrop(M)),
+      middle: object('hourglass-table',
+        object('table', p('M18 290 226 268 302 288 78 321Z', WOOD), p('M18 290 78 321 302 288V305L78 338 18 305Z', D)),
+        object('hourglass', e(158, 291, 56, 9, D, 'opacity=".2"'),
+          p('M123 102H193Q190 162 163 185V196Q190 222 193 277H123Q126 222 153 196V185Q126 162 123 102Z', A, 'opacity=".5"'),
+          p('M132 130H184Q177 164 158 179 139 164 132 130Z', L),
+          p('M158 222Q146 243 133 273H183Q170 243 158 222Z', L), line('M158 179V230', L, 1.5),
+          r(113, 98, 5, 184, W, 2), r(198, 98, 5, 184, W, 2), r(109, 88, 98, 14, WOOD, 4), r(109, 277, 98, 14, WOOD, 4))),
+      front: ''
     },
     'cinematic-table': {
       colors: ['#26263b', '#6d6895', '#f0d6bd', '#b3a5d0', '#b99b87'],
-      back: r(39, 48, 241, 211, D, 4) + r(48, 58, 223, 188, SKY, 2) + e(229, 101, 26, 26, L) + p('M48 219 105 133 144 180 181 111 271 210V246H48Z', M) + p('M48 227Q119 179 172 218T271 219V246H48Z', A) + r(34, 43, 251, 8, W, 3),
-      middle: p('M81 261 252 137 252 245Z', L, 'opacity=".14"') + e(77, 226, 31, 31, D) + e(124, 227, 26, 26, D) + [0,1,2].map(i => e(77 + Math.cos(i * 2.1) * 16, 226 + Math.sin(i * 2.1) * 16, 7, 7, M)).join('') + [0,1,2].map(i => e(124 + Math.cos(i * 2.1) * 13, 227 + Math.sin(i * 2.1) * 13, 6, 6, M)).join('') + r(43, 251, 107, 50, WOOD, 6) + p('M150 262 173 268V288L150 294Z', D) + r(55, 261, 16, 10, A, 2),
-      front: p('M0 305 310 278V350H0Z', D) + p('M0 307 310 280V288L0 315Z', W) + p('M13 0H35V277L13 304ZM283 0H310V284L283 276Z', M) + g(254, 294, .55, books, -5)
+      back: object('projection-screen', r(39, 48, 241, 211, D, 4), r(48, 58, 223, 188, PAPER, 2),
+        p('M48 58H95Q101 147 73 199L67 246H48ZM271 58H224Q218 147 246 199L252 246H271Z', M),
+        p('M82 228H244V246H82Z', A),
+        object('projected-players', p('M115 228 124 149H140L147 228ZM192 228 198 173H210L216 228Z', D), e(132, 139, 11, 11, D), e(204, 165, 9, 9, D)),
+        r(34, 43, 251, 8, W, 3)),
+      middle: '',
+      front: object('projection-desk',
+        object('table', p('M0 305 310 278V620H0Z', D), p('M0 305 310 278V286L0 313Z', W)),
+        object('projector', p('M170 269 252 137V245L170 280Z', L, 'opacity=".14"'),
+          e(77, 226, 31, 31, D), e(132, 230, 26, 26, D),
+          [0, 1, 2].map(i => e(77 + Math.cos(i * Math.PI * 2 / 3) * 16, 226 + Math.sin(i * Math.PI * 2 / 3) * 16, 7, 7, M)),
+          [0, 1, 2].map(i => e(132 + Math.cos(i * Math.PI * 2 / 3) * 13, 230 + Math.sin(i * Math.PI * 2 / 3) * 13, 6, 6, M)),
+          r(63, 250, 7, 13, D), r(129, 251, 7, 12, D), r(43, 255, 107, 45, WOOD, 6),
+          p('M150 264 173 269V288L150 294Z', D), r(55, 265, 16, 10, A, 2)),
+        object('mixing-console', p('M200 293 263 286 284 303 221 311Z', A),
+          [0, 1, 2].map(i => line('M' + (215 + i * 15) + ' ' + (293 - i * 1.7) + 'l10 10', D, 2) + p('m' + (216 + i * 15) + ' ' + (296 - i * 1.7) + ' 6-.7 3 3-6 .7Z', L))))
     },
     'quiet-roleplay': {
       colors: ['#1d2c38', '#586f83', '#f2dfb8', '#9db0bb', '#b99472'],
-      back: g(21, 35, 1.06, shelf) + g(219, 35, 1.03, shelf) + window(135, 33, 74, 203) + e(175, 91, 18, 18, L) + e(182, 83, 18, 18, M),
-      middle: desk + g(149, 245, .94, book, -7) + e(76, 213, 41, 52, GLOW) + g(79, 227, .78, candle) + g(250, 263, .67, books, -4),
-      front: g(272, 286, .66, cup) + g(26, 278, .65, plant) + p('m194 280 43-12 2 5-43 12Z', W)
+      back: object('left-bookshelf', g(18, 35, 1, shelf)) + object('right-bookshelf', g(224, 35, 1, shelf)) + object('window', window(133, 33, 74, 203)),
+      middle: object('reading-desk',
+        object('table', desk), object('open-book', g(172, 252, .78, book, -7)),
+        object('candle', e(65, 225, 39, 48, GLOW), g(65, 227, .78, candle))),
+      front: ''
     },
     'planned-party': {
       colors: ['#312737', '#8e7489', '#f7e4c6', '#c9adb7', '#c19a76'],
-      back: r(0, 0, 310, 350, SKY) + p('M0 302 310 247V350H0Z', WOOD) + g(279, 201, .75, plant),
-      middle: e(150, 293, 108, 13, D, 'opacity=".2"') + p('M52 73H258L247 281H42Z', W) + p('M57 69H253L242 270H47Z', PAPER) + p('M57 69H253L250 111H55Z', M) + r(82, 50, 9, 39, D, 4) + r(219, 50, 9, 39, D, 4) + [0,1,2].map(row=>[0,1,2,3].map(col=>r(67+col*42, 130+row*39, 25, 23, (row===1&&col===2)?W:A, 3)).join('')).join('') + line('m158 180 6 6 12-13', D, 2.5),
-      front: g(63, 288, .6, books, -8) + g(262, 279, .6, cup) + p('m137 299 80-22 2 5-80 22Z', D) + p('m135 300 7-7 2 5Z', L)
+      back: object('wall', backdrop(SKY)),
+      middle: object('planning-desk',
+        object('table', p('M0 302 310 247V620H0Z', WOOD)),
+        object('calendar', e(151, 283, 104, 10, D, 'opacity=".2"'),
+          p('M58 73H257L269 282H46Z', D),
+          // 종이·머리글·날짜·고리에 같은 기울기를 적용합니다.
+          '<g transform="translate(58 69) skewX(-3)">',
+          r(-3, 4, 202, 207, W, 2), r(0, 0, 196, 201, PAPER, 2), r(0, 0, 196, 42, M),
+          r(25, -19, 9, 39, D, 4), r(162, -19, 9, 39, D, 4),
+          [0, 1, 2].map(row => [0, 1, 2, 3].map(col => r(15 + col * 42, 61 + row * 39, 25, 23, (row === 1 && col === 2) ? W : A, 3))),
+          line('M104 112 110 118 120 106', D, 2.5), '</g>'),
+        object('envelope', p('M25 294 78 281 104 294 46 308Z', PAPER), line('M25 294 64 298 78 281', W, 1.4)),
+        object('pencil', p('M141 294 217 273 219 278 143 299Z', D), p('M135 298 141 294 143 299Z', L))),
+      front: ''
     },
     'steady-adventure': {
       colors: ['#23343a', '#597f8c', '#efe0b7', '#a4b9af', '#baa184'],
-      back: e(222, 79, 40, 40, L) + p('M-20 260 93 80 166 220 228 131 335 274V350H-20Z', M) + p('M93 80 166 220 129 181 121 142Z', D, 'opacity=".3"') + p('m70 117 23-37 20 38-21-10Z', L) + p('m205 167 23-36 20 37-22-8Z', A),
-      middle: p('M-15 306Q51 209 123 258T244 230 329 281V356H-15Z', A) + p('M61 351Q218 301 149 274 120 260 196 229 94 252 125 282 166 306 9 351Z', L) + p('M53 275V191H63V278Z', WOOD) + p('M35 196 82 183 90 193 83 204 35 216Z', W),
-      front: p('M-20 333Q45 279 103 327T214 308 330 331V367H-20Z', M) + p('M11 334 27 253 43 334Zm247 4 24-100 23 100Z', D) + p('M-3 333Q18 297 31 311T54 348Z', A)
+      back: object('mountains', p('M-20 260 93 80 166 220 228 131 335 274V390H-20Z', M),
+        p('M93 80 166 220 129 181 121 142Z', D, 'opacity=".3"'), p('M70 117 93 80 113 118 92 108Z', L), p('M205 167 228 131 248 168 226 160Z', A)),
+      middle: object('trail', p('M-15 306Q51 209 123 258T244 230 329 281V390H-15Z', A),
+        p('M61 351Q218 301 149 274 120 260 196 229 94 252 125 282 166 306 9 351Z', L),
+        object('signpost', p('M53 278V195H63V278Z', WOOD), p('M35 196 82 183 90 193 83 204 35 216Z', W), e(58, 199, 2, 2, D))),
+      front: object('foreground-hill', p('M-20 333Q45 279 103 327T214 308 330 331V390H-20Z', M),
+        p('M11 334 27 253 43 334Zm247 4 24-100 23 100Z', D), p('M-3 333Q18 297 31 311T54 348Z', A))
     }
   };
   const palette = id => (scenes[id] || scenes['steady-adventure']).colors.map((color, i) => '--art-' + i + ':' + color).join(';');
@@ -106,11 +207,12 @@
   function render(id) {
     const scene = scenes[id] || scenes['steady-adventure'];
     const prefix = 'handout-' + (++serial) + '-';
-    const layers = [r(0, 0, 310, 620, SKY), scene.back, scene.middle, scene.front];
+    const layers = [backdrop(SKY), scene.back, scene.middle, scene.front];
     return '<div class="handout-art" data-art="' + id + '" style="' + palette(id) + '" aria-hidden="true">' + layers.map((content, i) => {
       const key = prefix + i + '-';
       const defs = `<defs><linearGradient id="${key}sky" x2=".25" y2="1"><stop stop-color="${scene.colors[3]}"/><stop offset=".52" stop-color="${scene.colors[1]}"/><stop offset="1" stop-color="${scene.colors[0]}"/></linearGradient><linearGradient id="${key}wood" x2="0" y2="1"><stop stop-color="${scene.colors[4]}"/><stop offset="1" stop-color="${scene.colors[1]}"/></linearGradient><linearGradient id="${key}paper" x2=".7" y2="1"><stop stop-color="${scene.colors[2]}"/><stop offset="1" stop-color="${scene.colors[4]}"/></linearGradient><radialGradient id="${key}glow"><stop stop-color="${scene.colors[2]}" stop-opacity=".38"/><stop offset="1" stop-color="${scene.colors[2]}" stop-opacity="0"/></radialGradient></defs>`;
-      return '<svg class="handout-art-layer handout-art-' + (i === 0 ? 'orbit' : i - 1) + '" viewBox="0 0 310 620" preserveAspectRatio="none" fill="none" focusable="false">' + defs + content.replaceAll('#@', '#' + key) + '</svg>';
+      // 카드 설명이 길어져도 원과 물체의 비율은 유지하고, 바탕만 카드 전체로 늘립니다.
+      return '<svg class="handout-art-layer handout-art-' + (i === 0 ? 'orbit' : i - 1) + '" viewBox="0 0 310 620" preserveAspectRatio="' + (i === 0 ? 'none' : 'xMidYMin meet') + '" fill="none" focusable="false">' + defs + content.replaceAll('#@', '#' + key) + '</svg>';
     }).join('') + '</div>';
   }
   globalThis.TRPGHandoutArt = { render, scenes, palette };
